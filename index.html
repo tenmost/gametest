@@ -91,7 +91,7 @@ function idle(){
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   count.textContent='3';statusEl.textContent='CHOOSE YOUR MOVE';statusEl.className='';
 }
-function reset(){token++;p=3;c=3;over.classList.remove('show');idle();render()}
+function reset(){token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 async function play(choice){
@@ -125,7 +125,7 @@ async function play(choice){
   if(!p||!c){
     const youWon=c===0;
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
-    save();render();count.textContent='★';
+    save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 COMPUTER WINS';
     $('overText').textContent=youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`;
@@ -258,7 +258,7 @@ const arcGeo=new THREE.TorusGeometry(.03,.0065,8,20,Math.PI);
 
 // world-space limb: open tapered tube + joint balls, re-posed every frame
 function limb(mat,rA,rB){const cyl=mesh(new THREE.CylinderGeometry(rB*CS,rA*CS,1,24,1,true),mat),a=mesh(G.sph,mat),b=mesh(G.sph,mat);scene.add(cyl,a,b);
- return{set(A,B){const d=B.clone().sub(A),L=d.length()||1e-4;cyl.position.copy(A).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.divideScalar(L));cyl.scale.set(1,L,1);
+ return{hide(){cyl.visible=a.visible=b.visible=false},set(A,B){const d=B.clone().sub(A),L=d.length()||1e-4;cyl.position.copy(A).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.divideScalar(L));cyl.scale.set(1,L,1);
   a.position.copy(A);a.scale.setScalar(rA*CS);b.position.copy(B);b.scale.setScalar(rB*CS)}}}
 function ik(S,W,l1,l2,poleHint){const d=W.clone().sub(S);let L=d.length();const dir=d.divideScalar(L||1);L=Math.min(Math.max(L,Math.abs(l1-l2)+.01),l1+l2-.001);
  const a=(l1*l1-l2*l2+L*L)/(2*L),h=Math.sqrt(Math.max(l1*l1-a*a,0));const pole=poleHint.clone().addScaledVector(dir,-poleHint.dot(dir)).normalize();
@@ -355,8 +355,71 @@ function poseFigure(c,h,side){
 
 const hero=buildHero(),astro=buildAstro();
 hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale.setScalar(CS);
-astro.root.position.set(1.3,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
+astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
+/* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
+const RIG={proxyHand:true,skinColor:0xf2c4a6,thumbSign:1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
+ thumb:{rock:{a:.55,b:.9,c:.7},paper:{a:-.15,b:.1,c:.05},scissors:{a:.55,b:.9,c:.7}},
+ poses:{rock:{c:[1.45,1.5,1.5,1.45],s:[0,0,0,0]},paper:{c:[.05,.03,.05,.08],s:[.18,.05,-.07,-.18]},scissors:{c:[.04,.04,1.5,1.45],s:[.22,-.12,0,0]}}};
+window.RIG=RIG;
+const _v=()=>new THREE.Vector3(),_q=()=>new THREE.Quaternion();
+const wp=o=>o.getWorldPosition(_v()),wq=o=>o.getWorldQuaternion(_q());
+function rotWorld(bone,axisW,ang){if(!ang)return;const pq=wq(bone.parent).invert();const ax=axisW.clone().applyQuaternion(pq).normalize();bone.quaternion.premultiply(_q().setFromAxisAngle(ax,ang));bone.updateWorldMatrix(false,true)}
+function aimBone(bone,child,target){const p=wp(bone),cur=wp(child).sub(p).normalize(),des=target.clone().sub(p).normalize();
+ const dq=_q().setFromUnitVectors(cur,des),nw=dq.multiply(wq(bone));bone.quaternion.copy(wq(bone.parent).invert().multiply(nw));bone.updateWorldMatrix(false,true)}
+function frameBasis(f,n){const x=f.clone().normalize(),z=n.clone().addScaledVector(x,-n.dot(x)).normalize(),y=_v().crossVectors(z,x);return new THREE.Matrix4().makeBasis(x,y,z)}
+async function loadSkinned(url,o){
+ const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+ const g=await new GLTFLoader().loadAsync(url);
+ const root=g.scene,B={},mats=[];
+ root.traverse(x=>{if(x.isBone)B[x.name.replace(/^mixamorig:?/,'')]=x;if(x.isMesh){x.castShadow=x.receiveShadow=true;x.frustumCulled=false;mats.push(x.material)}});
+ const holder=grp();holder.add(root);root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
+ const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
+ const side=o.side,F=['Index','Middle','Ring','Pinky'],rest=new Map();
+ const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
+ for(const b of[...fingerBones.flat(),...thumb])rest.set(b,b.quaternion.clone());
+ const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
+ R.play=(name,{loop=true,fade=.35}={})=>{const a=act[name];if(!a||R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
+  if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
+ R.play(o.idle);return R}
+function poseSkinned(R,h,dt){
+ const s=R.side,B=R.B;
+ // smooth finger pose toward target
+ const T=RIG.poses[R.target],TT=RIG.thumb[R.target],k=1-Math.exp(-dt*14);
+ for(const key of['c','s'])for(let i=0;i<4;i++)R.pose[key][i]=lerp(R.pose[key][i],T[key][i],k);
+ for(const key of['a','b','c'])R.th[key]=lerp(R.th[key],TT[key],k);
+ const arm=B[s+'Arm'],fore=B[s+'ForeArm'],hand=B[s+'Hand'];
+ const save=[arm,fore,hand].map(b=>b.quaternion.clone());
+ // 1) two-bone IK so the wrist reaches the floating hand target
+ const S=wp(arm),W=h.root.localToWorld(V3(-RIG.wristBack,0,0));
+ const l1=S.distanceTo(wp(fore)),l2=wp(fore).distanceTo(wp(hand));
+ const E=ik(S,W,l1,l2,V3(...RIG.pole));aimBone(arm,fore,E);aimBone(fore,hand,W);
+ if(RIG.proxyHand){hand.scale.setScalar(.001);hand.updateWorldMatrix(false,true);if(R.ikW<.999){[arm,fore].forEach((b,i)=>b.quaternion.copy(save[i].clone().slerp(b.quaternion,R.ikW)));arm.updateWorldMatrix(false,true)}h.root.visible=R.ikW>.5;
+  if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);return}
+ // 2) orient the hand: fingers along the target's +X, palm toward the target's normal
+ const q=h.root.getWorldQuaternion(_q()),fT=V3(1,0,0).applyQuaternion(q),nT=V3(...RIG.handN).applyQuaternion(q);
+ const fC=wp(B[s+'HandMiddle1']).sub(wp(hand)),sC=wp(B[s+'HandIndex1']).sub(wp(B[s+'HandPinky1']));
+ const nC=_v().crossVectors(fC.clone().normalize(),sC.normalize()).multiplyScalar(RIG.palmSign[s]);
+ const Mc=frameBasis(fC,nC),Mt=frameBasis(fT,nT);
+ const dq=_q().setFromRotationMatrix(Mt.multiply(Mc.clone().transpose()));
+ hand.quaternion.copy(wq(hand.parent).invert().multiply(dq.multiply(wq(hand))));hand.updateWorldMatrix(false,true);
+ // blend with the animation (used when the arm is released, e.g. at match end)
+ if(R.ikW<.999)[arm,fore,hand].forEach((b,i)=>b.quaternion.copy(save[i].clone().slerp(b.quaternion,R.ikW)));
+ if(R.ikW<.999)arm.updateWorldMatrix(false,true);
+ // 3) fingers
+ for(const b of R.rest.keys())b.quaternion.copy(R.rest.get(b));hand.updateWorldMatrix(false,true);
+ const f=wp(B[s+'HandMiddle1']).sub(wp(hand)).normalize(),sv=wp(B[s+'HandIndex1']).sub(wp(B[s+'HandPinky1']));sv.addScaledVector(f,-sv.dot(f)).normalize();
+ const n=_v().crossVectors(f,sv).multiplyScalar(RIG.palmSign[s]),curlAx=_v().crossVectors(f,n).normalize(),sprAx=_v().crossVectors(f,sv).normalize();
+ R.fingerBones.forEach((ch,i)=>{rotWorld(ch[0],sprAx,R.pose.s[i]);ch.forEach((b,j)=>rotWorld(b,curlAx,R.pose.c[i]*RIG.curlK[j]))});
+ rotWorld(R.thumb[0],f,R.th.a*RIG.thumbSign);rotWorld(R.thumb[1],curlAx,R.th.b);rotWorld(R.thumb[2],curlAx,R.th.c);
+ // 4) head reaction
+ if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);
+}
+
+let HS=null;
+loadSkinned('assets/hero.glb?v=1',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+ if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
+
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
 scene.add(HG.root,HA.root);
 HG.target=ST0.g;HA.target=ST0.a;HG.pose=cp(POSES[ST0.g]);HA.pose=cp(POSES[ST0.a]);
@@ -419,6 +482,8 @@ Object.assign(API,{
  setHands(g,a){HG.target=g;HA.target=a},
  setShaking(on){st.shaking=on;if(on)st.shakeT0=TIME},
  clear(){st.res=null},
+ matchEnd(won){st.match=won?'win':'lose'},
+ reset(){st.match=null},
  reveal(res){st.res=res;st.revT=0;st.camShake=.12;
   const gp=HG.hand.localToWorld(new THREE.Vector3(.35,0,0)),ap=HA.hand.localToWorld(new THREE.Vector3(.35,0,0));
   if(res.g==='win')burst(gp,[.3,1,.55]);else if(res.a==='win')burst(ap,[1,.28,.45]);else burst(gp.clone().lerp(ap,.5),[.55,.75,1],80,2.4)}});
@@ -432,7 +497,7 @@ function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
  st.revT+=dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
- const base={g:[-.42,-.12,.55],a:[.42,-.12,.55]};const pulse=.6+.4*Math.sin(TIME*6);
+ const base={g:[-.35,-.33,.45],a:[.35,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
@@ -464,7 +529,12 @@ function update(dt){
  const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
- scene.updateMatrixWorld();poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
+ if(HS){HS.target=HG.target;const res=anyRes?st.res.g:null,e=x=>1-Math.exp(-dt*x);
+  if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=lerp(HS.ikW,0,e(4))}
+  else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=lerp(HS.ikW,0,e(6))}
+  else{HS.ikW=lerp(HS.ikW,1,e(6));HS.play(res==='win'?'Victory_Cheer':'Idle_15')}
+  HS.headDown=lerp(HS.headDown,res==='lose'?1:0,e(6));HS.mixer.update(dt)}
+ scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
 }
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
