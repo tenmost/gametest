@@ -358,7 +358,7 @@ hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale
 astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
 /* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
-const RIG={thumbFix:{a:0,b:0,c:0,d:0,e:0},proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
+const RIG={fingers:false,proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
  thumb:{rock:{a:.55,b:.9,c:.7},paper:{a:-.15,b:.1,c:.05},scissors:{a:.55,b:.9,c:.7}},
  poses:{rock:{c:[1.45,1.5,1.5,1.45],s:[0,0,0,0]},paper:{c:[.05,.03,.05,.08],s:[.18,.05,-.07,-.18]},scissors:{c:[.04,.04,1.5,1.45],s:[.22,-.12,0,0]}}};
 window.RIG=RIG;
@@ -381,15 +381,6 @@ async function loadSkinned(url,o){
  const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
  R.play=(name,{loop=true,fade=.35}={})=>{const a=act[name];if(!a||R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
   if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
- // finger poses taken from the model's own animations (animator-made fist)
- const sample=(clipName,t)=>{const m=new Map(),clip=g.animations.find(c=>c.name===clipName);if(!clip)return m;
-  for(const tr of clip.tracks){const [node,prop]=tr.name.split('.');if(prop!=='quaternion')continue;const b=B[node.replace(/^mixamorig:?/,'')];if(!b||!rest.has(b))continue;
-   const v=tr.createInterpolant().evaluate(t);m.set(b,new THREE.Quaternion(v[0],v[1],v[2],v[3]))}return m};
- const fist=sample(o.fistClip,o.fistTime),open=new Map([...rest].map(([b,q])=>[b,q.clone()]));
- const pick=(src,b)=>src.get(b)||rest.get(b);
- const isOut=b=>/Index|Middle/.test(b.name);
- R.fp={rock:new Map([...rest.keys()].map(b=>[b,pick(fist,b)])),paper:open,scissors:new Map([...rest.keys()].map(b=>[b,isOut(b)?rest.get(b):pick(fist,b)]))};
- R.cq=new Map([...rest].map(([b,q])=>[b,q.clone()]));
  R.play(o.idle);return R}
 function poseSkinned(R,h,dt){
  const s=R.side,B=R.B;
@@ -415,21 +406,19 @@ function poseSkinned(R,h,dt){
  // blend with the animation (used when the arm is released, e.g. at match end)
  if(R.ikW<.999)[arm,fore,hand].forEach((b,i)=>b.quaternion.copy(save[i].clone().slerp(b.quaternion,R.ikW)));
  if(R.ikW<.999)arm.updateWorldMatrix(false,true);
- // 3) fingers
- const tgt=R.fp[R.target],kf=1-Math.exp(-dt*16);
- for(const b of R.rest.keys()){const cq=R.cq.get(b);cq.slerp(tgt.get(b),kf);b.quaternion.copy(cq)}hand.updateWorldMatrix(false,true);
+ // 3) fingers stay as the model animates them (gestures are shown on cards)
+ if(!RIG.fingers){if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);return}
+ for(const b of R.rest.keys())b.quaternion.copy(R.rest.get(b));hand.updateWorldMatrix(false,true);
  const f=wp(B[s+'HandMiddle1']).sub(wp(hand)).normalize(),sv=wp(B[s+'HandIndex1']).sub(wp(B[s+'HandPinky1']));sv.addScaledVector(f,-sv.dot(f)).normalize();
- const sprAx=_v().crossVectors(f,sv).normalize();
- R.fingerBones.forEach((ch,i)=>rotWorld(ch[0],sprAx,R.pose.s[i]));
- R.thW=lerp(R.thW||0,R.target==='paper'?0:1,kf);const TF=RIG.thumbFix;
- if(R.thW>.01){const n=_v().crossVectors(f,sv).multiplyScalar(RIG.palmSign[s]),cax=_v().crossVectors(f,n).normalize();
-  rotWorld(R.thumb[0],f,TF.a*R.thW);rotWorld(R.thumb[0],n,TF.d*R.thW);rotWorld(R.thumb[0],cax,TF.e*R.thW);rotWorld(R.thumb[1],cax,TF.b*R.thW);rotWorld(R.thumb[2],cax,TF.c*R.thW)}
+ const n=_v().crossVectors(f,sv).multiplyScalar(RIG.palmSign[s]),curlAx=_v().crossVectors(f,n).normalize(),sprAx=_v().crossVectors(f,sv).normalize();
+ R.fingerBones.forEach((ch,i)=>{rotWorld(ch[0],sprAx,R.pose.s[i]);ch.forEach((b,j)=>rotWorld(b,curlAx,R.pose.c[i]*RIG.curlK[j]))});
+ rotWorld(R.thumb[0],f,R.th.a*RIG.thumbSign);rotWorld(R.thumb[1],curlAx,R.th.b);rotWorld(R.thumb[2],curlAx,R.th.c);
  // 4) head reaction
  if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);
 }
 
 let HS=null;
-loadSkinned('assets/hero_lab.glb?v=4',{fistClip:'Boxing_Practice',fistTime:5.63,scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+loadSkinned('assets/hero.glb?v=3',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
  if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
@@ -487,17 +476,74 @@ const pts=new THREE.Points(pGeo,new THREE.PointsMaterial({size:.22,map:SPR,verte
 function burst(pos,col,n=110,speed=3.2){for(let i=0;i<n;i++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),v=speed*(.4+Math.random()*.8);
  plist.push({p:pos.clone(),v:new THREE.Vector3(Math.cos(a)*r*v,u*v+.6,Math.sin(a)*r*v),c:col.map(x=>x*(1.2+Math.random()*1.3)),life:.7+Math.random()*.8,age:0});if(plist.length>NP)plist.shift()}}
 
+/* ---------- cards: rock / paper / scissors shown as 3D cards ---------- */
+const CARD_COL={rock:['#ffa04a','#3a1a08','#ffcf9a'],paper:['#52dcff','#0b2a4e','#bff3ff'],scissors:['#ff5ad8','#3d0a42','#ffc2f2'],back:['#a77bff','#140a33','#e2d4ff']};
+function rrect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function cardTexture(kind){
+ const c=document.createElement('canvas');c.width=512;c.height=736;const g=c.getContext('2d'),[edge,dark,light]=CARD_COL[kind];
+ rrect(g,10,10,492,716,54);const bg=g.createLinearGradient(0,0,0,736);bg.addColorStop(0,dark);bg.addColorStop(1,'#05030f');g.fillStyle=bg;g.fill();
+ g.save();g.clip();const rg=g.createRadialGradient(256,330,10,256,330,330);rg.addColorStop(0,edge+'66');rg.addColorStop(1,'#0000');g.fillStyle=rg;g.fillRect(0,0,512,736);
+ for(let i=0;i<70;i++){g.fillStyle=`rgba(255,255,255,${Math.random()*.6})`;g.beginPath();g.arc(Math.random()*512,Math.random()*736,Math.random()*2.2,0,7);g.fill()}g.restore();
+ g.lineWidth=14;g.strokeStyle=edge;g.shadowColor=edge;g.shadowBlur=30;rrect(g,22,22,468,692,46);g.stroke();g.shadowBlur=0;
+ g.lineWidth=3;g.strokeStyle=light+'aa';rrect(g,44,44,424,648,34);g.stroke();
+ const C=[256,320];
+ if(kind==='back'){
+  g.strokeStyle=edge;g.lineWidth=6;for(const r of[150,115,80]){g.beginPath();g.arc(C[0],C[1]+30,r,0,7);g.globalAlpha=.25+r/400;g.stroke()}g.globalAlpha=1;
+  g.fillStyle=light;g.font='900 200px Arial';g.textAlign='center';g.textBaseline='middle';g.shadowColor=edge;g.shadowBlur=40;g.fillText('?',C[0],C[1]+40);g.shadowBlur=0;
+  g.font='900 52px Arial';g.fillStyle=edge;g.fillText('SPACE DUEL',256,640);
+ }else{
+  g.save();g.translate(...C);
+  if(kind==='rock'){const pts=[];for(let i=0;i<11;i++){const a=i/11*Math.PI*2,r=130+Math.sin(i*2.7)*22+Math.cos(i*1.3)*14;pts.push([Math.cos(a)*r,Math.sin(a)*r*.85+10])}
+   g.beginPath();pts.forEach((p,i)=>i?g.lineTo(...p):g.moveTo(...p));g.closePath();const sg=g.createRadialGradient(-40,-50,10,0,0,170);sg.addColorStop(0,'#e6e0e4');sg.addColorStop(.6,'#8f878c');sg.addColorStop(1,'#4a4347');
+   g.fillStyle=sg;g.shadowColor='#000';g.shadowBlur=25;g.fill();g.shadowBlur=0;g.lineWidth=7;g.strokeStyle='#2c2629';g.stroke();
+   g.strokeStyle='#3a3337';g.lineWidth=5;g.beginPath();g.moveTo(-30,-60);g.lineTo(5,-10);g.lineTo(-10,30);g.moveTo(5,-10);g.lineTo(55,15);g.moveTo(40,-80);g.lineTo(60,-40);g.stroke();
+   g.fillStyle='#ffffff55';g.beginPath();g.ellipse(-55,-60,38,18,-.5,0,7);g.fill()}
+  if(kind==='paper'){g.rotate(-.12);g.shadowColor='#000';g.shadowBlur=25;g.fillStyle='#f4f8ff';g.beginPath();g.moveTo(-110,-150);g.lineTo(60,-150);g.lineTo(110,-100);g.lineTo(110,150);g.lineTo(-110,150);g.closePath();g.fill();g.shadowBlur=0;
+   g.fillStyle='#c9d6ea';g.beginPath();g.moveTo(60,-150);g.lineTo(60,-100);g.lineTo(110,-100);g.closePath();g.fill();
+   g.strokeStyle='#7fb4ff';g.lineWidth=5;for(let y=-80;y<=120;y+=34){g.beginPath();g.moveTo(-85,y);g.lineTo(85,y);g.stroke()}g.strokeStyle='#ff7a9a';g.beginPath();g.moveTo(-60,-130);g.lineTo(-60,140);g.stroke()}
+  if(kind==='scissors'){g.shadowColor='#000';g.shadowBlur=20;
+   for(const s of[-1,1]){g.save();g.rotate(s*.32);const bl=g.createLinearGradient(-20,0,20,0);bl.addColorStop(0,'#9aa3b5');bl.addColorStop(.5,'#ffffff');bl.addColorStop(1,'#7c8597');
+    g.fillStyle=bl;g.beginPath();g.moveTo(-16,10);g.lineTo(0,-185);g.lineTo(18,10);g.closePath();g.fill();
+    g.lineWidth=22;g.strokeStyle=edge;g.beginPath();g.ellipse(0,95,40,52,0,0,7);g.stroke();g.fillStyle=edge;g.fillRect(-12,10,24,40);g.restore()}
+   g.shadowBlur=0;g.fillStyle='#ddd';g.beginPath();g.arc(0,12,14,0,7);g.fill();g.fillStyle='#555';g.beginPath();g.arc(0,12,6,0,7);g.fill()}
+  g.restore();
+  g.fillStyle=light;g.font='900 76px Arial';g.textAlign='center';g.textBaseline='middle';g.shadowColor=edge;g.shadowBlur=30;g.fillText(kind.toUpperCase(),256,612);g.shadowBlur=0;
+ }
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
+const CARD_TEX={rock:cardTexture('rock'),paper:cardTexture('paper'),scissors:cardTexture('scissors'),back:cardTexture('back')};
+const CARD_W=.46,CARD_H=CARD_W*736/512,cardGeo=new THREE.PlaneGeometry(CARD_W,CARD_H);
+function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.add(inner);
+ const mk=tex=>new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.45,transparent:true,alphaTest:.4,roughness:.35,metalness:.1,side:THREE.FrontSide});
+ const front=new THREE.Mesh(cardGeo,mk(CARD_TEX.rock)),back=new THREE.Mesh(cardGeo,mk(CARD_TEX.back));back.rotation.y=Math.PI;front.position.z=.002;back.position.z=-.002;
+ front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
+const CARD={g:makeCard(),a:makeCard()};
+function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
+const SLOT={g:V3(-.4,.28,1.05),a:V3(.4,.28,1.05)};
+function updateCards(dt,pulse){
+ const revealed=st.res&&!st.shaking;
+ for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
+  c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
+  h.root.updateMatrixWorld(true);const hold=h.root.localToWorld(V3(.05,.24,.05));
+  const p=hold.clone().lerp(SLOT[key],c.u);p.y+=Math.sin(c.u*Math.PI)*.18;
+  c.g.position.copy(p);c.g.lookAt(camera.position);
+  const flip=Math.PI*(1-sstep(.35,.9,c.u));
+  const res=revealed?st.res[key]:null;
+  c.inner.rotation.set(0,flip,sgn*.12*(1-c.u)+(res==='lose'?-sgn*.22*c.u:0));
+  const sc=lerp(.85,res==='win'?1.15+.04*pulse:res==='lose'?.92:1.05,c.u);c.g.scale.setScalar(sc);
+  const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
+ }}
+
 /* ---------- state ---------- */
 const st={shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
 let TIME=0;
 Object.assign(API,{
- setHands(g,a){HG.target=g;HA.target=a},
+ setHands(g,a){HG.target='rock';HA.target='rock';setCardKind(CARD.g,g);setCardKind(CARD.a,a)},
  setShaking(on){st.shaking=on;if(on)st.shakeT0=TIME},
  clear(){st.res=null},
  matchEnd(won){st.match=won?'win':'lose'},
  reset(){st.match=null},
  reveal(res){st.res=res;st.revT=0;st.camShake=.12;
-  const gp=HG.hand.localToWorld(new THREE.Vector3(.35,0,0)),ap=HA.hand.localToWorld(new THREE.Vector3(.35,0,0));
+  const gp=SLOT.g.clone(),ap=SLOT.a.clone();
   if(res.g==='win')burst(gp,[.3,1,.55]);else if(res.a==='win')burst(ap,[1,.28,.45]);else burst(gp.clone().lerp(ap,.5),[.55,.75,1],80,2.4)}});
 stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();st.mx=(e.clientX-r.left)/r.width*2-1;st.my=(e.clientY-r.top)/r.height*2-1});
 stage.addEventListener('pointerleave',()=>{st.mx=st.my=0});
@@ -541,6 +587,7 @@ function update(dt){
  const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
+ updateCards(dt,pulse);
  if(HS){HS.target=HG.target;const res=anyRes?st.res.g:null,e=x=>1-Math.exp(-dt*x);
   if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=lerp(HS.ikW,0,e(4))}
   else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=lerp(HS.ikW,0,e(6))}
@@ -552,5 +599,5 @@ function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;cons
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
 let last=performance.now();
 renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
-API.ready=true;window.__dbg={HS:()=>HS,RIG,st,camera,THREE,HG,HA};document.getElementById('nogl').style.display='none';
+API.ready=true;window.__dbg={HS:()=>HS,RIG,st,camera,THREE,HG,HA,CARD};document.getElementById('nogl').style.display='none';
 </script></html>
