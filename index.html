@@ -132,7 +132,7 @@ function render(){
 }
 
 /* talking: speech bubbles + browser text-to-speech (free, no files) */
-const SEL={g:{name:'SPACE GIRL',voice:'f'},a:{name:'ASTRONAUT',voice:'m'}};
+const SEL={g:{name:'SPACE GIRL',voice:'f'},a:{name:'AZURE WANDERER',voice:'m'}};
 const LINES={
   start:{g:["Let's go!","You're going down!","Watch this!","Ready or not!","Eyes on the card!"],a:["Ready for liftoff!","Houston, prepare to lose!","Calculating your doom...","Countdown engaged!","Zero gravity, zero mercy!"]},
   gWin:{g:["Yes!","Too easy!","Boom!","Gotcha!","Who's the star now?"],a:["Oof!","Lucky shot!","Houston, we have a problem.","My helmet fogged up!","Not fair!"]},
@@ -228,11 +228,12 @@ let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
   pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
-  selHint.textContent=pl.length?'Pick your fighter — the computer gets one of the others':'Loading characters…'}
+  selHint.textContent=pl.length?'Pick your fighter — the computer plays one of the others':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
 function openSelect(){leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
-function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
+async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
+  const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
   const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
@@ -597,9 +598,8 @@ function poseSkinned(R,h,dt){
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 const CHARS=[
  {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=5',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice'],win:'Victory_Cheer',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
- {key:'azure',name:'AZURE WANDERER',url:'assets/azure_wanderer_punch.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
- {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}},
- {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
+ {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
+ {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-2.35,FLOOR+.12,.35],r:.38},a:{p:[2.35,FLOOR+.12,.35],r:-.38}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
@@ -610,7 +610,7 @@ function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
  list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,4.2/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
- let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||CHARS.find(c=>c.proc);
+ let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||me;
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
@@ -833,7 +833,7 @@ function updateCards(dt,pulse){
 const bubbles={};
 function bubbleEl(k){let b=bubbles[k];if(!b){b=document.createElement('div');b.className='bubble '+k;stage.appendChild(b);bubbles[k]=b}return b}
 function positionBubbles(){for(const k of['g','a']){const b=bubbles[k];if(!b)continue;if(st.select){b.classList.remove('show');continue}const R=SL[k]&&SL[k].R,head=R?R.B.Head:(k==='g'?hero.head:astro.head);
- const p=head.getWorldPosition(V3(0,0,0)).add(V3(k==='g'?-.62:.62,.42,.2)).project(camera);b.style.left=((p.x+1)/2*100)+'%';b.style.top=((1-p.y)/2*100)+'%'}}
+ const p=head.getWorldPosition(V3(0,0,0)).add(V3(k==='g'?-.62:.62,.42,.2)).project(camera);b.style.left=Math.min(86,Math.max(14,(p.x+1)/2*100))+'%';b.style.top=Math.min(70,Math.max(20,(1-p.y)/2*100))+'%'}}
 /* ---------- state ---------- */
 const st={select:true,shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
 let TIME=0;
