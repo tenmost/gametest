@@ -141,6 +141,8 @@ def main():
     ap.add_argument('--cell', type=float, default=0.009)
     ap.add_argument('--tex', type=int, default=1024)
     ap.add_argument('--keep', default='')
+    ap.add_argument('--merge', default='', help='another GLB with the same skeleton whose animations are added')
+    ap.add_argument('--no-simplify', action='store_true')
     ap.add_argument('--fine-cell', type=float, default=0.0, help='smaller cell for vertices driven by hand/finger bones')
     a = ap.parse_args()
     j, binb = load(a.inp)
@@ -172,7 +174,10 @@ def main():
         dom = J[np.arange(len(J)), np.argmax(W, 1)].astype(int)
         fine = hand[dom]
         print('fine (hand) vertices:', int(fine.sum()))
-    nP, nN, nUV, nJ, nW, nT = simplify(P, N, UV, J, W, T, a.cell, fine, a.fine_cell)
+    if a.no_simplify:
+        nP, nN, nUV, nJ, nW, nT = P, N, UV, J.astype(np.uint8 if J.max() < 256 else np.uint16), W, T.astype(np.uint32)
+    else:
+        nP, nN, nUV, nJ, nW, nT = simplify(P, N, UV, J, W, T, a.cell, fine, a.fine_cell)
     print(f'mesh: {len(P)} verts / {len(T)} tris  ->  {len(nP)} verts / {len(nT)} tris')
     idx = nT.reshape(-1).astype(np.uint16 if len(nP) < 65535 else np.uint32)
     prim2 = {'attributes': {'POSITION': w.acc(nP, 'VEC3', 34962, True), 'NORMAL': w.acc(nN, 'VEC3', 34962),
@@ -187,6 +192,22 @@ def main():
         for smp in an['samplers']:
             smp['input'] = copy_acc(smp['input']); smp['output'] = copy_acc(smp['output'])
         anims.append(an)
+    if a.merge:
+        j2, b2 = load(a.merge)
+        byname = {n.get('name'): i for i, n in enumerate(j['nodes'])}
+        for an in j2.get('animations', []):
+            if keep and an['name'] not in keep: continue
+            chans, samps = [], []
+            for ch in an['channels']:
+                nm = j2['nodes'][ch['target']['node']].get('name')
+                if nm not in byname: continue
+                smp = an['samplers'][ch['sampler']]
+                arr_in = acc_array(j2, b2, smp['input']); arr_out = acc_array(j2, b2, smp['output'])
+                src_in = j2['accessors'][smp['input']]; src_out = j2['accessors'][smp['output']]
+                ni = w.acc(arr_in.astype(np.float32), src_in['type'], minmax=True); no = w.acc(arr_out.astype(np.float32), src_out['type'])
+                samps.append({'input': ni, 'output': no, 'interpolation': smp.get('interpolation', 'LINEAR')})
+                chans.append({'sampler': len(samps) - 1, 'target': {'node': byname[nm], 'path': ch['target']['path']}})
+            anims.append({'name': an['name'], 'channels': chans, 'samplers': samps})
     j['animations'] = anims
     for im in j.get('images', []):
         img = Image.open(io.BytesIO(view_bytes(j, binb, im['bufferView'])))
