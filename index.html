@@ -121,8 +121,7 @@ function voiceFor(who){const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.len
   const wantF=SEL[who].voice==='f',pool=en.filter(v=>wantF?fem.test(v.name):(mal.test(v.name)&&!/female/i.test(v.name))),list=pool.length?pool:en;
   const same=SEL.g.voice===SEL.a.voice;return list[same&&who==='a'&&list.length>1?1:0]}
 const talkTimers=[];
-function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scene3D.say(who,text);if(muted||!canSpeak)return;
-  const u=new SpeechSynthesisUtterance(text),v=voiceFor(who);if(v)u.voice=v;u.pitch=SEL[who].voice==='f'?1.4:(who==='a'?.7:1);u.rate=who==='g'?1.1:.95;u.volume=.9;speechSynthesis.speak(u)},delay))}
+function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scene3D.say(who,text)},delay))}
 function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSynthesis.cancel()}
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0;
