@@ -21,7 +21,7 @@ main{width:min(100vw,1100px);padding:8px}
 #status{position:absolute;top:26%;left:22%;width:56%;text-align:center;font-size:clamp(12px,2.6vw,29px);font-weight:900;text-shadow:0 2px 8px black;pointer-events:none}
 #status.win{color:#6dffa8}#status.lose{color:#ff7a90}
 .corner{position:absolute;bottom:1.5%;background:#112c65dd;border:1px solid #83dfff;border-radius:8px;color:white;padding:clamp(4px,1vw,10px);font-weight:bold;cursor:pointer;font-size:clamp(9px,1.1vw,14px)}
-#restart{right:1%}#mute{left:1%}
+#restart{right:1%}#mute{left:1%}#changeP{right:13%}
 .flash{position:absolute;inset:0;pointer-events:none;opacity:0}.flash.go{animation:fl .5s}@keyframes fl{0%{opacity:.3}100%{opacity:0}}
 .overlay{position:absolute;inset:0;background:#050818bb;display:none;place-items:center;text-align:center;backdrop-filter:blur(3px)}
 .overlay.show{display:grid;animation:fade .4s}@keyframes fade{from{opacity:0}}
@@ -33,6 +33,13 @@ main{width:min(100vw,1100px);padding:8px}
 .bubble::after{content:'';position:absolute;bottom:-10px;left:50%;margin-left:-10px;border:10px solid transparent;border-bottom:0;border-top-color:#fff}
 .bubble.a{box-shadow:0 6px 18px #000a,0 0 0 3px #ffa04a}.bubble.g{box-shadow:0 6px 18px #000a,0 0 0 3px #ff5ad8}
 .bubble.show{opacity:1;transform:translate(-50%,-100%) scale(1)}
+#select{background:linear-gradient(#050818dd,#05081822 32%,#05081800 60%,#050818cc);backdrop-filter:none}
+#select .selWrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:3% 2% 4%}
+#stage.selecting .controls,#stage.selecting .count,#stage.selecting .hearts,#stage.selecting .score,#stage.selecting .label,#stage.selecting #status,#stage.selecting #changeP,#stage.selecting #restart{visibility:hidden}
+#select h2{font-size:clamp(22px,4.5vw,56px)}#selHint{margin:0;font-size:clamp(11px,1.5vw,18px);color:#c7e9ff}
+#selBtns{display:flex;gap:2%;justify-content:center;width:100%}
+#selBtns button{min-width:18%;padding:.7em 1.2em;font-size:clamp(11px,1.7vw,22px);font-weight:900;border-radius:16px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7cdd,#6a2fa5dd);color:#fff;cursor:pointer;box-shadow:0 0 18px #52d4ff88}
+#selBtns button:hover,#selBtns button:focus-visible{outline:3px solid #fff;transform:scale(1.05)}
 footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 </style>
 <main><div class="stage" id="stage">
@@ -50,13 +57,15 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
+<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p></div><div id="selBtns"></div></div></div>
+<button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><button id="again">PLAY AGAIN</button></div></div>
 </div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 15 seconds to pick, or a random card is played. Three hearts each — first to lose all hearts loses the match. Move the mouse to look around.</footer></main>
 
 <script>
 /* 3D scene placeholder until the Three.js module loads; the game works even if it never does */
 window.Scene3D={_s:{g:'rock',a:'scissors',shaking:false},setHands(g,a){this._s.g=g;this._s.a=a},setShaking(on){this._s.shaking=on},reveal(){},clear(){}};
-setTimeout(()=>{if(!Scene3D.ready)document.getElementById('nogl').textContent='3D scene could not load (check your connection) — you can still play.'},12000);
+setTimeout(()=>{if(!Scene3D.ready){document.getElementById('nogl').textContent='3D scene could not load (check your connection) — you can still play.';if(selecting)choosePlayer('girl')}},12000);
 /* ===================== GAME LOGIC ===================== */
 const $=id=>document.getElementById(id);
 const stage=$('stage'),count=$('count'),statusEl=$('status'),hp=$('hp'),hc=$('hc'),flash=$('flash'),over=$('over');
@@ -94,6 +103,7 @@ function render(){
 }
 
 /* talking: speech bubbles + browser text-to-speech (free, no files) */
+const SEL={g:{name:'SPACE GIRL',voice:'f'},a:{name:'ASTRONAUT',voice:'m'}};
 const LINES={
   start:{g:["Let's go!","You're going down!","Watch this!","Ready or not!","Eyes on the card!"],a:["Ready for liftoff!","Houston, prepare to lose!","Calculating your doom...","Countdown engaged!","Zero gravity, zero mercy!"]},
   gWin:{g:["Yes!","Too easy!","Boom!","Gotcha!","Who's the star now?"],a:["Oof!","Lucky shot!","Houston, we have a problem.","My helmet fogged up!","Not fair!"]},
@@ -108,10 +118,11 @@ let voices=[];const canSpeak='speechSynthesis' in window;
 if(canSpeak){const lv=()=>voices=speechSynthesis.getVoices();lv();speechSynthesis.onvoiceschanged=lv}
 function voiceFor(who){const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.length)return null;
   const fem=/female|zira|samantha|susan|hazel|karen|victoria|aria|jenny|libby|sonia|moira|tessa|fiona/i,mal=/(^|\W)male|david|daniel|mark|guy|george|alex|fred|ryan|thomas|rishi/i;
-  return who==='g'?(en.find(v=>fem.test(v.name))||en[0]):(en.find(v=>mal.test(v.name)&&!/female/i.test(v.name))||en[en.length>1?1:0])}
+  const wantF=SEL[who].voice==='f',pool=en.filter(v=>wantF?fem.test(v.name):(mal.test(v.name)&&!/female/i.test(v.name))),list=pool.length?pool:en;
+  const same=SEL.g.voice===SEL.a.voice;return list[same&&who==='a'&&list.length>1?1:0]}
 const talkTimers=[];
 function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scene3D.say(who,text);if(muted||!canSpeak)return;
-  const u=new SpeechSynthesisUtterance(text),v=voiceFor(who);if(v)u.voice=v;u.pitch=who==='g'?1.4:.7;u.rate=who==='g'?1.1:.95;u.volume=.9;speechSynthesis.speak(u)},delay))}
+  const u=new SpeechSynthesisUtterance(text),v=voiceFor(who);if(v)u.voice=v;u.pitch=SEL[who].voice==='f'?1.4:(who==='a'?.7:1);u.rate=who==='g'?1.1:.95;u.volume=.9;speechSynthesis.speak(u)},delay))}
 function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSynthesis.cancel()}
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0;
@@ -126,11 +137,11 @@ function idle(){
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   startPick();statusEl.textContent='CHOOSE YOUR MOVE';statusEl.className='';
 }
-function reset(){stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
+function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 async function play(choice){
-  if(busy||!p||!c)return;
+  if(selecting||busy||!p||!c)return;
   busy=true;started=true;stopPick();const run=++token;
   buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
   Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','rock');statusEl.className='';
@@ -173,14 +184,26 @@ async function play(choice){
 }
 
 buttons.forEach(b=>b.onclick=()=>play(b.dataset.m));
-$('restart').onclick=reset;$('again').onclick=reset;
+$('restart').onclick=reset;$('again').onclick=reset;$('changeP').onclick=()=>openSelect();
+/* character select */
+let selecting=true;
+const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
+function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
+  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
+  selHint.textContent=pl.length?'Pick your fighter — the computer gets one of the others':'Loading characters…'}
+Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
+function openSelect(){selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+  statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
+function choosePlayer(key){const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
+  SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
+  selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
 $('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND'};
 document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),m={'1':'rock',r:'rock','2':'paper',p:'paper','3':'scissors',s:'scissors'}[k];
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
   else if((k==='enter'||k===' ')&&over.classList.contains('show')){e.preventDefault();reset()}
 });
-idle();render();
+idle();render();openSelect();
 </script>
 <script type="module">
 import * as THREE from 'three';
@@ -294,7 +317,7 @@ const arcGeo=new THREE.TorusGeometry(.03,.0065,8,20,Math.PI);
 
 // world-space limb: open tapered tube + joint balls, re-posed every frame
 function limb(mat,rA,rB){const cyl=mesh(new THREE.CylinderGeometry(rB*CS,rA*CS,1,24,1,true),mat),a=mesh(G.sph,mat),b=mesh(G.sph,mat);scene.add(cyl,a,b);
- return{hide(){cyl.visible=a.visible=b.visible=false},set(A,B){const d=B.clone().sub(A),L=d.length()||1e-4;cyl.position.copy(A).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.divideScalar(L));cyl.scale.set(1,L,1);
+ return{hide(){cyl.visible=a.visible=b.visible=false},setVis(v){cyl.visible=a.visible=b.visible=v},set(A,B){const d=B.clone().sub(A),L=d.length()||1e-4;cyl.position.copy(A).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.divideScalar(L));cyl.scale.set(1,L,1);
   a.position.copy(A);a.scale.setScalar(rA*CS);b.position.copy(B);b.scale.setScalar(rB*CS)}}}
 function ik(S,W,l1,l2,poleHint){const d=W.clone().sub(S);let L=d.length();const dir=d.divideScalar(L||1);L=Math.min(Math.max(L,Math.abs(l1-l2)+.01),l1+l2-.001);
  const a=(l1*l1-l2*l2+L*L)/(2*L),h=Math.sqrt(Math.max(l1*l1-a*a,0));const pole=poleHint.clone().addScaledVector(dir,-poleHint.dot(dir)).normalize();
@@ -391,7 +414,7 @@ function poseFigure(c,h,side){
 
 const hero=buildHero(),astro=buildAstro();
 hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale.setScalar(CS);
-astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
+astro.root.position.set(1.85,FLOOR,-.25);astro.root.rotation.y=-.75;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
 /* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
 const RIG={showoff:'Boxing_Practice',cardAbove:[.62,.55],fingers:false,proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
@@ -409,15 +432,15 @@ async function loadSkinned(url,o){
  const g=await new GLTFLoader().loadAsync(url);
  const root=g.scene,B={},mats=[];
  root.traverse(x=>{if(x.isBone)B[x.name.replace(/^mixamorig:?/,'')]=x;if(x.isMesh){x.castShadow=x.receiveShadow=true;x.frustumCulled=false;mats.push(x.material)}});
- const holder=grp();holder.add(root);root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
+ const holder=grp();holder.add(root);if(o.height){const bb=new THREE.Box3().setFromObject(root);root.scale.setScalar(o.height/Math.max(.01,bb.max.y-bb.min.y))}else root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
  // keep every animation in place (no walking off): lock the hips' horizontal movement
  for(const c of g.animations)for(const tr of c.tracks)if(/Hips\.position$/.test(tr.name)){const v=tr.values;for(let i=0;i<v.length;i+=3){v[i]=v[0];v[i+2]=v[2]}}
  const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
  const side=o.side,F=['Index','Middle','Ring','Pinky'],rest=new Map();
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
- for(const b of[...fingerBones.flat(),...thumb])rest.set(b,b.quaternion.clone());
+ for(const b of[...fingerBones.flat(),...thumb].filter(Boolean))rest.set(b,b.quaternion.clone());
  const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
- R.play=(name,{loop=true,fade=.35}={})=>{const a=act[name];if(!a||R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
+ R.play=(name,{loop=true,fade=.35}={})=>{const a=act[name]||act[o.idle];if(!a||R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
   if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
  R.play(o.idle);return R}
 function poseSkinned(R,h,dt){
@@ -455,13 +478,45 @@ function poseSkinned(R,h,dt){
  if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);
 }
 
-let HS=null;
-loadSkinned('assets/cosmic-challenger.glb?v=1',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Walking'}).catch(err=>{console.warn('Cosmic Challenger not uploaded yet; using previous character',err);return loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'})}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
- if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
+/* ---------- character roster: pick a player, the computer gets one of the others ---------- */
+const CHARS=[
+ {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=5',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice'],win:'Victory_Cheer',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
+ {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=1',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch'],win:'victory',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
+ {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=1',voice:'m',optional:true,anim:{idle:'Walking',show:['Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop',select:'Arm_Circle_Shuffle'}},
+ {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
+const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
+const POS={g:{p:[-1.75,FLOOR,-.25],r:.75},a:{p:[1.8,FLOOR,-.25],r:-.75}};
+const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
+const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,playable:!c.opponentOnly}));
+function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
+function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
+function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
+ for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
+ list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.9,5/n);R.holder.visible=true;R.holder.position.set(x,FLOOR,.15);R.holder.rotation.y=-x*.12;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
+function assign(playerKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key),opp=opts[Math.floor(Math.random()*opts.length)]||CHARS.find(c=>c.proc);
+ SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:LOADED[opp.key]};HS=SL.g.R;
+ for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice},a:{name:opp.name,voice:opp.voice}}}
+for(const c of CHARS)if(!c.proc)loadSkinned(c.url,{height:3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
+ .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
+ .catch(e=>{if(!c.optional)console.warn(c.name+' failed to load',e)});
+function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
+ const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
+ if(st.select)R.play(A.select||A.idle);
+ else if(mine==='win')R.play(A.champ||A.win);
+ else if(mine==='lose')R.play(A.dead,{loop:false});
+ else if(st.shaking)R.play(R.showNow||A.show[0],{fade:.25});
+ else if(res==='win')R.play(A.win,{fade:.25});
+ else if(res==='lose'&&A.hit)R.play(A.hit,{loop:false,fade:.2});
+ else R.play(A.idle,{fade:.3});
+ R.headDown=lerp(R.headDown,res==='lose'&&!A.hit?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt)}
+function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
+
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
 scene.add(HG.root,HA.root);
-HG.target=ST0.g;HA.target=ST0.a;HG.pose=cp(POSES[ST0.g]);HA.pose=cp(POSES[ST0.a]);
+HG.target=ST0.g;HA.target=ST0.a;hideBuiltInHero();setAstroVisible(false);HG.pose=cp(POSES[ST0.g]);HA.pose=cp(POSES[ST0.a]);
 
 /* ---------- environment ---------- */
 const nebula=new THREE.Mesh(new THREE.SphereGeometry(180,48,32),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uT:{value:0}},
@@ -645,31 +700,35 @@ function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking;
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  const head=key==='g'?(HS?HS.B.Head:hero.head):astro.head;const hold=head.getWorldPosition(V3(0,0,0)).add(V3(0,(key==='g'?RIG.cardAbove[0]:RIG.cardAbove[1])+Math.sin(TIME*2.5+sgn)*.05,.2));
-  const p=hold.clone().lerp(SLOT[key],c.u);p.y+=Math.sin(c.u*Math.PI)*.18;
+  c.g.visible=!st.select;
+  const jig=st.shaking?Math.abs(Math.sin((TIME-st.shakeT0)*Math.PI/.7))*.08:0;
+  const p=SLOT[key].clone();p.y+=Math.sin(TIME*2.2+sgn)*.04*(1-c.u)+jig+Math.sin(c.u*Math.PI)*.14;
   c.g.position.copy(p);c.g.lookAt(camera.position);
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
   const wob=(st.shaking?Math.sin(TIME*9+sgn)*.18:Math.sin(TIME*1.5+sgn)*.06)*(1-c.u);
   c.inner.rotation.set(0,flip+wob*.6,wob+(res==='lose'?-sgn*.22*c.u:0));
-  const sc=lerp(.8,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
+  const sc=lerp(.92,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
 
 const bubbles={};
 function bubbleEl(k){let b=bubbles[k];if(!b){b=document.createElement('div');b.className='bubble '+k;stage.appendChild(b);bubbles[k]=b}return b}
-function positionBubbles(){for(const k of['g','a']){const b=bubbles[k];if(!b)continue;const head=k==='g'?(HS?HS.B.Head:hero.head):astro.head;
+function positionBubbles(){for(const k of['g','a']){const b=bubbles[k];if(!b)continue;if(st.select){b.classList.remove('show');continue}const R=SL[k]&&SL[k].R,head=R?R.B.Head:(k==='g'?hero.head:astro.head);
  const p=head.getWorldPosition(V3(0,0,0)).add(V3(k==='g'?-.62:.62,.42,.2)).project(camera);b.style.left=((p.x+1)/2*100)+'%';b.style.top=((1-p.y)/2*100)+'%'}}
 /* ---------- state ---------- */
-const st={shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
+const st={select:true,shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
 let TIME=0;
 Object.assign(API,{
  setHands(g,a){HG.target='rock';HA.target='rock';setCardKind(CARD.g,g);setCardKind(CARD.a,a)},
- setShaking(on){st.shaking=on;if(on)st.shakeT0=TIME},
+ setShaking(on){st.shaking=on;if(on){st.shakeT0=TIME;for(const k of['g','a']){const R=SL[k]&&SL[k].R;if(R){const sh=R.cfg.anim.show;R.showNow=sh[Math.floor(Math.random()*sh.length)]}}}},
  clear(){st.res=null},
  matchEnd(won){st.match=won?'win':'lose'},
  reset(){st.match=null},
- say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);(who==='g'?hero:astro).talkT=Math.min(2.2,.35+text.length*.06)},
+ showSelect(){st.select=true;st.res=null;st.match=null;st.shaking=false;layoutSelect();return rosterInfo()},
+ choose(key){st.select=false;return assign(key)},
+ roster:()=>rosterInfo(),
+ say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);TALK[who]=Math.min(2.2,.35+text.length*.06)},
  reveal(res){st.res=res;st.revT=0;st.camShake=.12;
   const gp=SLOT.g.clone(),ap=SLOT.a.clone();
   if(res.g==='win')burst(gp,[.3,1,.55]);else if(res.a==='win')burst(ap,[1,.28,.45]);else burst(gp.clone().lerp(ap,.5),[.55,.75,1],80,2.4)}});
@@ -683,7 +742,7 @@ function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
  st.revT+=dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
- const base={g:[-.35,-.33,.45],a:[.35,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
+ const base={g:[-1.2,-.33,.45],a:[1.2,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
@@ -708,7 +767,7 @@ function update(dt){
   if(st.shaking&&key==='a'){const b=(TIME-st.shakeT0)*Math.PI/.35;c.root.position.y=FLOOR+Math.abs(Math.sin(b*.5))*.16;c.body.rotation.y=Math.sin(b*.5)*.4;c.body.rotation.x=.08;c.cheer=.5+.5*Math.sin(b)}
   c.head.rotation.set((res==='lose'?.3*q:st.shaking?.08:0)+Math.sin(TIME*.9+ph)*.03,-sgn*.5+st.smx*.15,0);
   setFace(c.face,res==='win'?'win':res==='lose'?'lose':st.shaking?'focus':'idle',dt);
-  c.talkT=Math.max(0,(c.talkT||0)-dt);if(c.talkT>0){const o=Math.sin(TIME*22)>0;c.face.open.visible=o;c.face.smile.visible=!o;c.face.frown.visible=false}}
+  const tk=key==='a'?TALK.a:0;if(tk>0){const o=Math.sin(TIME*22)>0;c.face.open.visible=o;c.face.smile.visible=!o;c.face.frown.visible=false}}
  positionBubbles();
  earthM.rotation.y=TIME*.02;clouds.rotation.y=TIME*.028;giantM.rotation.y=TIME*.05;nebula.material.uniforms.uT.value=TIME;
  rocks.forEach(r=>{r.m.rotation.set(TIME*r.sp[0]+r.ph,TIME*r.sp[1],TIME*r.sp[2]);r.m.position.y=r.base[1]+Math.sin(TIME*.5+r.ph)*.3});
@@ -719,13 +778,10 @@ function update(dt){
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
  updateBackground(dt);updateCards(dt,pulse);
- if(HS){HS.target=HG.target;const res=anyRes?st.res.g:null,e=x=>1-Math.exp(-dt*x);
-  if(st.match==='win'){HS.play(HS.act.Victory_Cheer?'Victory_Cheer':'Arm_Circle_Shuffle');HS.ikW=0}
-  else if(st.match==='lose'){HS.play(HS.act.Dead?'Dead':'Charged_Axe_Chop',{loop:false});HS.ikW=0}
-  else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;const showoff=HS.act[RIG.showoff]?RIG.showoff:'Arm_Circle_Shuffle';const victory=HS.act.Victory_Cheer?'Victory_Cheer':'Arm_Circle_Shuffle';const idle=HS.act.Idle_15?'Idle_15':'Walking';HS.play(st.shaking?showoff:res==='win'?victory:hit?'Hit_Reaction':idle,{loop:!hit,fade:.25})}
-  HS.nod=hero.talkT>0?Math.sin(TIME*13)*.09:0;
-  HS.headDown=lerp(HS.headDown,res==='lose'&&!HS.act.Hit_Reaction?1:0,e(6));HS.mixer.update(dt)}
- scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
+ TALK.g=Math.max(0,TALK.g-dt);TALK.a=Math.max(0,TALK.a-dt);
+ const live=st.select?Object.values(LOADED).filter(R=>R.holder.visible):['g','a'].map(k=>SL[k]&&SL[k].R?[SL[k].R,k]:null).filter(Boolean);
+ if(st.select)live.forEach(R=>animChar(R,'g',dt,false));else live.forEach(([R,k])=>animChar(R,k,dt,anyRes));
+ scene.updateMatrixWorld();(st.select?live:live.map(x=>x[0])).forEach(poseLite);poseFigure(astro,HA,-1);
 }
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
