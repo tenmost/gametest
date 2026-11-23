@@ -110,10 +110,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 <main>
   <section id="login" class="card">
     <h2>Admin login</h2>
-    <p class="muted">Sign in with your tenmost.com admin account.</p>
+    <p class="muted">Sign in with your admin email and password.</p>
     <label>Email</label><input id="em" type="email" autocomplete="username">
     <label>Password</label><input id="pw" type="password" autocomplete="current-password">
-    <div class="row" style="margin-top:14px;gap:8px"><button id="doLogin">Sign in</button><button class="ghost" id="doLink">📧 Email me a login link</button><button class="ghost" id="doSignup">Create account</button><button class="ghost" id="doReset">Forgot password</button></div>
+    <div class="row" style="margin-top:14px;gap:8px"><button id="doLogin">Sign in</button><button class="ghost hidden" id="doLink">📧 Email me a login link</button><button class="ghost hidden" id="doSignup">Create account</button><button class="ghost hidden" id="doReset">Forgot password</button></div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">No password yet? The owner sets it in the 🔑 Admins tab — no email needed.</p>
     <div id="loginMsg"></div>
   </section>
 
@@ -206,7 +207,7 @@ async function checkAdmin(){
 function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('pAdmins').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
 $('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
   const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
-  if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=/invalid login/i.test(error.message)?'Wrong email or password. New admin? Press “Create account” first (same email + your new password), then confirm the email.':/not confirmed/i.test(error.message)?'Please open the confirmation email first, then sign in.':error.message;return}checkAdmin()};
+  if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=/invalid login/i.test(error.message)?'Wrong email or password. New admin? Ask the owner to set your password in the Admins tab.':/not confirmed/i.test(error.message)?'Please open the confirmation email first, then sign in.':error.message;return}checkAdmin()};
 $('doLink').onclick=async()=>{const em=$('em').value.trim(),m=$('loginMsg');if(!em){m.style.color='var(--bad)';m.textContent='Type your email first.';return}
   const {error}=await SB.auth.signInWithOtp({email:em,options:{shouldCreateUser:false,emailRedirectTo:location.href.split('#')[0].split('?')[0]}});
   m.style.color=error?'var(--bad)':'var(--ok)';m.textContent=error?(/sending|smtp/i.test(error.message)?'Email sending is not working right now — ask the owner to set your password in the Admins tab.':error.message):'Login link sent — open your email (check Spam too) and click the link.'};
