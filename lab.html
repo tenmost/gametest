@@ -480,7 +480,7 @@ function poseSkinned(R,h,dt){
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 const CHARS=[
  {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=5',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice'],win:'Victory_Cheer',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
- {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=1',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch'],win:'victory',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
+ {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=2',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
  {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}},
  {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;

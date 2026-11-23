@@ -192,8 +192,8 @@ def main():
         for smp in an['samplers']:
             smp['input'] = copy_acc(smp['input']); smp['output'] = copy_acc(smp['output'])
         anims.append(an)
-    if a.merge:
-        j2, b2 = load(a.merge)
+    for mf in [m for m in a.merge.split(',') if m]:
+        j2, b2 = load(mf)
         byname = {n.get('name'): i for i, n in enumerate(j['nodes'])}
         for an in j2.get('animations', []):
             if keep and an['name'] not in keep: continue
