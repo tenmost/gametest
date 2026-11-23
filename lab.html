@@ -382,7 +382,7 @@ const earthTex=equirect(1024,512,(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];const c=f
  let r=lerp(lerp(5,15,o),lerp(36,128,l),land),g=lerp(lerp(26,82,o),lerp(92,102,l),land),b=lerp(lerp(82,158,o),lerp(30,56,l),land);
  return[lerp(r,235,polar),lerp(g,240,polar),lerp(b,250,polar)]});
 const cloudTex=equirect(1024,512,(x,y,z)=>{const c=sstep(.5,.75,fbm(x*4,y*4,z*4,5));return[255,255,255,c*235]});
-const earth=new THREE.Group();earth.position.set(0,-31,-9);scene.add(earth);
+const earth=new THREE.Group();earth.position.set(0,-29.6,-9);scene.add(earth);
 const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial({map:earthTex,roughness:.75,metalness:0}));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
 const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
 const atmoMat=(col,pow,k)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{c:{value:new THREE.Color(col)}},
@@ -462,7 +462,7 @@ function update(dt){
  for(const q of plist){const f=1-q.age/q.life;pPos.set([q.p.x,q.p.y,q.p.z],n*3);pCol.set(q.c.map(v=>v*f),n*3);n++}
  pGeo.setDrawRange(0,n);pGeo.attributes.position.needsUpdate=pGeo.attributes.color.needsUpdate=true;
  const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
- const s=st.camShake;camera.position.set(st.smx*.7+(Math.random()-.5)*s,-.15-st.smy*.35+(Math.random()-.5)*s,6.6);camera.lookAt(st.smx*.12,-.72,0);
+ const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
  scene.updateMatrixWorld();poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
 }
