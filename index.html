@@ -457,8 +457,8 @@ function poseSkinned(R,h,dt){
 
 // Test branch: use the new Azure Wanderer if both animation files are uploaded.
 // Keep the original hero as a safe fallback while the assets are being installed.
-const AZURE_MAIN='assets/azure_wanderer_backflip.glb';
-const AZURE_PUNCH='assets/azure_wanderer_punch.glb';
+const AZURE_MAIN='https://raw.githubusercontent.com/tenmost/gametest/main/assets/azure_wanderer_all.glb';
+const AZURE_PUNCH='https://raw.githubusercontent.com/tenmost/gametest/main/assets/azure_wanderer_punch.glb';
 let AZ=null;
 async function loadAzure(){
  const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
@@ -483,9 +483,9 @@ async function loadAzure(){
  const acts={};
  for(const clip of clips)acts[clip.name]=mixer.clipAction(clip);
  const pick=(...names)=>names.find(n=>acts[n])||Object.keys(acts)[0];
- const idle=pick('Boxing_Guard_Prep_Straight_Punch','Backflip_Sweep_Kick');
+ const idle=pick('Lower_Weapon_Look_Raise','Agree_Gesture');
  const attack=pick('Boxing_Guard_Prep_Straight_Punch');
- const hit=pick('Backflip_Sweep_Kick');
+ const hit=pick('BeHit_FlyUp');
  const victory=attack;
  const state={holder,mixer,acts,idle,attack,hit,victory,active:null,lastState:'',lastReveal:-1,
    play(name,once=false){if(!name||!acts[name])return;if(this.active===name)return;
