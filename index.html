@@ -439,7 +439,7 @@ async function loadSkinned(url,o){
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
  for(const b of[...fingerBones.flat(),...thumb].filter(Boolean))rest.set(b,b.quaternion.clone());
  const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
- R.play=(name,{loop=true,fade=.35}={})=>{const a=act[name]||act[o.idle];if(!a||R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
+ R.play=(spec,{loop=true,fade=.35}={})=>{const [name,sp]=String(spec).split('*'),a=act[name]||act[String(o.idle).split('*')[0]];if(!a)return;a.timeScale=sp?+sp:1;if(R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
   if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
  R.play(o.idle);return R}
 function poseSkinned(R,h,dt){
@@ -480,8 +480,8 @@ function poseSkinned(R,h,dt){
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 const CHARS=[
  {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=5',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice'],win:'Victory_Cheer',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
- {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=1',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch'],win:'victory',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
- {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=1',voice:'m',optional:true,anim:{idle:'Walking',show:['Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop',select:'Arm_Circle_Shuffle'}},
+ {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=2',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
+ {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}},
  {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-1.75,FLOOR,-.25],r:.75},a:{p:[1.8,FLOOR,-.25],r:-.75}};
@@ -491,11 +491,11 @@ function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
- list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.9,5/n);R.holder.visible=true;R.holder.position.set(x,FLOOR,.15);R.holder.rotation.y=-x*.12;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
+ list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,4.2/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
 function assign(playerKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key),opp=opts[Math.floor(Math.random()*opts.length)]||CHARS.find(c=>c.proc);
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:LOADED[opp.key]};HS=SL.g.R;
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice},a:{name:opp.name,voice:opp.voice}}}
 for(const c of CHARS)if(!c.proc)loadSkinned(c.url,{height:3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
