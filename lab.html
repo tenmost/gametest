@@ -456,7 +456,7 @@ function poseSkinned(R,h,dt){
 }
 
 let HS=null;
-loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+loadSkinned('assets/cosmic-challenger.glb?v=1',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Walking'}).catch(err=>{console.warn('Cosmic Challenger not uploaded yet; using previous character',err);return loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'})}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
  if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
@@ -718,9 +718,9 @@ function update(dt){
  camera.fov=st.fov;
  updateBackground(dt);updateCards(dt,pulse);
  if(HS){HS.target=HG.target;const res=anyRes?st.res.g:null,e=x=>1-Math.exp(-dt*x);
-  if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=0}
-  else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=0}
-  else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;HS.play(st.shaking?RIG.showoff:res==='win'?'Victory_Cheer':hit?'Hit_Reaction':'Idle_15',{loop:!hit,fade:.25})}
+  if(st.match==='win'){HS.play(HS.act.Victory_Cheer?'Victory_Cheer':'Arm_Circle_Shuffle');HS.ikW=0}
+  else if(st.match==='lose'){HS.play(HS.act.Dead?'Dead':'Charged_Axe_Chop',{loop:false});HS.ikW=0}
+  else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;const showoff=HS.act[RIG.showoff]?RIG.showoff:'Arm_Circle_Shuffle';const victory=HS.act.Victory_Cheer?'Victory_Cheer':'Arm_Circle_Shuffle';const idle=HS.act.Idle_15?'Idle_15':'Walking';HS.play(st.shaking?showoff:res==='win'?victory:hit?'Hit_Reaction':idle,{loop:!hit,fade:.25})}
   HS.nod=hero.talkT>0?Math.sin(TIME*13)*.09:0;
   HS.headDown=lerp(HS.headDown,res==='lose'&&!HS.act.Hit_Reaction?1:0,e(6));HS.mixer.update(dt)}
  scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
