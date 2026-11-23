@@ -893,7 +893,7 @@ Object.assign(API,{
   return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle}).then(R=>{R.cfg=c;R.holder.visible=false;LOADED[key+'#2']=R}).catch(()=>{})},
  roster:()=>rosterInfo(),
  say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);TALK[who]=Math.min(2.2,.35+text.length*.06)},
- reveal(res){st.res=res;st.revT=0;st.impacted=false;CARD.g.broken=CARD.a.broken=false}});
+ reveal(res){st.res=res;st.revT=0;st.revStart=performance.now();st.impacted=false;CARD.g.broken=CARD.a.broken=false}});
 stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();st.mx=(e.clientX-r.left)/r.width*2-1;st.my=(e.clientY-r.top)/r.height*2-1});
 stage.addEventListener('pointerleave',()=>{st.mx=st.my=0});
 
@@ -902,7 +902,7 @@ function setGlow(h,res,pulse){for(const m of[h.mats.base,h.mats.acc]){if(res){m.
 
 function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
- st.revT+=dt;st.camShake*=Math.exp(-dt*6);
+ st.revT=st.revStart?(performance.now()-st.revStart)/1000:st.revT+dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
  const base={g:[-1.2,-.86,.45],a:[1.2,-.86,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
