@@ -184,10 +184,11 @@ async function runRound(choice,other){
   buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
   Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','rock');statusEl.className='';
   Scene3D.setShaking(true);hush();chat('start',Math.random()<.5?'g':'a',1000);
-  for(let n=5;n>=1;n--){
-    count.textContent=n;count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
-    statusEl.textContent=['READY…','SET…','ROCK…','PAPER…','SCISSORS…'][5-n];sfx.tick();
-    await wait(700);if(run!==token)return;
+  for(let n=0;n<=3;n++){
+    count.textContent=n?n:'⚡';count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
+    statusEl.textContent=['READY…','✊ ROCK!','✋ PAPER!','✌️ SCISSORS!'][n];sfx.tick();
+    if(n&&Scene3D.beat)Scene3D.beat(n);
+    await wait(n?1000:1200);if(run!==token)return;
   }
   Scene3D.setShaking(false);sfx.go();
 
@@ -195,6 +196,8 @@ async function runRound(choice,other){
   logStat('sd_rounds',{player_move:choice,opp_move:other,result:win>0?'win':win<0?'lose':'tie',timed_out:!!autoPicked});autoPicked=false;
   Scene3D.setHands(choice,other);
   Scene3D.reveal(win>0?{g:'win',a:'lose'}:win<0?{g:'lose',a:'win'}:{g:'tie',a:'tie'});
+  count.textContent='';statusEl.textContent='';
+  await wait(560);if(run!==token)return; // cards flip, wind up and smash together
   if(win>0){c--;shake(hc)}
   if(win<0){p--;shake(hp)}
   render();
@@ -828,19 +831,45 @@ function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.ad
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
 const SLOT={g:V3(-.42,-.56,2.2),a:V3(.42,-.56,2.2)};
+const MID=SLOT.g.clone().lerp(SLOT.a,.5),SHARDS=[],CLASH_IN=.42-CARD_W*.55;
+function shatter(c){c.broken=true;const tex=c.front.material.map;
+ const mat=new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.55,transparent:true,alphaTest:.05,side:THREE.DoubleSide,depthWrite:false});
+ const cols=3,rows=4,w=CARD_W/cols,h=CARD_H/rows,q=c.g.quaternion.clone(),sc=c.g.scale.x,o=c.g.position.clone(),grp={mat,age:0,list:[]};
+ for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const geo=new THREE.PlaneGeometry(w,h),uv=geo.attributes.uv;
+  for(let k=0;k<uv.count;k++)uv.setXY(k,(i+uv.getX(k))/cols,(j+uv.getY(k))/rows);
+  const m=new THREE.Mesh(geo,mat),lp=V3((i+.5)*w-CARD_W/2,(j+.5)*h-CARD_H/2,0).multiplyScalar(sc).applyQuaternion(q);
+  m.position.copy(o).add(lp);m.quaternion.copy(q);m.scale.setScalar(sc);scene.add(m);
+  const v=lp.clone().normalize().multiplyScalar(1.4+Math.random()*1.8).add(V3((Math.random()-.5)*.9,1+Math.random()*1.4,.5+Math.random()*1.3));
+  grp.list.push({m,v,w:V3(Math.random()*14-7,Math.random()*14-7,Math.random()*14-7)})}
+ SHARDS.push(grp)}
+function updateShards(dt){for(let i=SHARDS.length-1;i>=0;i--){const g=SHARDS[i];g.age+=dt;g.mat.opacity=Math.max(0,1-Math.pow(g.age/1.4,2));
+ for(const s of g.list){s.v.y-=5*dt;s.m.position.addScaledVector(s.v,dt);s.m.rotation.x+=s.w.x*dt;s.m.rotation.y+=s.w.y*dt;s.m.rotation.z+=s.w.z*dt}
+ if(g.age>1.4){for(const s of g.list){scene.remove(s.m);s.m.geometry.dispose()}g.mat.dispose();SHARDS.splice(i,1)}}}
 function updateCards(dt,pulse){
- const revealed=st.res&&!st.shaking;
+ const revealed=st.res&&!st.shaking,T=st.revT;
+ if(revealed&&!st.impacted&&T>=.55){st.impacted=true;st.camShake=.2;const r=st.res;
+  if(r.g==='tie')burst(MID.clone(),[.55,.75,1],90,2.6);
+  else{shatter(CARD[r.g==='lose'?'g':'a']);burst(MID.clone(),r.g==='win'?[.3,1,.55]:[1,.28,.45],150,3.8)}}
+ updateShards(dt);
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  c.g.visible=!st.select;
-  const jig=st.shaking?Math.abs(Math.sin((TIME-st.shakeT0)*Math.PI/.7))*.08:0;
-  const p=SLOT[key].clone();p.y+=Math.sin(TIME*2.2+sgn)*.04*(1-c.u)+jig+Math.sin(c.u*Math.PI)*.14;
+  c.g.visible=!st.select&&!c.broken;
+  // 1-2-3: each beat throws the card higher
+  let bounce=0;if(st.shaking&&st.beatN){const t=(TIME-st.beatT)/.75;if(t<1)bounce=Math.sin(t*Math.PI)*(.08+.07*st.beatN)}
+  const p=SLOT[key].clone();p.y+=Math.sin(TIME*2.2+sgn)*.04*(1-c.u)+bounce+Math.sin(c.u*Math.PI)*.1;
+  if(revealed){const res0=st.res[key];let dx=0,dz=0;
+   if(T<.3)dx=0;
+   else if(T<.42)dx=-sgn*.14*sstep(.3,.42,T);                       // wind up
+   else if(T<.55){const k=(T-.42)/.13;dx=lerp(-sgn*.14,sgn*CLASH_IN,k*k)} // smash together
+   else if(res0==='win'){dx=sgn*(CLASH_IN+(.42-CLASH_IN)*sstep(.8,1.4,T));dz=.18*sstep(.8,1.4,T)} // winner takes the centre
+   else dx=sgn*CLASH_IN*Math.exp(-(T-.55)*7)-sgn*.05*Math.sin((T-.55)*18)*Math.exp(-(T-.55)*5); // tie: recoil
+   p.x+=dx;p.z+=dz}
   c.g.position.copy(p);c.g.lookAt(camera.position);
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
   const wob=(st.shaking?Math.sin(TIME*9+sgn)*.18:Math.sin(TIME*1.5+sgn)*.06)*(1-c.u);
   c.inner.rotation.set(0,flip+wob*.6,wob+(res==='lose'?-sgn*.22*c.u:0));
-  const sc=lerp(.92,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
+  const sc=lerp(.92,res==='win'?1.12+.18*sstep(.8,1.4,T)+.04*pulse:res==='lose'?.9:1.02,c.u)*(st.shaking&&st.beatN?1+.03*st.beatN:1);c.g.scale.setScalar(sc);
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
 
@@ -853,8 +882,9 @@ const st={select:true,shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,m
 let TIME=0;
 Object.assign(API,{
  setHands(g,a){HG.target='rock';HA.target='rock';setCardKind(CARD.g,g);setCardKind(CARD.a,a)},
- setShaking(on){st.shaking=on;if(on){st.shakeT0=TIME;for(const k of['g','a']){const R=SL[k]&&SL[k].R;if(R){const sh=R.cfg.anim.show;R.showNow=sh[Math.floor(Math.random()*sh.length)]}}}},
- clear(){st.res=null},
+ beat(n){st.beatN=n;st.beatT=TIME},
+ setShaking(on){st.shaking=on;st.beatN=0;if(on){st.shakeT0=TIME;for(const k of['g','a']){const R=SL[k]&&SL[k].R;if(R){const sh=R.cfg.anim.show;R.showNow=sh[Math.floor(Math.random()*sh.length)]}}}},
+ clear(){st.res=null;CARD.g.broken=CARD.a.broken=false},
  matchEnd(won){st.match=won?'win':'lose'},
  reset(){st.match=null},
  showSelect(){st.select=true;st.res=null;st.match=null;st.shaking=false;layoutSelect();return rosterInfo()},
@@ -863,9 +893,7 @@ Object.assign(API,{
   return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle}).then(R=>{R.cfg=c;R.holder.visible=false;LOADED[key+'#2']=R}).catch(()=>{})},
  roster:()=>rosterInfo(),
  say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);TALK[who]=Math.min(2.2,.35+text.length*.06)},
- reveal(res){st.res=res;st.revT=0;st.camShake=.12;
-  const gp=SLOT.g.clone(),ap=SLOT.a.clone();
-  if(res.g==='win')burst(gp,[.3,1,.55]);else if(res.a==='win')burst(ap,[1,.28,.45]);else burst(gp.clone().lerp(ap,.5),[.55,.75,1],80,2.4)}});
+ reveal(res){st.res=res;st.revT=0;st.revStart=performance.now();st.impacted=false;CARD.g.broken=CARD.a.broken=false}});
 stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();st.mx=(e.clientX-r.left)/r.width*2-1;st.my=(e.clientY-r.top)/r.height*2-1});
 stage.addEventListener('pointerleave',()=>{st.mx=st.my=0});
 
@@ -874,7 +902,7 @@ function setGlow(h,res,pulse){for(const m of[h.mats.base,h.mats.acc]){if(res){m.
 
 function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
- st.revT+=dt;st.camShake*=Math.exp(-dt*6);
+ st.revT=st.revStart?(performance.now()-st.revStart)/1000:st.revT+dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
  const base={g:[-1.2,-.86,.45],a:[1.2,-.86,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
@@ -920,6 +948,6 @@ function update(dt){
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
 let last=performance.now();
-renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
+window.__dbg={st,CARD,SHARDS};renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
 API.ready=true;document.getElementById('nogl').style.display='none';
 </script></html>
