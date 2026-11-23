@@ -188,7 +188,7 @@ async function runRound(choice,other){
     count.textContent=n?n:'⚡';count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
     statusEl.textContent=['READY…','✊ ROCK!','✋ PAPER!','✌️ SCISSORS!'][n];sfx.tick();
     if(n&&Scene3D.beat)Scene3D.beat(n);
-    await wait(n?650:800);if(run!==token)return;
+    await wait(n?1000:1200);if(run!==token)return;
   }
   Scene3D.setShaking(false);sfx.go();
 
@@ -855,7 +855,7 @@ function updateCards(dt,pulse){
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
   c.g.visible=!st.select&&!c.broken;
   // 1-2-3: each beat throws the card higher
-  let bounce=0;if(st.shaking&&st.beatN){const t=(TIME-st.beatT)/.5;if(t<1)bounce=Math.sin(t*Math.PI)*(.08+.07*st.beatN)}
+  let bounce=0;if(st.shaking&&st.beatN){const t=(TIME-st.beatT)/.75;if(t<1)bounce=Math.sin(t*Math.PI)*(.08+.07*st.beatN)}
   const p=SLOT[key].clone();p.y+=Math.sin(TIME*2.2+sgn)*.04*(1-c.u)+bounce+Math.sin(c.u*Math.PI)*.1;
   if(revealed){const res0=st.res[key];let dx=0,dz=0;
    if(T<.3)dx=0;
