@@ -457,7 +457,7 @@ function poseSkinned(R,h,dt){
 
 // Test branch: use the new Azure Wanderer if both animation files are uploaded.
 // Keep the original hero as a safe fallback while the assets are being installed.
-const AZURE_MAIN='assets/azure_wanderer_all.glb';
+const AZURE_MAIN='assets/azure_wanderer_backflip.glb';
 const AZURE_PUNCH='assets/azure_wanderer_punch.glb';
 let AZ=null;
 async function loadAzure(){
@@ -483,17 +483,17 @@ async function loadAzure(){
  const acts={};
  for(const clip of clips)acts[clip.name]=mixer.clipAction(clip);
  const pick=(...names)=>names.find(n=>acts[n])||Object.keys(acts)[0];
- const idle=pick('Lower_Weapon_Look_Raise','Agree_Gesture','Walking');
+ const idle=pick('Boxing_Guard_Prep_Straight_Punch','Backflip_Sweep_Kick');
  const attack=pick('Boxing_Guard_Prep_Straight_Punch');
- const hit=pick('BeHit_FlyUp');
- const victory=pick('victory','Joyful_Dance_with_Hand_Sway');
+ const hit=pick('Backflip_Sweep_Kick');
+ const victory=attack;
  const state={holder,mixer,acts,idle,attack,hit,victory,active:null,lastState:'',lastReveal:-1,
    play(name,once=false){if(!name||!acts[name])return;if(this.active===name)return;
      const action=acts[name];action.reset();action.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);
      action.clampWhenFinished=once;action.enabled=true;action.fadeIn(.2).play();
      if(this.active&&acts[this.active])acts[this.active].fadeOut(.2);this.active=name},
    update(dt){const outcome=st.res&&!st.shaking?st.res.g:null;
-     const desired=st.match==='win'?'victory':st.match==='lose'?'hit':st.shaking?'attack':outcome==='lose'?'hit':outcome==='win'?'victory':'idle';
+     const desired=st.match==='win'?'victory':st.match==='lose'?'hit':st.shaking?'idle':outcome==='lose'?'hit':outcome==='win'?'victory':'idle';
      if(desired!==this.lastState){this.lastState=desired;
        this.play(desired==='attack'?this.attack:desired==='hit'?this.hit:desired==='victory'?this.victory:this.idle,
          desired==='hit'||desired==='attack')}
