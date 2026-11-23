@@ -358,7 +358,7 @@ hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale
 astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
 /* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
-const RIG={proxyHand:true,skinColor:0xf2c4a6,thumbSign:1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
+const RIG={proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
  thumb:{rock:{a:.55,b:.9,c:.7},paper:{a:-.15,b:.1,c:.05},scissors:{a:.55,b:.9,c:.7}},
  poses:{rock:{c:[1.45,1.5,1.5,1.45],s:[0,0,0,0]},paper:{c:[.05,.03,.05,.08],s:[.18,.05,-.07,-.18]},scissors:{c:[.04,.04,1.5,1.45],s:[.22,-.12,0,0]}}};
 window.RIG=RIG;
@@ -417,7 +417,7 @@ function poseSkinned(R,h,dt){
 }
 
 let HS=null;
-loadSkinned('assets/hero.glb?v=1',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+loadSkinned('assets/hero.glb?v=3',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
  if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
