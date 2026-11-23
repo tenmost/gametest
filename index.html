@@ -474,7 +474,7 @@ async function loadAzure(){
  const scaled=new THREE.Box3().setFromObject(root);
  const center=scaled.getCenter(new THREE.Vector3());
  root.position.set(-center.x,-scaled.min.y,-center.z);
- holder.position.set(-.8,FLOOR,-.25);holder.rotation.y=1.0;
+ holder.position.set(.8,FLOOR,-.25);holder.rotation.y=-1.0;
  scene.add(holder);
  root.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;obj.frustumCulled=false}});
  const mixer=new THREE.AnimationMixer(root);
@@ -492,8 +492,8 @@ async function loadAzure(){
      const action=acts[name];action.reset();action.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);
      action.clampWhenFinished=once;action.enabled=true;action.fadeIn(.2).play();
      if(this.active&&acts[this.active])acts[this.active].fadeOut(.2);this.active=name},
-   update(dt){const outcome=st.res&&!st.shaking?st.res.g:null;
-     const desired=st.match==='win'?'victory':st.match==='lose'?'hit':st.shaking?'idle':outcome==='lose'?'hit':outcome==='win'?'victory':'idle';
+   update(dt){const outcome=st.res&&!st.shaking?st.res.a:null;
+     const desired=st.match==='lose'?'victory':st.match==='win'?'hit':st.shaking?'idle':outcome==='lose'?'hit':outcome==='win'?'victory':'idle';
      if(desired!==this.lastState){this.lastState=desired;
        this.play(desired==='attack'?this.attack:desired==='hit'?this.hit:desired==='victory'?this.victory:this.idle,
          desired==='hit'||desired==='attack')}
@@ -502,12 +502,10 @@ async function loadAzure(){
  return state;
 }
 let HS=null;
-loadAzure().then(R=>{AZ=R;hero.root.visible=false;HG.root.visible=false;
- // Hide the original Mixamo hero if it loaded first.
- if(HS){HS.holder.visible=false;HS=null}
+loadAzure().then(R=>{AZ=R;astro.root.visible=false;HA.root.visible=false;
  AZ.play(AZ.idle);
 }).catch(e=>console.info('Azure test assets not installed yet; keeping original hero.',e));
-loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{if(AZ){R.holder.visible=false;return}HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
  if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
@@ -693,7 +691,7 @@ function update(dt){
   else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;HS.play(st.shaking?RIG.showoff:res==='win'?'Victory_Cheer':hit?'Hit_Reaction':'Idle_15',{loop:!hit,fade:.25})}
   HS.nod=hero.talkT>0?Math.sin(TIME*13)*.09:0;
   HS.headDown=lerp(HS.headDown,res==='lose'&&!HS.act.Hit_Reaction?1:0,e(6));HS.mixer.update(dt)}
- scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else if(!AZ)poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
+ scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);if(!AZ)poseFigure(astro,HA,-1);
 }
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
