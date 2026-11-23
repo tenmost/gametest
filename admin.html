@@ -189,7 +189,7 @@ async function checkAdmin(){
   const {data:{session}}=await SB.auth.getSession();
   if(!session){showLogin();return}
   const {data:isAdmin,error}=await SB.rpc('sd_is_admin');
-  if(error||!isAdmin){showLogin('This account is not an admin.');await SB.auth.signOut();return}
+  if(error||!isAdmin){showLogin('This account is not an admin.');await SB.auth.signOut({scope:'local'});return}
   $('who').textContent=session.user.email;
   $('login').classList.add('hidden');$('tabs').classList.remove('hidden');$('logout').classList.remove('hidden');
   showTab(location.hash==='#stats'?'stats':'chars');
@@ -197,18 +197,18 @@ async function checkAdmin(){
 function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
 $('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
   const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
-  if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=error.message;return}checkAdmin()};
+  if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=/invalid login/i.test(error.message)?'Wrong email or password. New admin? Press “Create account” first (same email + your new password), then confirm the email.':/not confirmed/i.test(error.message)?'Please open the confirmation email first, then sign in.':error.message;return}checkAdmin()};
 $('doSignup').onclick=async()=>{const em=$('em').value.trim(),pw=$('pw').value;const m=$('loginMsg');
   if(!em||pw.length<8){m.style.color='var(--bad)';m.textContent='Enter your email and a password of at least 8 characters.';return}
   const {data,error}=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}});
-  if(error){m.style.color='var(--bad)';m.textContent=error.message;return}
+  if(error){m.style.color='var(--bad)';m.textContent=/already registered/i.test(error.message)?'This email already has an account — use Sign in (or Forgot password).':error.message;return}
   if(data.session){checkAdmin();return}
   m.style.color='var(--ok)';m.textContent='Account created — open the confirmation email, then sign in here.'};
 $('pw').onkeydown=e=>{if(e.key==='Enter')$('doLogin').click()};
 $('doReset').onclick=async()=>{const em=$('em').value.trim();if(!em){$('loginMsg').textContent='Type your email first.';return}
   const {error}=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]});
   $('loginMsg').style.color=error?'var(--bad)':'var(--ok)';$('loginMsg').textContent=error?error.message:'Password reset email sent.'};
-$('logout').onclick=async()=>{await SB.auth.signOut();showLogin()};
+$('logout').onclick=async()=>{await SB.auth.signOut({scope:'local'});showLogin()};
 SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){const p=prompt('New password (min 8 characters):');if(p)SB.auth.updateUser({password:p}).then(({error})=>toast(error?error.message:'Password changed'))}});
 
 /* ---------------- tabs ---------------- */
