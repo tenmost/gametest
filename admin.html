@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Space Duel · Admin</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<style>
+:root{--bg:#07071a;--panel:#11112b;--line:#24244a;--txt:#e8e8ff;--mut:#8f8fc0;--acc:#7c5cff;--ok:#2cd982;--bad:#ff4d6d;--warn:#ffb648;--rock:#ff8a3d;--paper:#3db8ff;--scissors:#c86bff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#2a1660 0,transparent 60%),var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--acc);border:0;border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:600}
+button.ghost{background:transparent;border:1px solid var(--line)}
+button.danger{background:transparent;border:1px solid #5a2333;color:var(--bad)}
+button:disabled{opacity:.45;cursor:default}
+input,select{background:#0b0b22;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:#0a0a20cc;position:sticky;top:0;backdrop-filter:blur(8px);z-index:5}
+header h1{font-size:17px;margin:0;letter-spacing:.06em}
+header h1 span{color:var(--acc)}
+nav{display:flex;gap:4px;margin-left:12px}
+nav button{background:transparent;color:var(--mut);padding:7px 12px}
+nav button.on{background:#1d1d42;color:var(--txt)}
+.sp{flex:1}
+#who{color:var(--mut);font-size:12px}
+main{max-width:1180px;margin:0 auto;padding:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--mut)}
+h2{font-size:15px;margin:0 0 12px;letter-spacing:.04em}
+/* login */
+#login{max-width:360px;margin:12vh auto}
+#login h2{font-size:20px}
+#loginMsg{min-height:20px;margin-top:10px;font-size:13px}
+/* characters */
+.chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:14px}
+.ch{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ch.off{opacity:.55}
+.ch .thumb{height:180px;background:linear-gradient(#1a1440,#0b0b22);position:relative}
+.ch .thumb canvas{width:100%;height:100%;display:block}
+.ch .thumb .badge{position:absolute;left:10px;top:10px;font-size:11px;background:#0008;padding:3px 8px;border-radius:20px}
+.ch .body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ch .nm{font-weight:700;letter-spacing:.04em}
+.ch .meta{font-size:12px;color:var(--mut)}
+.ch .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.ch .acts button{padding:6px 10px;font-size:12px}
+.sw{position:relative;width:40px;height:22px;flex:none}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;background:#2a2a52;border-radius:22px;cursor:pointer;transition:.2s}
+.sw span:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+span{background:var(--ok)}
+.sw input:checked+span:before{transform:translateX(18px)}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s}
+.drop.hov{border-color:var(--acc);color:var(--txt);background:#7c5cff14}
+/* modal */
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-start;justify-content:center;z-index:20;overflow:auto;padding:30px 12px}
+.modal.show{display:flex}
+.modal .card{width:min(980px,100%)}
+.ed{display:grid;grid-template-columns:1fr 1.1fr;gap:20px}
+@media (max-width:820px){.ed{grid-template-columns:1fr}}
+#prev{height:380px;border-radius:12px;background:linear-gradient(#1a1440,#0b0b22);position:relative;overflow:hidden}
+#prev canvas{width:100%;height:100%;display:block}
+#prevInfo{position:absolute;left:10px;bottom:10px;font-size:12px;background:#0009;padding:4px 9px;border-radius:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.slotRow{display:grid;grid-template-columns:110px 1fr 30px;gap:8px;align-items:center;margin:6px 0}
+.slotRow .k{font-size:12px;color:var(--mut)}
+.slotRow button{padding:6px 0;background:#1d1d42}
+.showList{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{background:#1d1d42;border-radius:20px;padding:4px 6px 4px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
+.chip b{cursor:pointer;color:var(--mut);font-weight:400}
+.chip i{cursor:pointer;font-style:normal}
+#edMsg{min-height:20px;font-size:13px}
+.bar{height:8px;border-radius:5px;background:#1d1d42;overflow:hidden}
+.bar>div{height:100%;border-radius:5px}
+/* stats */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:.02em}
+.kpi .l{font-size:12px;color:var(--mut)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line);font-size:13px}
+th{color:var(--mut);font-weight:500;font-size:12px}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.mv{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%}
+#daily{height:140px;display:flex;align-items:flex-end;gap:3px;margin-top:8px}
+#daily div{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+#daily div:hover:after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000;padding:3px 6px;border-radius:5px;font-size:11px;white-space:nowrap}
+.empty{color:var(--mut);padding:24px;text-align:center}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d1d42;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:40;display:none}
+.toast.show{display:block}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>SPACE DUEL <span>ADMIN</span></h1>
+  <nav id="tabs" class="hidden"><button data-t="chars" class="on">🧑‍🚀 Characters</button><button data-t="stats">📊 Statistics</button></nav>
+  <div class="sp"></div>
+  <span id="who"></span>
+  <a href="./" target="_blank"><button class="ghost">▶ Game</button></a>
+  <button class="ghost hidden" id="logout">Log out</button>
+</header>
+
+<main>
+  <section id="login" class="card">
+    <h2>Admin login</h2>
+    <p class="muted">Sign in with your tenmost.com admin account.</p>
+    <label>Email</label><input id="em" type="email" autocomplete="username">
+    <label>Password</label><input id="pw" type="password" autocomplete="current-password">
+    <div class="row" style="margin-top:14px"><button id="doLogin">Sign in</button><button class="ghost" id="doReset">Forgot password</button></div>
+    <div id="loginMsg"></div>
+  </section>
+
+  <section id="pChars" class="hidden">
+    <div class="row"><h2 style="margin:0">Characters</h2><span class="muted" id="chCount"></span><div class="sp"></div>
+      <button class="ghost" id="reloadChars">↻ Refresh</button></div>
+    <div class="drop" id="drop" style="margin-top:14px">
+      <b>＋ Upload new character</b><br><span style="font-size:12px">Drop a .glb file here or click (Meshy / Mixamo rigged GLB with animations · max 50 MB, ideally under 8 MB)</span>
+      <input type="file" id="file" accept=".glb,model/gltf-binary" hidden>
+    </div>
+    <div class="chars" id="chars"></div>
+  </section>
+
+  <section id="pStats" class="hidden">
+    <div class="row"><h2 style="margin:0">Statistics</h2><div class="sp"></div>
+      <select id="days" style="width:auto"><option value="1">Last 24 h</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="365">Last year</option><option value="3650">All time</option></select>
+      <button class="ghost" id="reloadStats">↻ Refresh</button></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="two">
+      <div class="card"><h2>Which move wins most</h2><div id="moves"></div><p class="muted" style="font-size:12px;margin:10px 0 0">Win rate = rounds won ÷ rounds played with that move, counting both sides of every round (draws count as played).</p></div>
+      <div class="card"><h2>Which moves players pick</h2><div id="picks"></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h2>Most used characters</h2><div id="charStats"></div></div>
+    <div class="card" style="margin-top:14px"><h2>Rounds per day</h2><div id="daily"></div></div>
+  </section>
+</main>
+
+<div class="modal" id="modal"><div class="card">
+  <div class="row"><h2 style="margin:0" id="edTitle">Character</h2><div class="sp"></div><button class="ghost" id="edClose">✕</button></div>
+  <div class="ed" style="margin-top:12px">
+    <div>
+      <div id="prev"><span id="prevInfo">Loading model…</span></div>
+      <p class="muted" style="font-size:12px">Click ▶ next to any animation to preview it here.</p>
+    </div>
+    <div>
+      <div class="grid2">
+        <div><label>Name (shown in the game)</label><input id="fName" maxlength="40"></div>
+        <div><label>Key (id, cannot change later)</label><input id="fKey" maxlength="40"></div>
+        <div><label>Height in game (2–4.5, default 3.4)</label><input id="fHeight" type="number" min="1" max="6" step=".1"></div>
+        <div><label>Speech bubble voice</label><select id="fVoice"><option value="m">Male</option><option value="f">Female</option></select></div>
+      </div>
+      <label style="margin-top:16px">Animations <span id="clipCount"></span></label>
+      <div id="slots"></div>
+      <label>Show-off moves before the reveal (random each round)</label>
+      <div class="row" style="gap:6px"><select id="showAdd" style="flex:1"></select><button id="showAddBtn" style="padding:7px 12px">Add</button></div>
+      <div class="showList" id="showList"></div>
+      <div class="row" style="margin-top:18px"><button id="edSave">Save</button><button class="ghost" id="edCancel">Cancel</button><div class="sp"></div>
+        <label class="row muted" style="margin:0;gap:8px;font-size:13px"><span class="sw"><input type="checkbox" id="fEnabled"><span></span></span>Visible in game</label></div>
+      <div id="edMsg"></div>
+    </div>
+  </div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SB=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw');
+const BUCKET='sd-models';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toast=(t,ms=2600)=>{const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),ms)};
+const MOVE_COL={rock:'var(--rock)',paper:'var(--paper)',scissors:'var(--scissors)'};
+const MOVE_ICON={rock:'✊',paper:'✋',scissors:'✌️'};
+const SLOTS=[['idle','Idle (waiting)',true],['select','Character select'],['win','Won a round'],['hit','Lost a round'],['champ','Won the match'],['dead','Lost the match']];
+
+/* ---------------- auth ---------------- */
+async function checkAdmin(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){showLogin();return}
+  const {data:isAdmin,error}=await SB.rpc('sd_is_admin');
+  if(error||!isAdmin){showLogin('This account is not an admin.');await SB.auth.signOut();return}
+  $('who').textContent=session.user.email;
+  $('login').classList.add('hidden');$('tabs').classList.remove('hidden');$('logout').classList.remove('hidden');
+  showTab(location.hash==='#stats'?'stats':'chars');
+}
+function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
+$('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
+  const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
+  if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=error.message;return}checkAdmin()};
+$('pw').onkeydown=e=>{if(e.key==='Enter')$('doLogin').click()};
+$('doReset').onclick=async()=>{const em=$('em').value.trim();if(!em){$('loginMsg').textContent='Type your email first.';return}
+  const {error}=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]});
+  $('loginMsg').style.color=error?'var(--bad)':'var(--ok)';$('loginMsg').textContent=error?error.message:'Password reset email sent.'};
+$('logout').onclick=async()=>{await SB.auth.signOut();showLogin()};
+SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){const p=prompt('New password (min 8 characters):');if(p)SB.auth.updateUser({password:p}).then(({error})=>toast(error?error.message:'Password changed'))}});
+
+/* ---------------- tabs ---------------- */
+let statsTimer=null;
+function showTab(t){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('pChars').classList.toggle('hidden',t!=='chars');$('pStats').classList.toggle('hidden',t!=='stats');history.replaceState(null,'','#'+t);
+  clearInterval(statsTimer);
+  if(t==='chars')loadChars();else{loadStats();statsTimer=setInterval(loadStats,30000)}}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+
+/* ---------------- 3D helpers ---------------- */
+const loader=new GLTFLoader();
+const gltfCache=new Map();
+function loadGLB(src){ // src: url string or File
+  const k=typeof src==='string'?src:src.name+src.size+src.lastModified;
+  if(!gltfCache.has(k))gltfCache.set(k,new Promise((res,rej)=>{
+    if(typeof src==='string')loader.load(src,res,undefined,rej);
+    else src.arrayBuffer().then(buf=>loader.parse(buf,'',res,rej)).catch(rej)}));
+  return gltfCache.get(k)}
+function makeViewer(host){
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(2,devicePixelRatio));r.toneMapping=THREE.ACESFilmicToneMapping;r.outputColorSpace=THREE.SRGBColorSpace;
+  host.appendChild(r.domElement);
+  const scene=new THREE.Scene(),pm=new THREE.PMREMGenerator(r);scene.environment=pm.fromScene(new RoomEnvironment(),.04).texture;
+  scene.add(new THREE.HemisphereLight(0xbfd8ff,0x302050,1.2));const d=new THREE.DirectionalLight(0xffffff,2.2);d.position.set(2,4,3);scene.add(d);
+  const cam=new THREE.PerspectiveCamera(35,1,.05,100);
+  const v={r,scene,cam,host,model:null,mixer:null,act:{},cur:null,clock:new THREE.Clock(),alive:true,controls:null};
+  const size=()=>{const w=host.clientWidth||300,h=host.clientHeight||200;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};size();
+  v.ro=new ResizeObserver(size);v.ro.observe(host);
+  v.loop=()=>{if(!v.alive)return;requestAnimationFrame(v.loop);const dt=Math.min(.05,v.clock.getDelta());v.mixer&&v.mixer.update(dt);v.controls&&v.controls.update();r.render(scene,cam)};v.loop();
+  v.dispose=()=>{v.alive=false;v.ro.disconnect();r.dispose();r.domElement.remove()};
+  v.setModel=gltf=>{if(v.model)scene.remove(v.model);
+    const root=cloneSkinned(gltf.scene);v.model=root;scene.add(root);
+    const bb=new THREE.Box3().setFromObject(root),h=Math.max(.01,bb.max.y-bb.min.y);root.scale.setScalar(2/h);
+    const bb2=new THREE.Box3().setFromObject(root),c=bb2.getCenter(new THREE.Vector3());root.position.sub(new THREE.Vector3(c.x,bb2.min.y,c.z));
+    cam.position.set(0,1.2,4.6);cam.lookAt(0,1,0);if(v.controls)v.controls.target.set(0,1,0);
+    for(const cl of gltf.animations)for(const tr of cl.tracks)if(/Hips\.position$/.test(tr.name)){const a=tr.values;for(let i=0;i<a.length;i+=3){a[i]=a[0];a[i+2]=a[2]}}
+    v.mixer=new THREE.AnimationMixer(root);v.act={};for(const cl of gltf.animations)v.act[cl.name]=v.mixer.clipAction(cl);v.cur=null};
+  v.play=spec=>{const [n,sp]=String(spec||'').split('*'),a=v.act[n];if(!a)return false;a.timeScale=sp?+sp:1;if(v.cur===a)return true;a.reset();a.play();if(v.cur)a.crossFadeFrom(v.cur,.3,false);v.cur=a;return true};
+  return v}
+// minimal skinned clone so the same GLB can be shown in several viewers
+function cloneSkinned(src){const clone=src.clone(true),sm=new Map(),cm=new Map();
+  (function par(a,b){sm.set(a,b);cm.set(b,a);for(let i=0;i<a.children.length;i++)par(a.children[i],b.children[i])})(src,clone);
+  clone.traverse(n=>{if(!n.isSkinnedMesh)return;const s=cm.get(n);n.skeleton=s.skeleton.clone();n.bindMatrix.copy(s.bindMatrix);
+    n.skeleton.bones=s.skeleton.bones.map(b=>sm.get(b));n.bind(n.skeleton,n.bindMatrix)});return clone}
+
+/* ---------------- characters ---------------- */
+let CH=[],thumbs=[];
+async function loadChars(){
+  thumbs.forEach(v=>v.dispose());thumbs=[];
+  $('chars').innerHTML='<div class="empty">Loading…</div>';
+  const {data,error}=await SB.from('sd_characters').select('*').order('sort').order('created_at');
+  if(error){$('chars').innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  CH=data;$('chCount').textContent=`${data.filter(c=>c.enabled).length} visible · ${data.length} total`;
+  $('chars').innerHTML=data.length?'':'<div class="empty">No characters yet — upload a GLB above.</div>';
+  data.forEach((c,i)=>{const el=document.createElement('div');el.className='ch'+(c.enabled?'':' off');
+    el.innerHTML=`<div class="thumb"><span class="badge">${c.storage_path?'☁ uploaded':'📁 repo file'}</span></div>
+      <div class="body"><div class="row" style="gap:8px"><div class="nm">${esc(c.name)}</div><div class="sp"></div>
+        <label class="sw" title="Visible in game"><input type="checkbox" ${c.enabled?'checked':''}><span></span></label></div>
+        <div class="meta">key: ${esc(c.key)} · height ${c.height} · ${(c.anim.show||[]).length} show-off moves</div>
+        <div class="acts"><button class="ghost up" ${i?'':'disabled'}>↑</button><button class="ghost dn" ${i<data.length-1?'':'disabled'}>↓</button>
+          <button class="ed">✎ Edit</button><button class="danger del">🗑 Delete</button></div></div>`;
+    $('chars').appendChild(el);
+    el.querySelector('input').onchange=async e=>{const {error}=await SB.from('sd_characters').update({enabled:e.target.checked}).eq('id',c.id);
+      if(error){toast(error.message);e.target.checked=!e.target.checked;return}c.enabled=e.target.checked;el.classList.toggle('off',!c.enabled);
+      toast(c.enabled?`${c.name} is now in the game`:`${c.name} hidden from the game`);$('chCount').textContent=`${CH.filter(c=>c.enabled).length} visible · ${CH.length} total`};
+    el.querySelector('.up').onclick=()=>move(i,-1);el.querySelector('.dn').onclick=()=>move(i,1);
+    el.querySelector('.ed').onclick=()=>openEditor(c);
+    el.querySelector('.del').onclick=()=>delChar(c);
+    // live 3D thumbnail
+    const v=makeViewer(el.querySelector('.thumb'));thumbs.push(v);
+    loadGLB(c.url).then(g=>{if(!v.alive)return;v.setModel(g);v.cam.position.set(0,1.1,3.6);v.cam.lookAt(0,1,0);v.play(c.anim.select||c.anim.idle)||v.play(c.anim.idle)})
+      .catch(()=>{el.querySelector('.badge').textContent='⚠ model failed to load';el.querySelector('.badge').style.color='var(--bad)'});
+  })}
+async function move(i,d){const a=CH[i],b=CH[i+d];if(!a||!b)return;
+  // renumber everything so order is always clean
+  const order=CH.slice();order[i]=b;order[i+d]=a;
+  const ups=order.map((c,k)=>SB.from('sd_characters').update({sort:(k+1)*10}).eq('id',c.id));
+  const rs=await Promise.all(ups);const err=rs.find(r=>r.error);if(err)toast(err.error.message);loadChars()}
+async function delChar(c){
+  if(!confirm(`Delete "${c.name}" permanently?\n\n${c.storage_path?'The uploaded model file will be deleted too.':'(The model file stays in the GitHub repo; only the game entry is removed.)'}\n\nTip: switch it off instead if you may want it back.`))return;
+  if(c.storage_path){const {error}=await SB.storage.from(BUCKET).remove([c.storage_path]);if(error){toast('File: '+error.message)}}
+  const {error}=await SB.from('sd_characters').delete().eq('id',c.id);if(error){toast(error.message);return}
+  toast(`${c.name} deleted`);loadChars()}
+$('reloadChars').onclick=loadChars;
+
+/* upload */
+const drop=$('drop');
+drop.onclick=()=>$('file').click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('hov')};drop.ondragleave=()=>drop.classList.remove('hov');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('hov');const f=e.dataTransfer.files[0];if(f)startUpload(f)};
+$('file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)startUpload(f)};
+function startUpload(f){
+  if(!/\.glb$/i.test(f.name)){toast('Please choose a .glb file');return}
+  if(f.size>50*1024*1024){toast('File is over 50 MB — please make it smaller first');return}
+  const base=f.name.replace(/\.glb$/i,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase().slice(0,40)||'NEW HERO';
+  openEditor({id:null,name:base,key:slug(base),height:3.4,voice:'m',enabled:true,anim:{},url:null,file:f})}
+const slug=s=>{let k=s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30)||'hero';let n=k,i=2;while(CH.some(c=>c.key===n))n=k+'-'+i++;return n};
+
+/* ---------------- editor ---------------- */
+let ED=null,pv=null;
+function guess(clips,words){const lc=clips.map(c=>c.toLowerCase());for(const w of words){const i=lc.findIndex(c=>c.includes(w));if(i>=0)return clips[i]}return''}
+async function openEditor(c){
+  ED={...c,anim:JSON.parse(JSON.stringify(c.anim||{}))};
+  $('edTitle').textContent=c.id?`Edit · ${c.name}`:'New character';
+  $('fName').value=c.name;$('fKey').value=c.key;$('fKey').disabled=!!c.id;$('fHeight').value=c.height;$('fVoice').value=c.voice||'m';$('fEnabled').checked=c.enabled!==false;
+  $('edMsg').textContent=c.file?`${c.file.name} · ${(c.file.size/1048576).toFixed(1)} MB${c.file.size>12*1048576?' — big file, the game will load slower (tools/optimize_glb.py can shrink it)':''}`:'';
+  $('edMsg').style.color=c.file&&c.file.size>12*1048576?'var(--warn)':'var(--mut)';
+  $('slots').innerHTML='';$('showList').innerHTML='';$('showAdd').innerHTML='';$('clipCount').textContent='';$('edSave').disabled=true;
+  $('modal').classList.add('show');
+  if(pv)pv.dispose();pv=makeViewer($('prev'));pv.controls=new OrbitControls(pv.cam,pv.r.domElement);pv.controls.enableDamping=true;pv.controls.target.set(0,1,0);
+  $('prevInfo').textContent='Loading model…';
+  let g;try{g=await loadGLB(c.file||c.url)}catch(e){$('prevInfo').textContent='Could not read this GLB: '+(e.message||e);return}
+  if(!ED||ED.key!==c.key)return;
+  pv.setModel(g);
+  const clips=g.animations.map(a=>a.name);ED.clips=clips;
+  const skinned=(()=>{let s=false;g.scene.traverse(n=>{if(n.isSkinnedMesh)s=true});return s})();
+  $('clipCount').textContent=`(${clips.length} found in the file)`;
+  if(!clips.length){$('prevInfo').textContent='⚠ This file has no animations — export it from Meshy with animations.';$('edMsg').style.color='var(--bad)';$('edMsg').textContent='A character needs at least one animation (idle).';return}
+  if(!skinned){$('edMsg').style.color='var(--warn)';$('edMsg').textContent+=' ⚠ No rigged mesh found — animations may not move it.'}
+  // first time: auto-guess the mapping
+  const A=ED.anim;
+  if(!A.idle){A.idle=guess(clips,['idle','stand','breath'])||clips[0];A.select=guess(clips,['victory','cheer','dance'])||A.idle;
+    A.win=guess(clips,['backflip','victory','cheer','win','jump'])||'';A.hit=guess(clips,['hit','react','stomp','angry'])||'';
+    A.champ=guess(clips,['victory','cheer','dance','celebrat'])||A.win;A.dead=guess(clips,['dead','death','die','fall','knock'])||'';
+    A.show=clips.filter(n=>/dance|box|punch|kick|karate|strut|flex|shuffle|chop|skill|beat/i.test(n)).slice(0,4);if(!A.show.length)A.show=[A.idle]}
+  const opts=(sel,allowNone)=>(allowNone?'<option value="">— use idle —</option>':'')+clips.map(n=>`<option ${n===sel?'selected':''}>${esc(n)}</option>`).join('');
+  SLOTS.forEach(([k,lab,req])=>{const cur=String(A[k]||'').split('*')[0],sp=String(A[k]||'').split('*')[1];
+    const row=document.createElement('div');row.className='slotRow';
+    row.innerHTML=`<span class="k">${lab}</span><select data-k="${k}" ${sp?`data-sp="${sp}"`:''}>${opts(cur,!req)}</select><button title="Preview">▶</button>`;
+    $('slots').appendChild(row);const s=row.querySelector('select');
+    s.onchange=()=>{A[k]=s.value?(s.value+(s.dataset.sp?'*'+s.dataset.sp:'')):'';preview(A[k]||A.idle)};
+    row.querySelector('button').onclick=()=>preview(A[k]||A.idle)});
+  $('showAdd').innerHTML=opts('',false);renderShow();
+  $('edSave').disabled=false;preview(A.select||A.idle)}
+function preview(spec){if(pv&&pv.play(spec))$('prevInfo').textContent='▶ '+String(spec).split('*')[0]}
+function renderShow(){const A=ED.anim;$('showList').innerHTML='';(A.show||[]).forEach((n,i)=>{const ch=document.createElement('span');ch.className='chip';
+  ch.innerHTML=`<i title="Preview">▶ ${esc(String(n).split('*')[0])}</i><b title="Remove">✕</b>`;ch.querySelector('i').onclick=()=>preview(n);
+  ch.querySelector('b').onclick=()=>{A.show.splice(i,1);renderShow()};$('showList').appendChild(ch)})}
+$('showAddBtn').onclick=()=>{const v=$('showAdd').value;if(!v||!ED)return;ED.anim.show=ED.anim.show||[];if(!ED.anim.show.includes(v))ED.anim.show.push(v);renderShow();preview(v)};
+function closeEditor(){$('modal').classList.remove('show');if(pv){pv.dispose();pv=null}ED=null}
+$('edClose').onclick=$('edCancel').onclick=closeEditor;
+$('modal').onclick=e=>{if(e.target===$('modal'))closeEditor()};
+$('edSave').onclick=async()=>{if(!ED)return;const b=$('edSave');const msg=t=>{$('edMsg').style.color='var(--mut)';$('edMsg').textContent=t};
+  const name=$('fName').value.trim().slice(0,40),key=$('fKey').value.trim().toLowerCase(),height=Math.min(6,Math.max(1,+$('fHeight').value||3.4));
+  if(!name){msg('Name is required');return}
+  if(!ED.id&&!/^[a-z0-9_-]{2,40}$/.test(key)){msg('Key: 2–40 letters a-z, numbers, - or _');return}
+  if(!ED.id&&CH.some(c=>c.key===key)){msg('That key is already used');return}
+  const A=ED.anim;const anim={idle:A.idle,show:(A.show&&A.show.length?A.show:[A.idle])};for(const [k] of SLOTS)if(k!=='idle'&&A[k])anim[k]=A[k];
+  const row={name,height,voice:$('fVoice').value,enabled:$('fEnabled').checked,anim};
+  b.disabled=true;
+  try{
+    if(!ED.id){
+      msg('Uploading model… (this can take a moment)');
+      const path=`${key}-${Date.now().toString(36)}.glb`;
+      const up=await SB.storage.from(BUCKET).upload(path,ED.file,{contentType:'model/gltf-binary',cacheControl:'31536000',upsert:false});
+      if(up.error)throw up.error;
+      const url=SB.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      const sort=(Math.max(0,...CH.map(c=>c.sort||0))+10);
+      const {error}=await SB.from('sd_characters').insert({...row,key,url,storage_path:path,sort});
+      if(error){await SB.storage.from(BUCKET).remove([path]);throw error}
+      toast(`${name} added${row.enabled?' — it is in the game now':''}`);
+    }else{
+      const {error}=await SB.from('sd_characters').update(row).eq('id',ED.id);if(error)throw error;toast('Saved')}
+    closeEditor();loadChars();
+  }catch(e){$('edMsg').style.color='var(--bad)';$('edMsg').textContent=e.message||String(e);b.disabled=false}};
+
+/* ---------------- statistics ---------------- */
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const nameOf=k=>{const c=CH.find(c=>c.key===k);return c?c.name:k};
+async function loadStats(){
+  if(!CH.length){const {data}=await SB.from('sd_characters').select('key,name');if(data)CH=data}
+  const {data:s,error}=await SB.rpc('sd_stats',{days:+$('days').value});
+  if(error||!s){$('kpis').innerHTML=`<div class="empty">${esc(error?error.message:'No access')}</div>`;return}
+  const online=s.by_mode.online||0;
+  $('kpis').innerHTML=[[s.rounds,'Rounds played'],[s.matches,'Matches finished'],[pct(online,s.rounds)+'%','Online rounds ('+online+')'],[s.rounds-online,'Vs computer rounds'],[pct(s.timeouts,s.rounds)+'%','Auto-picked (timer ran out)']]
+    .map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+  if(!s.rounds){const e='<div class="empty">No games in this period yet.</div>';$('moves').innerHTML=$('picks').innerHTML=$('charStats').innerHTML=e;$('daily').innerHTML='';return}
+  const mv=['rock','paper','scissors'].map(m=>s.moves.find(x=>x.move===m)||{move:m,plays:0,wins:0,losses:0,ties:0}).sort((a,b)=>pct(b.wins,b.plays)-pct(a.wins,a.plays));
+  $('moves').innerHTML=`<table><tr><th>Move</th><th style="width:40%">Win rate</th><th class="num">Wins</th><th class="num">Losses</th><th class="num">Draws</th></tr>${mv.map((m,i)=>`<tr>
+    <td><span class="mv">${MOVE_ICON[m.move]} ${m.move.toUpperCase()}${i===0&&m.wins?' 🏆':''}</span></td>
+    <td><div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="flex:1"><div style="width:${pct(m.wins,m.plays)}%;background:${MOVE_COL[m.move]}"></div></div><b>${pct(m.wins,m.plays)}%</b></div></td>
+    <td class="num">${m.wins}</td><td class="num">${m.losses}</td><td class="num">${m.ties}</td></tr>`).join('')}</table>`;
+  const pk=s.player_moves,tot=Object.values(pk).reduce((a,b)=>a+b,0);
+  $('picks').innerHTML=`<table><tr><th>Move</th><th style="width:55%">Share of player picks</th><th class="num">Picks</th></tr>${['rock','paper','scissors'].map(m=>`<tr>
+    <td><span class="mv">${MOVE_ICON[m]} ${m.toUpperCase()}</span></td>
+    <td><div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="flex:1"><div style="width:${pct(pk[m]||0,tot)}%;background:${MOVE_COL[m]}"></div></div><b>${pct(pk[m]||0,tot)}%</b></div></td>
+    <td class="num">${pk[m]||0}</td></tr>`).join('')}</table>`;
+  const cs=s.characters,maxP=Math.max(1,...cs.map(c=>c.picks));
+  $('charStats').innerHTML=cs.length?`<table><tr><th>Character</th><th style="width:38%">Picked by players</th><th class="num">Picks</th><th class="num">In matches</th><th class="num">Match win rate</th></tr>${cs.map((c,i)=>`<tr>
+    <td><b>${esc(nameOf(c.char))}</b>${i===0&&c.picks?' ⭐':''}</td>
+    <td><div class="bar"><div style="width:${c.picks/maxP*100}%;background:var(--acc)"></div></div></td>
+    <td class="num">${c.picks}</td><td class="num">${c.matches}</td><td class="num">${pct(c.wins,c.matches)}%</td></tr>`).join('')}</table>`:'<div class="empty">No finished matches yet.</div>';
+  const days=s.daily,maxD=Math.max(1,...days.map(d=>d.rounds));
+  $('daily').innerHTML=days.map(d=>`<div style="height:${d.rounds/maxD*100}%" data-t="${d.day}: ${d.rounds}"></div>`).join('')}
+$('days').onchange=loadStats;$('reloadStats').onclick=loadStats;
+
+checkAdmin();
+</script>
+</body>
+</html>
