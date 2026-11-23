@@ -241,7 +241,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 function blendPose(h,k){const T=POSES[h.target],P=h.pose;for(const key of['c','s'])for(let i=0;i<4;i++)P[key][i]=lerp(P[key][i],T[key][i],k);for(const key of['tz','ty','tc'])P[key]=lerp(P[key],T[key],k)}
 
 /* ---------- characters: stylized toy figures (built in "metres", scaled up) ---------- */
-const CS=1.75, FLOOR=-2.6;
+const CS=1.75, FLOOR=-2.6, UP=new THREE.Vector3(0,1,0);
 const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
 const tmat=(color,o={})=>new THREE.MeshPhysicalMaterial({color,roughness:o.r??.55,metalness:o.m??0,clearcoat:o.cc??.15,clearcoatRoughness:.4,sheen:o.sh??0,sheenColor:new THREE.Color(0xffffff),emissive:o.e??0,emissiveIntensity:o.ei??1,side:o.ds?THREE.DoubleSide:THREE.FrontSide,envMapIntensity:o.env??1});
 const T={skinA:tmat(0xf3c09c,{r:.6,cc:.05}),skinB:tmat(0x9a6440,{r:.6,cc:.05}),eye:tmat(0x111018,{r:.15,cc:1}),white:tmat(0xffffff,{e:0xffffff,ei:.6}),
