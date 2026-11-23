@@ -518,18 +518,18 @@ function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.ad
  front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
-const SLOT={g:V3(-.4,.28,1.05),a:V3(.4,.28,1.05)};
+const SLOT={g:V3(-.42,-.05,2.2),a:V3(.42,-.05,2.2)};
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking;
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  h.root.updateMatrixWorld(true);const hold=h.root.localToWorld(V3(.05,.24,.05));
+  h.root.updateMatrixWorld(true);const hold=h.root.localToWorld(V3(.06,.13,.1));
   const p=hold.clone().lerp(SLOT[key],c.u);p.y+=Math.sin(c.u*Math.PI)*.18;
   c.g.position.copy(p);c.g.lookAt(camera.position);
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
   c.inner.rotation.set(0,flip,sgn*.12*(1-c.u)+(res==='lose'?-sgn*.22*c.u:0));
-  const sc=lerp(.85,res==='win'?1.15+.04*pulse:res==='lose'?.92:1.05,c.u);c.g.scale.setScalar(sc);
+  const sc=lerp(.8,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
 
