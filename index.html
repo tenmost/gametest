@@ -210,7 +210,7 @@ const suitGlove=()=>({base:phys(0xf1f1f6,{r:.5,cc:.3}),acc:phys(0xff7618,{r:.38,
 
 /* ---------- geometry & helpers ---------- */
 const G={sph:new THREE.SphereGeometry(1,40,28),cyl:new THREE.CylinderGeometry(1,1,1,32),box:new THREE.BoxGeometry(1,1,1),
- tor:new THREE.TorusGeometry(1,.22,16,64).rotateX(Math.PI/2)};
+ tor:new THREE.TorusGeometry(1,.22,16,64).rotateX(Math.PI/2),torT:new THREE.TorusGeometry(1,.07,12,64).rotateX(Math.PI/2)};
 const capCache={};
 function cap(r,L){const k=r+'_'+L;return capCache[k]||(capCache[k]=new THREE.CapsuleGeometry(r,L,8,16).rotateZ(-Math.PI/2).translate(L/2,0,0))}
 function grp(p=[0,0,0],r=[0,0,0],s=[1,1,1]){const g=new THREE.Group();g.rotation.order='YZX';g.position.set(...p);g.rotation.set(...r);g.scale.set(...s);return g}
@@ -224,7 +224,7 @@ const POSES={
  scissors:{c:[.05,.05,1.62,1.55],s:[.3,-.16,-.03,-.07],tz:.25,ty:-1.25,tc:.55}};
 const cp=p=>JSON.parse(JSON.stringify(p));
 function buildHand(mats,mirror){
- const root=grp();const hand=put(root,grp([0,0,0],[0,0,0],[mirror?-1.2:1.2,1.2,1.2]));
+ const root=grp();const hand=put(root,grp([0,0,0],[0,0,0],[mirror?-.42:.42,.42,.42]));
  put(hand,mesh(G.sph,mats.base,[0,0,0],[.27,.31,.14]));
  put(hand,mesh(G.sph,mats.acc,[.05,0,-.08],[.2,.27,.07]));
  const fingers=[];
@@ -240,66 +240,125 @@ function applyPose(h){const P=h.pose;h.fingers.forEach(([j1,j2],i)=>{j1.rotation
 const lerp=(a,b,t)=>a+(b-a)*t;
 function blendPose(h,k){const T=POSES[h.target],P=h.pose;for(const key of['c','s'])for(let i=0;i<4;i++)P[key][i]=lerp(P[key][i],T[key][i],k);for(const key of['tz','ty','tc'])P[key]=lerp(P[key],T[key],k)}
 
-/* ---------- characters ---------- */
+/* ---------- characters: stylized toy figures (built in "metres", scaled up) ---------- */
+const CS=1.75, FLOOR=-2.6, UP=new THREE.Vector3(0,1,0);
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const tmat=(color,o={})=>new THREE.MeshPhysicalMaterial({color,roughness:o.r??.55,metalness:o.m??0,clearcoat:o.cc??.15,clearcoatRoughness:.4,sheen:o.sh??0,sheenColor:new THREE.Color(0xffffff),emissive:o.e??0,emissiveIntensity:o.ei??1,side:o.ds?THREE.DoubleSide:THREE.FrontSide,envMapIntensity:o.env??1});
+const T={skinA:tmat(0xf3c09c,{r:.6,cc:.05}),skinB:tmat(0x9a6440,{r:.6,cc:.05}),eye:tmat(0x111018,{r:.15,cc:1}),white:tmat(0xffffff,{e:0xffffff,ei:.6}),
+ brow:tmat(0x3a2414,{r:.7}),browB:tmat(0x1a1210,{r:.7}),mouth:tmat(0x5a1a22,{r:.6}),tongue:tmat(0xe06a78,{r:.6}),blush:new THREE.MeshBasicMaterial({color:0xff7090,transparent:true,opacity:.28,depthWrite:false}),
+ hair:tmat(0x7b3a16,{r:.45,cc:.3}),hairB:tmat(0x141014,{r:.5,cc:.2}),
+ jacket:tmat(0x7a2ad6,{r:.4,cc:.35,ds:true}),jacketIn:tmat(0x3a1470,{r:.7}),top:tmat(0x1c1824,{r:.5}),legging:tmat(0x241c36,{r:.6,sh:.4}),stripe:tmat(0xff4ae0,{e:0xff3ad8,ei:2.2}),
+ shoe:tmat(0xf2f2f6,{r:.45,cc:.3}),sole:tmat(0x7a2ad6,{r:.5}),strap:tmat(0x3a2a1c,{r:.6}),lens:tmat(0x5fe0ff,{r:.05,cc:1,e:0x1a8ac8,ei:1.8}),metal:tmat(0x9098a8,{r:.3,m:.85}),
+ suit:tmat(0xe9eaf0,{r:.55,cc:.25,sh:.3}),suitD:tmat(0xb4b8c4,{r:.5,m:.15}),orange:tmat(0xff7618,{r:.4,cc:.3}),boot:tmat(0x8e94a3,{r:.45,m:.2}),
+ glass:new THREE.MeshPhysicalMaterial({color:0xcfe8ff,roughness:0,metalness:0,transparent:true,opacity:.16,envMapIntensity:2.5,depthWrite:false,clearcoat:1}),
+ gold:tmat(0xd9a443,{r:.08,m:1,cc:1,env:2.2}),panel:tmat(0x2ab4ff,{e:0x28b0ff,ei:2.2}),red:tmat(0xff3040,{e:0xff2030,ei:2}),green:tmat(0x30ff80,{e:0x20ff70,ei:2})};
+function lathe(pts,open=0){return new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(r,y)),48,open/2,Math.PI*2-open)}
+const capGeo=(f)=>new THREE.SphereGeometry(1,40,20,0,Math.PI*2,0,Math.PI*f);
+const arcGeo=new THREE.TorusGeometry(.03,.0065,8,20,Math.PI);
+
+// world-space limb: open tapered tube + joint balls, re-posed every frame
+function limb(mat,rA,rB){const cyl=mesh(new THREE.CylinderGeometry(rB*CS,rA*CS,1,24,1,true),mat),a=mesh(G.sph,mat),b=mesh(G.sph,mat);scene.add(cyl,a,b);
+ return{set(A,B){const d=B.clone().sub(A),L=d.length()||1e-4;cyl.position.copy(A).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.divideScalar(L));cyl.scale.set(1,L,1);
+  a.position.copy(A);a.scale.setScalar(rA*CS);b.position.copy(B);b.scale.setScalar(rB*CS)}}}
+function ik(S,W,l1,l2,poleHint){const d=W.clone().sub(S);let L=d.length();const dir=d.divideScalar(L||1);L=Math.min(Math.max(L,Math.abs(l1-l2)+.01),l1+l2-.001);
+ const a=(l1*l1-l2*l2+L*L)/(2*L),h=Math.sqrt(Math.max(l1*l1-a*a,0));const pole=poleHint.clone().addScaledVector(dir,-poleHint.dot(dir)).normalize();
+ return S.clone().addScaledVector(dir,a).addScaledVector(pole,h)}
+
+function buildFace(head,skin,o){
+ const f={eyes:[],brows:[],head};
+ for(const s of[-1,1]){const e=put(head,grp([s*.045,.012,.112]));put(e,mesh(G.sph,T.eye,[0,0,0],[.019,.027,.012]));put(e,mesh(G.sph,T.white,[.007,.011,.01],[.006,.007,.004]));f.eyes.push(e);
+  const b=put(head,grp([s*.047,.056,.115],[0,0,0]));put(b,mesh(cap(.0065,.032),o.brow,[-.016,0,0]));f.brows.push(b);
+  put(head,mesh(G.sph,T.blush,[s*.072,-.035,.1],[.022,.013,.01]));
+  put(head,mesh(G.sph,skin,[s*.123,.0,0],[.02,.034,.024]))}
+ put(head,mesh(G.sph,skin,[0,-.022,.124],[.016,.02,.018]));
+ f.smile=put(head,mesh(arcGeo,T.mouth,[0,-.06,.114],[1,.85,1],[0,0,Math.PI]));
+ f.frown=put(head,mesh(arcGeo,T.mouth,[0,-.078,.112],[.8,.6,1]));f.frown.visible=false;
+ const open=put(head,grp([0,-.064,.108]));put(open,mesh(G.sph,T.mouth,[0,0,0],[.034,.026,.014]));put(open,mesh(G.sph,T.tongue,[0,-.012,.006],[.02,.01,.008]));f.open=open;open.visible=false;
+ f.blink=0;f.nextBlink=2+Math.random()*3;
+ return f}
+function setFace(f,expr,dt){
+ f.nextBlink-=dt;if(f.nextBlink<0){f.blink=.14;f.nextBlink=2.5+Math.random()*3.5}f.blink=Math.max(0,f.blink-dt);
+ const happy=expr==='win',sad=expr==='lose',focus=expr==='focus';
+ f.eyes.forEach(e=>e.scale.y=f.blink>0?.12:happy?.55:1);
+ f.brows.forEach((b,i)=>{const s=i?1:-1;b.rotation.z=s*(sad?-.35:focus?.35:happy?-.1:0);b.position.y=.056+(happy?.012:sad?.006:focus?-.006:0)});
+ f.smile.visible=!sad&&!happy;f.smile.scale.x=focus?.55:1;f.open.visible=happy;f.frown.visible=sad}
+
 function buildHero(){
- const root=grp(),body=put(root,grp()),S=G.sph;
- put(body,mesh(S,M.pants,[0,.25,0],[.55,.45,.36]));
- put(body,mesh(S,M.top,[0,1.0,.02],[.46,.72,.32]));
- put(body,mesh(S,M.jacket,[0,1.12,-.06],[.56,.7,.34]));
- for(const x of[-.2,.2])put(body,mesh(G.cyl,M.trim,[x,1.1,.27],[.022,1.05,.022],[-.12,0,x>0?-.12:.12]));
- put(body,mesh(G.tor,M.strap,[0,.45,0],[.5,.35,.33]));put(body,mesh(G.box,M.metal,[0,.45,.38],[.16,.12,.05]));
- for(const x of[-.56,.56]){put(body,mesh(S,M.jacket,[x,1.62,0],[.26,.22,.26]));put(body,mesh(S,M.trim,[x*1.08,1.66,.02],[.1,.025,.24]))}
- put(body,mesh(G.cyl,M.skin,[0,1.92,0],[.13,.3,.13]));
- const head=put(body,grp([0,2.32,.02]));
- put(head,mesh(S,M.skin,[0,0,0],[.35,.41,.37]));
- put(head,mesh(S,M.hair,[0,.1,-.06],[.39,.4,.38]));
- put(head,mesh(S,M.hair,[.05,.27,.16],[.3,.14,.22],[0,0,-.3]));
- put(head,mesh(S,M.hairD,[-.3,-.05,.08],[.1,.32,.18]));put(head,mesh(S,M.hairD,[.3,-.05,.08],[.1,.32,.18]));
- const tail=put(head,grp([0,.25,-.38],[.4,0,0]));put(tail,mesh(S,M.hair,[0,0,-.1],[.15,.15,.22]));put(tail,mesh(S,M.hair,[0,-.35,-.22],[.15,.42,.15],[-.3,0,0]));put(tail,mesh(S,M.hairD,[0,-.75,-.3],[.1,.25,.1],[-.2,0,0]));
- for(const x of[-.13,.13]){put(head,mesh(S,M.eye,[x,.02,.33],[.055,.07,.03]));put(head,mesh(S,M.cyan,[x*1.6,-.12,.28],[.07,.012,.02],[0,x>0?-.5:.5,-.2]))}
- put(head,mesh(S,M.lip,[0,-.2,.34],[.07,.022,.025]));
- put(head,mesh(G.tor,M.strap,[0,.2,0],[.37,.22,.37]));
- for(const x of[-.14,.14]){put(head,mesh(G.cyl,M.metal,[x,.26,.33],[.11,.1,.11],[Math.PI/2-.3,0,0]));put(head,mesh(G.cyl,M.lens,[x,.265,.37],[.085,.04,.085],[Math.PI/2-.3,0,0]))}
- put(body,mesh(S,M.jacket,[.62,1.25,.05],[.17,.4,.17],[0,0,-.12]));put(body,mesh(S,M.jacket,[.7,.75,.12],[.14,.35,.14],[.2,0,-.1]));put(body,mesh(S,M.top,[.72,.35,.2],[.14,.16,.12]));
- const shoulder=put(body,grp([-.56,1.58,.05]));
- return{root,body,head,shoulder,sleeve:M.jacket,band:M.trim,elbow:M.jacketD};
+ const root=grp(),body=put(root,grp()),M2=T;
+ // legs are world limbs; shoes live in root
+ for(const s of[-1,1]){put(root,mesh(G.sph,M2.shoe,[s*.12,.055,.035],[.06,.055,.12]));put(root,mesh(G.cyl,M2.sole,[s*.12,.018,.035],[.062,.03,.115]));put(root,mesh(G.tor,M2.stripe,[s*.12,.09,.02],[.052,.25,.07]))}
+ put(body,mesh(lathe([[.0,.86],[.13,.88],[.15,.95],[.14,1.05],[.125,1.12],[.0,1.13]]),M2.legging,[0,0,0],[1,1,.78]));
+ put(body,mesh(lathe([[.0,1.1],[.118,1.11],[.13,1.2],[.15,1.32],[.155,1.42],[.11,1.5],[.04,1.53]]),M2.top,[0,0,0],[1,1,.72]));
+ put(body,mesh(lathe([[.13,1.16],[.142,1.2],[.162,1.32],[.168,1.42],[.125,1.5],[.06,1.535]],.9),M2.jacket,[0,0,0],[1,1,.76]));
+ put(body,mesh(G.tor,M2.jacket,[0,1.515,0],[.07,.3,.06]));
+ for(const s of[-1,1])put(body,mesh(G.cyl,M2.stripe,[s*.055,1.33,.118],[.006,.34,.006],[-.12,0,s*.08]));
+ put(body,mesh(G.cyl,T.skinA,[0,1.56,0],[.042,.09,.042]));
+ const head=put(body,grp([0,1.69,.005]));
+ put(head,mesh(G.sph,T.skinA,[0,0,0],[.118,.132,.122]));put(head,mesh(G.sph,T.skinA,[0,-.045,.012],[.095,.09,.1]));
+ // hair
+ put(head,mesh(capGeo(.56),M2.hair,[0,.012,-.012],[.13,.145,.134],[-.32,0,0]));
+ put(head,mesh(G.sph,M2.hair,[0,-.005,-.035],[.124,.12,.112]));
+ for(const s of[-1,1]){put(head,mesh(G.sph,M2.hair,[s*.06,.088,.085],[.06,.024,.035],[0,0,s*.45]));put(head,mesh(G.sph,M2.hair,[s*.112,-.02,.03],[.022,.075,.045]))}
+ const pony=put(head,grp([0,.1,-.11],[.55,0,0]));put(pony,mesh(G.tor,M2.stripe,[0,0,0],[.026,.4,.026]));put(pony,mesh(G.sph,M2.hair,[0,-.07,-.02],[.045,.085,.045],[.2,0,0]));put(pony,mesh(G.sph,M2.hair,[0,-.18,-.01],[.038,.08,.038],[-.15,0,0]));put(pony,mesh(G.sph,M2.hair,[0,-.27,.02],[.026,.05,.026]));
+ const gog=put(head,grp([0,.085,0],[-.25,0,0]));put(gog,mesh(G.torT,M2.strap,[0,0,0],[.131,.3,.131]));
+ for(const s of[-1,1]){put(gog,mesh(G.cyl,M2.metal,[s*.045,.012,.122],[.03,.028,.03],[Math.PI/2-.4,0,0]));put(gog,mesh(G.cyl,M2.lens,[s*.045,.014,.133],[.023,.012,.023],[Math.PI/2-.4,0,0]))}
+ const face=buildFace(head,T.skinA,{brow:T.brow});
+ return{root,body,head,face,glove:gloveMat(),skin:T.skinA,
+  legs:{mat:M2.legging,r:[.068,.055,.05,.04],hip:.085,knee:[.1,.49,.02],ankle:[.12,.1,0]},
+  sleeve:M2.jacket,cuff:M2.stripe,armR:[.048,.04,.038,.032],lead:V3(-.165,1.43,.0),off:V3(.165,1.43,0),offHand:M2.top};
 }
 function buildAstro(){
- const root=grp(),body=put(root,grp()),S=G.sph;
- put(body,mesh(S,M.suit,[0,.25,0],[.62,.48,.42]));
- put(body,mesh(S,M.suit,[0,1.05,0],[.62,.78,.44]));
- put(body,mesh(G.box,M.suitD,[0,1.15,-.45],[.95,1.1,.42]));put(body,mesh(G.cyl,M.metal,[-.3,1.2,-.68],[.1,.9,.1]));put(body,mesh(G.cyl,M.metal,[.3,1.2,-.68],[.1,.9,.1]));
- put(body,mesh(G.box,M.metal,[0,1.12,.4],[.42,.34,.12]));put(body,mesh(G.box,M.panel,[0,1.12,.465],[.32,.24,.02]));
- put(body,mesh(G.tor,M.orange,[0,.62,0],[.6,.6,.43]));
- for(const x of[-.64,.64]){put(body,mesh(S,M.suit,[x,1.6,0],[.32,.28,.32]));put(body,mesh(G.tor,M.orange,[x,1.45,0],[.3,.5,.3]))}
- put(body,mesh(G.cyl,M.badge,[.68,1.72,.18],[.15,.03,.15],[1.1,0,-.5]));put(body,mesh(S,M.star,[.71,1.74,.22],[.08,.08,.02],[0,.5,0]));
- put(body,mesh(G.tor,M.orange,[0,1.9,0],[.42,.6,.42]));
- const head=put(body,grp([0,2.4,0]));
- put(head,mesh(S,M.suit,[0,0,0],[.6,.6,.6]));
- put(head,mesh(S,M.visor,[0,-.02,.22],[.48,.42,.42]));
- put(head,mesh(G.tor,M.orange,[0,-.02,.24],[.47,.42,.45],[Math.PI/2+.25,0,0]));
- put(head,mesh(G.cyl,M.metal,[.6,.05,0],[.14,.12,.14],[0,0,Math.PI/2]));put(head,mesh(G.cyl,M.metal,[-.6,.05,0],[.14,.12,.14],[0,0,Math.PI/2]));
- put(head,mesh(S,M.cyan,[.68,.05,0],[.03,.07,.07]));
- put(body,mesh(S,M.suit,[-.72,1.25,.05],[.2,.42,.2],[0,0,.12]));put(body,mesh(G.tor,M.orange,[-.75,.95,.08],[.18,.5,.18]));put(body,mesh(S,M.suit,[-.78,.7,.12],[.17,.35,.17],[.2,0,.1]));put(body,mesh(S,M.suit,[-.8,.3,.2],[.16,.17,.14]));
- const shoulder=put(body,grp([.62,1.55,.08]));
- return{root,body,head,shoulder,sleeve:M.suit,band:M.orange,elbow:M.orange};
+ const root=grp(),body=put(root,grp()),M2=T;
+ for(const s of[-1,1]){put(root,mesh(G.sph,M2.boot,[s*.13,.065,.04],[.075,.068,.135]));put(root,mesh(G.cyl,M2.orange,[s*.13,.02,.04],[.078,.035,.13]));put(root,mesh(G.cyl,M2.suitD,[s*.13,.13,.0],[.068,.08,.068]))}
+ put(body,mesh(lathe([[.0,.84],[.15,.86],[.175,.95],[.17,1.06],[.15,1.12],[.0,1.13]]),M2.suit,[0,0,0],[1,1,.8]));
+ put(body,mesh(lathe([[.0,1.08],[.155,1.09],[.17,1.2],[.19,1.32],[.19,1.42],[.14,1.5],[.05,1.54]]),M2.suit,[0,0,0],[1,1,.78]));
+ put(body,mesh(G.tor,M2.orange,[0,1.08,0],[.16,.35,.126]));
+ put(body,mesh(G.box,M2.suitD,[0,1.3,.135],[.13,.1,.04]));put(body,mesh(G.box,M2.panel,[-.025,1.31,.156],[.06,.05,.005]));
+ put(body,mesh(G.sph,M2.red,[.04,1.322,.157],[.009,.009,.006]));put(body,mesh(G.sph,M2.green,[.04,1.297,.157],[.009,.009,.006]));
+ for(const s of[-1,1])put(body,mesh(G.cyl,M2.orange,[s*.1,1.3,.12],[.012,.32,.012],[-.1,0,s*-.05]));
+ put(body,mesh(G.sph,M2.suitD,[0,1.3,-.16],[.16,.2,.08]));for(const s of[-1,1])put(body,mesh(G.cyl,M2.metal,[s*.07,1.3,-.215],[.04,.34,.04]));
+ put(body,mesh(G.torT,M2.orange,[0,1.53,0],[.1,.6,.09]));
+ const head=put(body,grp([0,1.7,.005]));
+ put(head,mesh(G.sph,T.skinB,[0,0,0],[.112,.126,.116]));put(head,mesh(G.sph,T.skinB,[0,-.042,.012],[.09,.086,.096]));
+ put(head,mesh(capGeo(.5),M2.hairB,[0,.01,-.006],[.12,.136,.124],[-.2,0,0]));put(head,mesh(G.sph,M2.hairB,[0,0,-.03],[.115,.115,.105]));
+ const face=buildFace(head,T.skinB,{brow:T.browB});
+ const helm=put(body,grp([0,1.71,.005]));
+ put(helm,mesh(G.torT,M2.suit,[0,-.185,0],[.19,.5,.19]));
+ const glass=put(helm,mesh(G.sph,T.glass,[0,.0,0],[.205,.205,.205]));glass.castShadow=false;glass.renderOrder=5;
+ put(helm,mesh(capGeo(.32),M2.gold,[0,0,0],[.212,.212,.212],[-.55,0,0]));
+ put(helm,mesh(G.cyl,M2.suitD,[.2,.02,0],[.035,.04,.035],[0,0,Math.PI/2]));put(helm,mesh(G.cyl,M2.metal,[.215,.13,0],[.006,.2,.006]));put(helm,mesh(G.sph,M2.panel,[.215,.235,0],[.016,.016,.016]));
+ return{root,body,head,face,glove:suitGlove(),skin:T.skinB,
+  legs:{mat:M2.suit,r:[.082,.07,.066,.058],hip:.09,knee:[.11,.5,.03],ankle:[.13,.13,0]},
+  sleeve:M2.suit,cuff:M2.orange,armR:[.06,.052,.05,.044],lead:V3(.18,1.43,0),off:V3(-.18,1.43,0),offHand:M2.suit};
 }
-const UP=new THREE.Vector3(0,1,0);
-function makeArm(ch){const a={sh:mesh(G.sph,ch.sleeve),up:mesh(G.cyl,ch.sleeve),el:mesh(G.sph,ch.elbow),fo:mesh(G.cyl,ch.sleeve),bd:mesh(G.cyl,ch.band)};Object.values(a).forEach(m=>scene.add(m));return a}
-function seg(m,A,B,r){const d=new THREE.Vector3().subVectors(B,A),L=d.length();m.position.copy(A).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(UP,d.normalize());m.scale.set(r,L,r)}
-function poseArm(arm,ch,h,side){
- const S=ch.shoulder.getWorldPosition(new THREE.Vector3()),W=h.hand.localToWorld(new THREE.Vector3(-.38,0,0));
- const E=S.clone().lerp(W,.5).add(new THREE.Vector3(side*-.05,-.42,-.25));
- arm.sh.position.copy(S);arm.sh.scale.setScalar(.24);seg(arm.up,S,E,.19);arm.el.position.copy(E);arm.el.scale.setScalar(.19);
- seg(arm.fo,E,W,.16);seg(arm.bd,E.clone().lerp(W,.72),E.clone().lerp(W,.85),.175)}
+function rigLimbs(c){c.L={legL1:limb(c.legs.mat,c.legs.r[0],c.legs.r[1]),legL2:limb(c.legs.mat,c.legs.r[1],c.legs.r[3]),legR1:limb(c.legs.mat,c.legs.r[0],c.legs.r[1]),legR2:limb(c.legs.mat,c.legs.r[1],c.legs.r[3]),
+ a1:limb(c.sleeve,c.armR[0],c.armR[1]),a2:limb(c.sleeve,c.armR[1],c.armR[3]),o1:limb(c.sleeve,c.armR[0],c.armR[1]),o2:limb(c.sleeve,c.armR[1],c.armR[3])};
+ c.cuffM=mesh(G.cyl,c.cuff);c.offFist=mesh(G.sph,c.glove.base);c.offCuff=mesh(G.cyl,c.cuff);scene.add(c.cuffM,c.offFist,c.offCuff);c.cheer=0}
+const OFF={hip:{e:[.29,1.2,-.04],w:[.19,1.0,.05]},cheer:{e:[.3,1.62,.03],w:[.27,1.92,.08]},sad:{e:[.22,1.15,.02],w:[.21,.9,.04]}};
+function poseFigure(c,h,side){
+ const R=c.root,B=c.body,toW=(o,p)=>o.localToWorld(V3(...p));
+ // legs (in root space)
+ for(const s of[-1,1]){const hip=toW(R,[s*c.legs.hip,.9,0]),knee=toW(R,[s*c.legs.knee[0],c.legs.knee[1],c.legs.knee[2]]),ank=toW(R,[s*c.legs.ankle[0],c.legs.ankle[1],c.legs.ankle[2]]);
+  c.L[s<0?'legL1':'legR1'].set(hip,knee);c.L[s<0?'legL2':'legR2'].set(knee,ank)}
+ // leading arm: IK from shoulder to the floating hand
+ const S=B.localToWorld(c.lead.clone()),W=h.hand.localToWorld(V3(-.42,0,0));
+ const out=S.clone().sub(B.localToWorld(V3(0,1.43,0))).normalize();const pole=V3(0,-1,0).addScaledVector(out,.8);
+ const l1=.33*CS,l2=.31*CS,E=ik(S,W,l1,l2,pole);c.L.a1.set(S,E);c.L.a2.set(E,W);
+ const cd=W.clone().sub(E).normalize();c.cuffM.position.copy(W).addScaledVector(cd,-.03);c.cuffM.quaternion.setFromUnitVectors(UP,cd);c.cuffM.scale.set(c.armR[3]*CS*1.25,.07,c.armR[3]*CS*1.25);
+ // off arm: hand on hip / cheering / sad
+ const ox=Math.sign(c.off.x),mix=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t));
+ let e=OFF.hip.e,w=OFF.hip.w;if(c.cheer>0){e=mix(e,OFF.cheer.e,c.cheer);w=mix(w,OFF.cheer.w,c.cheer)}if(c.sadT>0){e=mix(e,OFF.sad.e,c.sadT);w=mix(w,OFF.sad.w,c.sadT)}
+ const oS=B.localToWorld(c.off.clone()),oE=toW(B,[ox*e[0],e[1],e[2]]),oW=toW(B,[ox*w[0],w[1],w[2]]);
+ c.L.o1.set(oS,oE);c.L.o2.set(oE,oW);
+ const od=oW.clone().sub(oE).normalize();c.offFist.position.copy(oW).addScaledVector(od,.05);c.offFist.scale.setScalar(.058*CS);
+ c.offCuff.position.copy(oW);c.offCuff.quaternion.setFromUnitVectors(UP,od);c.offCuff.scale.set(c.armR[3]*CS*1.25,.07,c.armR[3]*CS*1.25)}
 
 const hero=buildHero(),astro=buildAstro();
-hero.root.position.set(-2.75,-1.05,-.3);hero.root.rotation.y=.95;
-astro.root.position.set(2.8,-1.05,-.3);astro.root.rotation.y=-.95;
-scene.add(hero.root,astro.root);
-const HG=buildHand(gloveMat(),false),HA=buildHand(suitGlove(),true);
+hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale.setScalar(CS);
+astro.root.position.set(1.3,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
+scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
+const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
 scene.add(HG.root,HA.root);
-const armG=makeArm(hero),armA=makeArm(astro);
 HG.target=ST0.g;HA.target=ST0.a;HG.pose=cp(POSES[ST0.g]);HA.pose=cp(POSES[ST0.a]);
 
 /* ---------- environment ---------- */
@@ -323,7 +382,7 @@ const earthTex=equirect(1024,512,(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];const c=f
  let r=lerp(lerp(5,15,o),lerp(36,128,l),land),g=lerp(lerp(26,82,o),lerp(92,102,l),land),b=lerp(lerp(82,158,o),lerp(30,56,l),land);
  return[lerp(r,235,polar),lerp(g,240,polar),lerp(b,250,polar)]});
 const cloudTex=equirect(1024,512,(x,y,z)=>{const c=sstep(.5,.75,fbm(x*4,y*4,z*4,5));return[255,255,255,c*235]});
-const earth=new THREE.Group();earth.position.set(0,-31,-9);scene.add(earth);
+const earth=new THREE.Group();earth.position.set(0,-29.6,-9);scene.add(earth);
 const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial({map:earthTex,roughness:.75,metalness:0}));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
 const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
 const atmoMat=(col,pow,k)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{c:{value:new THREE.Color(col)}},
@@ -373,37 +432,39 @@ function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
  st.revT+=dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
- const base={g:[-.85,.72,1.15],a:[.85,.72,1.15]};const pulse=.6+.4*Math.sin(TIME*6);
+ const base={g:[-.42,-.12,.55],a:[.42,-.12,.55]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
-  p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.05;
-  if(st.shaking){const up=Math.abs(Math.sin((TIME-st.shakeT0)/.7*Math.PI));p[1]+=up*.55;p[0]-=sgn*up*.15;rz+=up*.55}
+  p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
+  if(st.shaking){const up=Math.abs(Math.sin((TIME-st.shakeT0)/.7*Math.PI));p[1]+=up*.4;p[0]-=sgn*up*.12;rz+=up*.55}
   const res=st.res&&!st.shaking?st.res[key]:null;
   if(res){const t=Math.min(st.revT/.25,1),pop=Math.sin(t*Math.PI)*.25,q=Math.min(st.revT*4,1);
-   if(res==='win'){p[0]+=sgn*(.12+pop);p[1]+=.05}
-   else if(res==='lose'){p[0]-=sgn*.25*q;p[1]-=.08;rz-=.25*q;p[1]+=Math.sin(st.revT*40)*.04*Math.max(0,1-st.revT*1.5)}
-   else p[0]+=sgn*pop*.6}
+   if(res==='win'){p[0]+=sgn*(.06+pop*.5);p[1]+=.04}
+   else if(res==='lose'){p[0]-=sgn*.15*q;p[1]-=.08;rz-=.25*q;p[1]+=Math.sin(st.revT*40)*.04*Math.max(0,1-st.revT*1.5)}
+   else p[0]+=sgn*pop*.3}
   setGlow(h,res,pulse);
   h.root.position.set(...p);h.root.rotation.set(0,sgn*.25,sgn*rz);
  }
  const anyRes=st.res&&!st.shaking;
  clashLight.intensity=anyRes?Math.max(0,6*(1-st.revT*.5))*pulse:0;
  if(anyRes)clashLight.color.copy(st.res.g==='win'?GLOW.win:st.res.a==='win'?GLOW.lose:GLOW.tie);
- for(const[c,sgn,ph]of[[hero,1,0],[astro,-1,1.3]]){const br=Math.sin(TIME*1.6+ph);c.body.position.set(0,br*.03,0);c.body.rotation.set(0,0,sgn*.03*br);
-  const sh=st.shaking?Math.abs(Math.sin((TIME-st.shakeT0)/.7*Math.PI))*.08:0;
-  c.head.rotation.set(Math.sin(TIME*.9+ph)*.04+sh,sgn*(.15+st.smx*.1*sgn),0);
-  const res=anyRes?st.res[sgn>0?'g':'a']:null;
-  if(res==='lose'){const q=Math.min(st.revT*3,1);c.body.rotation.z-=sgn*.08*q;c.body.position.x=-sgn*.15*q}
-  if(res==='win')c.body.position.y+=Math.abs(Math.sin(st.revT*7))*.08*Math.max(0,1-st.revT*.6)}
+ for(const[c,sgn,ph,key]of[[hero,1,0,'g'],[astro,-1,1.3,'a']]){const br=Math.sin(TIME*1.6+ph);
+  const res=anyRes?st.res[key]:null,q=Math.min(st.revT*3,1);
+  c.body.position.set(0,br*.004,0);c.body.rotation.set(st.shaking?.05:0,0,sgn*.012*br);
+  c.root.position.y=FLOOR;c.cheer=lerp(c.cheer,res==='win'?1:0,1-Math.exp(-dt*8));c.sadT=lerp(c.sadT||0,res==='lose'?1:0,1-Math.exp(-dt*6));
+  if(res==='win')c.root.position.y=FLOOR+Math.abs(Math.sin(st.revT*6))*.22*Math.max(0,1-st.revT*.55);
+  if(res==='lose')c.body.rotation.x=-.07*q;
+  c.head.rotation.set((res==='lose'?.3*q:st.shaking?.08:0)+Math.sin(TIME*.9+ph)*.03,-sgn*.5+st.smx*.15,0);
+  setFace(c.face,res==='win'?'win':res==='lose'?'lose':st.shaking?'focus':'idle',dt)}
  earthM.rotation.y=TIME*.02;clouds.rotation.y=TIME*.028;giantM.rotation.y=TIME*.05;nebula.material.uniforms.uT.value=TIME;
  rocks.forEach(r=>{r.m.rotation.set(TIME*r.sp[0]+r.ph,TIME*r.sp[1],TIME*r.sp[2]);r.m.position.y=r.base[1]+Math.sin(TIME*.5+r.ph)*.3});
  let n=0;for(let i=plist.length-1;i>=0;i--){const q=plist[i];q.age+=dt;if(q.age>q.life){plist.splice(i,1);continue}q.v.y-=dt*1.2;q.v.multiplyScalar(Math.exp(-dt*1.5));q.p.addScaledVector(q.v,dt)}
  for(const q of plist){const f=1-q.age/q.life;pPos.set([q.p.x,q.p.y,q.p.z],n*3);pCol.set(q.c.map(v=>v*f),n*3);n++}
  pGeo.setDrawRange(0,n);pGeo.attributes.position.needsUpdate=pGeo.attributes.color.needsUpdate=true;
- const tf=anyRes&&st.revT<1.5?36:st.shaking?39:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
- const s=st.camShake;camera.position.set(st.smx*.9+(Math.random()-.5)*s,1.35-st.smy*.45+(Math.random()-.5)*s,8);camera.lookAt(st.smx*.15,.75,0);
+ const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
+ const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
- scene.updateMatrixWorld();poseArm(armG,hero,HG,1);poseArm(armA,astro,HA,-1);
+ scene.updateMatrixWorld();poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
 }
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
