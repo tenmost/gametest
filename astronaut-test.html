@@ -464,10 +464,10 @@ async function addSideModel(url,side){
  const holder=new THREE.Group(),root=gltf.scene;holder.add(root);
  const initial=new THREE.Box3().setFromObject(root),size=initial.getSize(new THREE.Vector3());
  if(size.y<.001)throw new Error('Invalid GLB dimensions: '+url);
- root.scale.setScalar(2.25/size.y);
+ root.scale.setScalar(2.85/size.y);
  const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3());
  root.position.set(-center.x,-box.min.y,-center.z);
- holder.position.set(side==='left'?-2.22:2.22,FLOOR,-.35);
+ holder.position.set(side==='left'?-2.28:2.28,FLOOR+1.15,.45);
  holder.rotation.y=side==='left'?.35:-.35;
  scene.add(holder);
  root.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;obj.frustumCulled=false}});
@@ -585,19 +585,19 @@ function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.ad
  front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
-const SLOT={g:V3(-.42,-.05,2.2),a:V3(.42,-.05,2.2)};
+const SLOT={g:V3(-.66,-.48,2.65),a:V3(.66,-.48,2.65)};
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking;
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  const head=key==='g'?(HS?HS.B.Head:hero.head):astro.head;const hold=head.getWorldPosition(V3(0,0,0)).add(V3(0,(key==='g'?RIG.cardAbove[0]:RIG.cardAbove[1])+Math.sin(TIME*2.5+sgn)*.05,.2));
+  const hold=V3(key==='g'?-1.00:1.00,-.42+Math.sin(TIME*2.5+sgn)*.035,2.7);
   const p=hold.clone().lerp(SLOT[key],c.u);p.y+=Math.sin(c.u*Math.PI)*.18;
   c.g.position.copy(p);c.g.lookAt(camera.position);
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
   const wob=(st.shaking?Math.sin(TIME*9+sgn)*.18:Math.sin(TIME*1.5+sgn)*.06)*(1-c.u);
   c.inner.rotation.set(0,flip+wob*.6,wob+(res==='lose'?-sgn*.22*c.u:0));
-  const sc=lerp(.8,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
+  const sc=lerp(1.65,res==='win'?2.05+.04*pulse:res==='lose'?1.55:1.85,c.u);c.g.scale.setScalar(sc);
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
 
