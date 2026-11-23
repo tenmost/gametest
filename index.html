@@ -597,11 +597,11 @@ function poseSkinned(R,h,dt){
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 const CHARS=[
  {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=5',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice'],win:'Victory_Cheer',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
- {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=2',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
+ {key:'azure',name:'AZURE WANDERER',url:'assets/azure_wanderer_punch.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
  {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}},
  {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
-const POS={g:{p:[-1.75,FLOOR,-.25],r:.75},a:{p:[1.8,FLOOR,-.25],r:-.75}};
+const POS={g:{p:[-2.35,FLOOR+.12,.35],r:.38},a:{p:[2.35,FLOOR+.12,.35],r:-.38}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
 const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,playable:!c.opponentOnly}));
 function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
@@ -614,7 +614,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1.18);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice},a:{name:opp.name,voice:opp.voice}}}
 for(const c of CHARS)if(!c.proc)loadSkinned(c.url,{height:3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
@@ -813,7 +813,7 @@ function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.ad
  front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
-const SLOT={g:V3(-.42,-.05,2.2),a:V3(.42,-.05,2.2)};
+const SLOT={g:V3(-.42,-.56,2.2),a:V3(.42,-.56,2.2)};
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking;
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
@@ -862,7 +862,7 @@ function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
  st.revT+=dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
- const base={g:[-1.2,-.33,.45],a:[1.2,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
+ const base={g:[-1.2,-.86,.45],a:[1.2,-.86,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
