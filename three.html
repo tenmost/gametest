@@ -160,24 +160,24 @@ const cv=document.getElementById('gl'), stage=document.getElementById('stage');
 /* ---------- renderer ---------- */
 const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(42,16/9,.1,400);
 const pmrem=new THREE.PMREMGenerator(renderer);
-scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;scene.environmentIntensity=.45;
+scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;scene.environmentIntensity=.3;
 
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
-const bloom=new UnrealBloomPass(new THREE.Vector2(960,540),.75,.55,.86);composer.addPass(bloom);
+const bloom=new UnrealBloomPass(new THREE.Vector2(960,540),.45,.35,1.0);composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 /* ---------- lights ---------- */
-scene.add(new THREE.HemisphereLight(0x7a80ff,0x2a0c3a,.9));
-const key=new THREE.DirectionalLight(0xfff1e0,2.6);key.position.set(-4,7,7);key.castShadow=true;
+scene.add(new THREE.HemisphereLight(0x7a80ff,0x2a0c3a,.6));
+const key=new THREE.DirectionalLight(0xfff1e0,2.0);key.position.set(-4,7,7);key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-5,right:5,top:5,bottom:-4,near:1,far:25});key.shadow.bias=-.0005;key.shadow.normalBias=.02;scene.add(key);
-const rimP=new THREE.DirectionalLight(0xb060ff,2.2);rimP.position.set(-7,2,-5);scene.add(rimP);
-const rimC=new THREE.DirectionalLight(0x3fa8ff,2.0);rimC.position.set(7,3,-4);scene.add(rimC);
+const rimP=new THREE.DirectionalLight(0xb060ff,1.6);rimP.position.set(-7,2,-5);scene.add(rimP);
+const rimC=new THREE.DirectionalLight(0x3fa8ff,1.5);rimC.position.set(7,3,-4);scene.add(rimC);
 const fill=new THREE.DirectionalLight(0x8090ff,.5);fill.position.set(0,-3,6);scene.add(fill);
 const clashLight=new THREE.PointLight(0xffffff,0,6,1.5);clashLight.position.set(0,.9,1.6);scene.add(clashLight);
 
@@ -202,7 +202,7 @@ const M={skin:std(0xf7c2a0,{r:.62}),hair:std(0x8a4419,{r:.42}),hairD:std(0x5e2b0
  jacket:phys(0x7a2ad6,{r:.32,cc:.4}),jacketD:std(0x48188c,{r:.5}),top:std(0x18141f,{r:.35}),pants:std(0x231a33,{r:.6}),
  trim:std(0xff4ae0,{e:0xff3ad8,ei:2.4}),cyan:std(0x40d0ff,{e:0x30c0ff,ei:2.2}),eye:phys(0x0d1430,{r:.1,cc:1}),lip:std(0xd8607a,{r:.5}),
  strap:std(0x3a2a1c,{r:.6}),lens:phys(0x5fe0ff,{r:.05,cc:1,e:0x1a8ac8,ei:1.6}),
- suit:phys(0xeeeef4,{r:.48,cc:.35}),suitD:std(0x9ca1ae,{r:.5,m:.2}),orange:phys(0xff7618,{r:.38,cc:.3}),
+ suit:phys(0xd8d9e2,{r:.5,cc:.3}),suitD:std(0x9ca1ae,{r:.5,m:.2}),orange:phys(0xff7618,{r:.38,cc:.3}),
  visor:phys(0xd9a443,{r:.06,m:1,cc:1,env:2.2}),metal:std(0x8d95a6,{r:.3,m:.85}),panel:std(0x2ab4ff,{e:0x28b0ff,ei:2.2}),
  star:std(0xffc23a,{e:0xffa000,ei:.8}),badge:std(0x213a8c,{r:.4}),rock:std(0x6a6066,{r:.95,flat:true})};
 const gloveMat=()=>({base:phys(0x27242e,{r:.38,cc:.5}),acc:phys(0x5a3494,{r:.4,cc:.3})});
@@ -329,7 +329,7 @@ const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.Mes
 const atmoMat=(col,pow,k)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{c:{value:new THREE.Color(col)}},
  vertexShader:`varying vec3 vN,vV;void main(){vec4 w=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-w.xyz);gl_Position=projectionMatrix*w;}`,
  fragmentShader:`varying vec3 vN,vV;uniform vec3 c;void main(){float f=pow(clamp(1.-abs(dot(vN,vV)),0.,1.),${pow.toFixed(1)});float a=smoothstep(0.,.35,abs(dot(vN,vV)));gl_FragColor=vec4(c*f*${k.toFixed(2)}*a,1.);}`});
-earth.add(new THREE.Mesh(new THREE.SphereGeometry(29,96,64),atmoMat(0x4aa0ff,1.2,2.2)));
+earth.add(new THREE.Mesh(new THREE.SphereGeometry(29,96,64),atmoMat(0x4aa0ff,1.6,1.1)));
 
 const giantTex=equirect(512,256,(x,y,z)=>{const b=y*10+fbm(x*2.5,y*2.5,z*2.5,4)*3,t=.5+.5*Math.sin(b),s=sstep(.6,.9,fbm(x*4,y*4,z*4,3))*.4;
  return[lerp(lerp(115,250,t),75,s),lerp(lerp(70,158,t),128,s),lerp(lerp(184,200,t),242,s)]});
@@ -409,5 +409,5 @@ function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;cons
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
 let last=performance.now();
 renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
-API.ready=true;document.getElementById('nogl').style.display='none';
+API.ready=true;window.__dbg={THREE,scene,renderer,bloom,M,key,rimP,rimC,camera,st,earth,nebula};document.getElementById('nogl').style.display='none';
 </script></html>
