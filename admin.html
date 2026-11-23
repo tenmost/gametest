@@ -113,7 +113,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <p class="muted">Sign in with your tenmost.com admin account.</p>
     <label>Email</label><input id="em" type="email" autocomplete="username">
     <label>Password</label><input id="pw" type="password" autocomplete="current-password">
-    <div class="row" style="margin-top:14px"><button id="doLogin">Sign in</button><button class="ghost" id="doReset">Forgot password</button></div>
+    <div class="row" style="margin-top:14px"><button id="doLogin">Sign in</button><button class="ghost" id="doSignup">Create account</button><button class="ghost" id="doReset">Forgot password</button></div>
     <div id="loginMsg"></div>
   </section>
 
@@ -198,6 +198,12 @@ function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classLis
 $('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
   const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
   if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=error.message;return}checkAdmin()};
+$('doSignup').onclick=async()=>{const em=$('em').value.trim(),pw=$('pw').value;const m=$('loginMsg');
+  if(!em||pw.length<8){m.style.color='var(--bad)';m.textContent='Enter your email and a password of at least 8 characters.';return}
+  const {data,error}=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}});
+  if(error){m.style.color='var(--bad)';m.textContent=error.message;return}
+  if(data.session){checkAdmin();return}
+  m.style.color='var(--ok)';m.textContent='Account created — open the confirmation email, then sign in here.'};
 $('pw').onkeydown=e=>{if(e.key==='Enter')$('doLogin').click()};
 $('doReset').onclick=async()=>{const em=$('em').value.trim();if(!em){$('loginMsg').textContent='Type your email first.';return}
   const {error}=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]});
