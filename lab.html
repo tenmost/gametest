@@ -948,6 +948,6 @@ function update(dt){
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
  if(cur.x!==w||cur.y!==h){renderer.setSize(w,h,false);composer.setSize(w,h);composer.setPixelRatio(renderer.getPixelRatio())}camera.aspect=w/h;camera.updateProjectionMatrix()}
 let last=performance.now();
-renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
+window.__dbg={st,CARD,SHARDS};renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
 API.ready=true;document.getElementById('nogl').style.display='none';
 </script></html>
