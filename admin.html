@@ -100,7 +100,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 <body>
 <header>
   <h1>SPACE DUEL <span>ADMIN</span></h1>
-  <nav id="tabs" class="hidden"><button data-t="chars" class="on">🧑‍🚀 Characters</button><button data-t="stats">📊 Statistics</button></nav>
+  <nav id="tabs" class="hidden"><button data-t="chars" class="on">🧑‍🚀 Characters</button><button data-t="stats">📊 Statistics</button><button data-t="admins" id="tabAdmins" class="hidden">🔑 Admins</button></nav>
   <div class="sp"></div>
   <span id="who"></span>
   <a href="./" target="_blank"><button class="ghost">▶ Game</button></a>
@@ -138,6 +138,14 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div class="card" style="margin-top:14px"><h2>Most used characters</h2><div id="charStats"></div></div>
     <div class="card" style="margin-top:14px"><h2>Rounds per day</h2><div id="daily"></div></div>
+  </section>
+  <section id="pAdmins" class="hidden">
+    <div class="row"><h2 style="margin:0">Game admins</h2><span class="muted" style="font-size:12px">They can manage characters and see statistics — not tenmost.com admin.</span></div>
+    <div class="card" style="margin-top:14px">
+      <div class="row" style="gap:8px;flex-wrap:nowrap"><input id="newAdmin" type="email" placeholder="email@example.com"><button id="addAdmin" style="white-space:nowrap">＋ Add admin</button></div>
+      <div id="admMsg" style="min-height:18px;font-size:13px;margin-top:8px"></div>
+      <div id="admins"></div>
+    </div>
   </section>
 </main>
 
@@ -192,15 +200,16 @@ async function checkAdmin(){
   if(error||!isAdmin){showLogin('This account is not an admin.');await SB.auth.signOut({scope:'local'});return}
   $('who').textContent=session.user.email;
   $('login').classList.add('hidden');$('tabs').classList.remove('hidden');$('logout').classList.remove('hidden');
-  showTab(location.hash==='#stats'?'stats':'chars');
+  const {data:owner}=await SB.rpc('sd_is_owner');IS_OWNER=!!owner;$('tabAdmins').classList.toggle('hidden',!IS_OWNER);
+  const h=location.hash.slice(1);showTab(h==='stats'||(h==='admins'&&IS_OWNER)?h:'chars');
 }
-function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
+function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('pAdmins').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
 $('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
   const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
   if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=/invalid login/i.test(error.message)?'Wrong email or password. New admin? Press “Create account” first (same email + your new password), then confirm the email.':/not confirmed/i.test(error.message)?'Please open the confirmation email first, then sign in.':error.message;return}checkAdmin()};
 $('doLink').onclick=async()=>{const em=$('em').value.trim(),m=$('loginMsg');if(!em){m.style.color='var(--bad)';m.textContent='Type your email first.';return}
   const {error}=await SB.auth.signInWithOtp({email:em,options:{shouldCreateUser:false,emailRedirectTo:location.href.split('#')[0].split('?')[0]}});
-  m.style.color=error?'var(--bad)':'var(--ok)';m.textContent=error?error.message:'Login link sent — open your email (check Spam too) and click the link.'};
+  m.style.color=error?'var(--bad)':'var(--ok)';m.textContent=error?(/sending|smtp/i.test(error.message)?'Email sending is not working right now — ask the owner to set your password in the Admins tab.':error.message):'Login link sent — open your email (check Spam too) and click the link.'};
 $('doSignup').onclick=async()=>{const em=$('em').value.trim(),pw=$('pw').value;const m=$('loginMsg');
   if(!em||pw.length<8){m.style.color='var(--bad)';m.textContent='Enter your email and a password of at least 8 characters.';return}
   const {data,error}=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}});
@@ -215,11 +224,11 @@ $('logout').onclick=async()=>{await SB.auth.signOut({scope:'local'});showLogin()
 SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){const p=prompt('New password (min 8 characters):');if(p)SB.auth.updateUser({password:p}).then(({error})=>toast(error?error.message:'Password changed'))}});
 
 /* ---------------- tabs ---------------- */
-let statsTimer=null;
+let statsTimer=null,IS_OWNER=false;
 function showTab(t){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  $('pChars').classList.toggle('hidden',t!=='chars');$('pStats').classList.toggle('hidden',t!=='stats');history.replaceState(null,'','#'+t);
+  $('pChars').classList.toggle('hidden',t!=='chars');$('pStats').classList.toggle('hidden',t!=='stats');$('pAdmins').classList.toggle('hidden',t!=='admins');history.replaceState(null,'','#'+t);
   clearInterval(statsTimer);
-  if(t==='chars')loadChars();else{loadStats();statsTimer=setInterval(loadStats,30000)}}
+  if(t==='chars')loadChars();else if(t==='admins')loadAdmins();else{loadStats();statsTimer=setInterval(loadStats,30000)}}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 
 /* ---------------- 3D helpers ---------------- */
@@ -407,6 +416,22 @@ async function loadStats(){
   const days=s.daily,maxD=Math.max(1,...days.map(d=>d.rounds));
   $('daily').innerHTML=days.map(d=>`<div style="height:${d.rounds/maxD*100}%" data-t="${d.day}: ${d.rounds}"></div>`).join('')}
 $('days').onchange=loadStats;$('reloadStats').onclick=loadStats;
+
+/* ---------------- admins (owner only) ---------------- */
+const admMsg=(t,ok)=>{$('admMsg').style.color=ok?'var(--ok)':'var(--bad)';$('admMsg').textContent=t};
+async function loadAdmins(){const {data,error}=await SB.rpc('sd_admin_list');if(error){admMsg(error.message);return}
+  $('admins').innerHTML=data.length?`<table><tr><th>Email</th><th>Status</th><th>Set password</th><th></th></tr>${data.map(a=>`<tr data-e="${esc(a.email)}">
+    <td><b>${esc(a.email)}</b></td>
+    <td class="muted" style="font-size:12px">${a.last_sign_in?'✅ signed in '+new Date(a.last_sign_in).toLocaleDateString():a.has_password?'🔑 password set, not signed in yet':'⏳ no password yet'}</td>
+    <td><div class="row" style="gap:6px;flex-wrap:nowrap"><input type="password" placeholder="new password (min 8)" autocomplete="new-password"><button class="ghost setpw" style="white-space:nowrap">Save</button></div></td>
+    <td><button class="danger rm">Remove</button></td></tr>`).join('')}</table>`:'<div class="empty">No extra admins.</div>';
+  $('admins').querySelectorAll('tr[data-e]').forEach(tr=>{const e=tr.dataset.e,inp=tr.querySelector('input');
+    tr.querySelector('.setpw').onclick=async()=>{const {error}=await SB.rpc('sd_admin_set_password',{p_email:e,p_password:inp.value});
+      if(error){admMsg(error.message);return}inp.value='';admMsg(`Password saved for ${e} — they can now sign in with it.`,true);loadAdmins()};
+    tr.querySelector('.rm').onclick=async()=>{if(!confirm(`Remove ${e} as game admin?`))return;const {error}=await SB.rpc('sd_admin_remove',{p_email:e});
+      if(error){admMsg(error.message);return}admMsg(`${e} removed`,true);loadAdmins()}})}
+$('addAdmin').onclick=async()=>{const e=$('newAdmin').value.trim();if(!e)return;const {error}=await SB.rpc('sd_admin_add',{p_email:e});
+  if(error){admMsg(error.message);return}$('newAdmin').value='';admMsg(`${e} added — now set a password for them below.`,true);loadAdmins()};
 
 checkAdmin();
 </script>
