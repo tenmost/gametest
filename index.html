@@ -358,7 +358,7 @@ hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale
 astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
 /* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
-const RIG={fingers:false,proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
+const RIG={showoff:'Boxing_Practice',cardAbove:[.62,.55],fingers:false,proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
  thumb:{rock:{a:.55,b:.9,c:.7},paper:{a:-.15,b:.1,c:.05},scissors:{a:.55,b:.9,c:.7}},
  poses:{rock:{c:[1.45,1.5,1.5,1.45],s:[0,0,0,0]},paper:{c:[.05,.03,.05,.08],s:[.18,.05,-.07,-.18]},scissors:{c:[.04,.04,1.5,1.45],s:[.22,-.12,0,0]}}};
 window.RIG=RIG;
@@ -374,6 +374,8 @@ async function loadSkinned(url,o){
  const root=g.scene,B={},mats=[];
  root.traverse(x=>{if(x.isBone)B[x.name.replace(/^mixamorig:?/,'')]=x;if(x.isMesh){x.castShadow=x.receiveShadow=true;x.frustumCulled=false;mats.push(x.material)}});
  const holder=grp();holder.add(root);root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
+ // keep every animation in place (no walking off): lock the hips' horizontal movement
+ for(const c of g.animations)for(const tr of c.tracks)if(/Hips\.position$/.test(tr.name)){const v=tr.values;for(let i=0;i<v.length;i+=3){v[i]=v[0];v[i+2]=v[2]}}
  const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
  const side=o.side,F=['Index','Middle','Ring','Pinky'],rest=new Map();
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
@@ -418,7 +420,7 @@ function poseSkinned(R,h,dt){
 }
 
 let HS=null;
-loadSkinned('assets/hero.glb?v=3',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
+loadSkinned('assets/hero.glb?v=5',{scale:2.0,pos:[-.8,FLOOR,-.25],rotY:1.0,side:'Right',idle:'Idle_15'}).then(R=>{HS=R;hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;
  if(RIG.proxyHand){for(const m of[HG.mats.base,HG.mats.acc]){m.color.set(RIG.skinColor);m.clearcoat=0;m.roughness=.6}}else HG.root.visible=false}).catch(e=>console.warn('hero model failed to load, using built-in figure',e));
 
 const HG=buildHand(hero.glove,false),HA=buildHand(astro.glove,true);
@@ -523,12 +525,13 @@ function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking;
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  h.root.updateMatrixWorld(true);const hold=h.root.localToWorld(V3(.06,.13,.1));
+  const head=key==='g'?(HS?HS.B.Head:hero.head):astro.head;const hold=head.getWorldPosition(V3(0,0,0)).add(V3(0,(key==='g'?RIG.cardAbove[0]:RIG.cardAbove[1])+Math.sin(TIME*2.5+sgn)*.05,.2));
   const p=hold.clone().lerp(SLOT[key],c.u);p.y+=Math.sin(c.u*Math.PI)*.18;
   c.g.position.copy(p);c.g.lookAt(camera.position);
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
-  c.inner.rotation.set(0,flip,sgn*.12*(1-c.u)+(res==='lose'?-sgn*.22*c.u:0));
+  const wob=(st.shaking?Math.sin(TIME*9+sgn)*.18:Math.sin(TIME*1.5+sgn)*.06)*(1-c.u);
+  c.inner.rotation.set(0,flip+wob*.6,wob+(res==='lose'?-sgn*.22*c.u:0));
   const sc=lerp(.8,res==='win'?1.12+.04*pulse:res==='lose'?.9:1.02,c.u);c.g.scale.setScalar(sc);
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
@@ -559,7 +562,7 @@ function update(dt){
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
-  if(st.shaking){const up=Math.abs(Math.sin((TIME-st.shakeT0)/.7*Math.PI));p[1]+=up*.4;p[0]-=sgn*up*.12;rz+=up*.55}
+  if(st.shaking){const b=(TIME-st.shakeT0)*Math.PI/.35,punch=Math.max(0,Math.sin(b));p[0]+=sgn*punch*.18;p[1]+=.22+Math.cos(b)*.08;p[2]+=punch*.12;rz+=.1}
   const res=st.res&&!st.shaking?st.res[key]:null;
   if(res){const t=Math.min(st.revT/.25,1),pop=Math.sin(t*Math.PI)*.25,q=Math.min(st.revT*4,1);
    if(res==='win'){p[0]+=sgn*(.06+pop*.5);p[1]+=.04}
@@ -577,6 +580,7 @@ function update(dt){
   c.root.position.y=FLOOR;c.cheer=lerp(c.cheer,res==='win'?1:0,1-Math.exp(-dt*8));c.sadT=lerp(c.sadT||0,res==='lose'?1:0,1-Math.exp(-dt*6));
   if(res==='win')c.root.position.y=FLOOR+Math.abs(Math.sin(st.revT*6))*.22*Math.max(0,1-st.revT*.55);
   if(res==='lose')c.body.rotation.x=-.07*q;
+  if(st.shaking&&key==='a'){const b=(TIME-st.shakeT0)*Math.PI/.35;c.root.position.y=FLOOR+Math.abs(Math.sin(b*.5))*.16;c.body.rotation.y=Math.sin(b*.5)*.4;c.body.rotation.x=.08;c.cheer=.5+.5*Math.sin(b)}
   c.head.rotation.set((res==='lose'?.3*q:st.shaking?.08:0)+Math.sin(TIME*.9+ph)*.03,-sgn*.5+st.smx*.15,0);
   setFace(c.face,res==='win'?'win':res==='lose'?'lose':st.shaking?'focus':'idle',dt)}
  earthM.rotation.y=TIME*.02;clouds.rotation.y=TIME*.028;giantM.rotation.y=TIME*.05;nebula.material.uniforms.uT.value=TIME;
@@ -589,10 +593,10 @@ function update(dt){
  camera.fov=st.fov;
  updateCards(dt,pulse);
  if(HS){HS.target=HG.target;const res=anyRes?st.res.g:null,e=x=>1-Math.exp(-dt*x);
-  if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=lerp(HS.ikW,0,e(4))}
-  else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=lerp(HS.ikW,0,e(6))}
-  else{HS.ikW=lerp(HS.ikW,1,e(6));HS.play(res==='win'?'Victory_Cheer':'Idle_15')}
-  HS.headDown=lerp(HS.headDown,res==='lose'?1:0,e(6));HS.mixer.update(dt)}
+  if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=0}
+  else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=0}
+  else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;HS.play(st.shaking?RIG.showoff:res==='win'?'Victory_Cheer':hit?'Hit_Reaction':'Idle_15',{loop:!hit,fade:.25})}
+  HS.headDown=lerp(HS.headDown,res==='lose'&&!HS.act.Hit_Reaction?1:0,e(6));HS.mixer.update(dt)}
  scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
 }
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;const cur=renderer.getSize(new THREE.Vector2());
