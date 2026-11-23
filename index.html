@@ -153,12 +153,12 @@ const talkTimers=[];
 function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scene3D.say(who,text)},delay))}
 function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSynthesis.cancel()}
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
-let pickTimer=null,pickLeft=0;
+let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false;
 function startPick(){stopPick();pickLeft=15;count.textContent=pickLeft;if(!started)return;
   pickTimer=setInterval(()=>{pickLeft--;
-    if(pickLeft<=0){stopPick();play(MOVES[Math.floor(Math.random()*3)]);return}
+    if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
     count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
 function idle(){
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
@@ -192,6 +192,7 @@ async function runRound(choice,other){
   Scene3D.setShaking(false);sfx.go();
 
   const win=choice===other?0:(beats[choice]===other?1:-1);
+  logStat('sd_rounds',{player_move:choice,opp_move:other,result:win>0?'win':win<0?'lose':'tie',timed_out:!!autoPicked});autoPicked=false;
   Scene3D.setHands(choice,other);
   Scene3D.reveal(win>0?{g:'win',a:'lose'}:win<0?{g:'lose',a:'win'}:{g:'tie',a:'tie'});
   if(win>0){c--;shake(hc)}
@@ -207,7 +208,7 @@ async function runRound(choice,other){
   hush();if(p&&c)chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);else chat(c===0?'matchWin':'matchLose',c===0?'g':'a',1300);
 
   if(!p||!c){
-    const youWon=c===0;
+    const youWon=c===0;logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
     save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
@@ -245,6 +246,9 @@ document.addEventListener('keydown',e=>{
 });
 /* ---------- online multiplayer (Supabase Realtime: no database tables, just a live channel per room) ---------- */
 const SB_URL='https://mrrqfrmgblbgrvkbrwvt.supabase.co',SB_KEY='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
+function logStat(table,row){try{if(NET&&NET.live&&NET.opp&&!(myId<NET.opp.id))return;
+  fetch(SB_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+   body:JSON.stringify({mode:NET&&NET.live?'online':'cpu',player_char:SEL.g.key||null,opp_char:SEL.a.key||null,...row})}).catch(()=>{})}catch(e){}}
 const myId=Math.random().toString(36).slice(2,10),urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 let NET=null,MODE=urlRoom?'online':'cpu',onChar=null;
 const onEl=$('online'),charName=k=>((Scene3D.roster&&Scene3D.roster().find(c=>c.key===k))||{name:k.toUpperCase()}).name;
@@ -596,7 +600,7 @@ function poseSkinned(R,h,dt){
 }
 
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
-const CHARS=[
+let CHARS=[
  {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=6',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice','Confident_Strut','Finger_Wag_No'],win:'Backflip',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
  {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
  {key:'tv',name:'TV HEAD',url:'assets/tv-head.glb?v=1',voice:'m',optional:true,height:2.8,anim:{idle:'Confused_Scratch',show:['Boom_Dance','Draw_and_Shoot_from_Back'],win:'Skill_01',hit:'Electrocution_Reaction',champ:'Boom_Dance',dead:'Angry_To_Tantrum_Sit',select:'Boom_Dance'}},
@@ -616,10 +620,19 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
  for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1.18);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
- setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice},a:{name:opp.name,voice:opp.voice}}}
-for(const c of CHARS)if(!c.proc)loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
+ setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
+function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
- .catch(e=>{if(!c.optional)console.warn(c.name+' failed to load',e)});
+ .catch(e=>{if(!c.optional)console.warn(c.name+' failed to load',e)})}
+/* roster comes from the admin panel (Supabase table sd_characters); built-in list is the fallback */
+async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co',K='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
+ const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),4000);
+ try{const r=await fetch(SBU+'/rest/v1/sd_characters?select=key,name,url,height,anim,voice&enabled=eq.true&order=sort.asc,created_at.asc',{headers:{apikey:K,Authorization:'Bearer '+K},signal:ctl.signal});
+  if(!r.ok)throw new Error(r.status);const rows=await r.json();
+  const list=rows.filter(x=>x.url&&x.anim&&x.anim.idle).map((x,i)=>({key:x.key,name:x.name,url:x.url,voice:x.voice||'m',height:x.height||3.4,optional:i>=2,
+   anim:{...x.anim,show:(Array.isArray(x.anim.show)&&x.anim.show.length?x.anim.show:[x.anim.idle])}}));
+  return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
+fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loadChar(c)});
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
  if(st.select)R.play(A.select||A.idle);
