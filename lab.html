@@ -543,7 +543,7 @@ function makeUFO(){
  scene.add(g);return{g,lights,beam,alien,active:false,wait:randR(1,6),beamT:0}}
 const UFOS=[makeUFO(),makeUFO()];
 function launchUFO(u){const dir=Math.random()<.5?1:-1,z=randR(-26,-15);
- u.p=V3(-dir*(Math.abs(z)*1.3+6),randR(2.5,7.5),z);u.v=V3(dir*randR(.7,1.3),randR(-.08,.08),randR(-.1,.1));u.s=randR(.55,.95);u.g.scale.setScalar(u.s);u.active=true;u.ph=Math.random()*9;u.beamT=0}
+ u.p=V3(-dir*(Math.abs(z)*1.3+6),randR(2.5,7.5),z);u.v=V3(dir*randR(.7,1.3),randR(-.08,.08),randR(-.1,.1));u.s=randR(.9,1.4);u.g.scale.setScalar(u.s);u.active=true;u.ph=Math.random()*9;u.beamT=0}
 // shooting stars
 const STARS=[0,1,2].map(()=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),streakMat(STREAK_W));m.visible=false;scene.add(m);return{m,life:0,wait:randR(1,4)}});
 function launchStar(s){const z=randR(-70,-45),dir=Math.random()<.5?1:-1;s.p=V3(randR(-40,40),randR(14,30),z);s.v=V3(dir*randR(18,30),randR(-14,-8),0);s.life=0;s.dur=randR(.6,1.1);s.len=randR(6,11);s.m.visible=true}
@@ -554,8 +554,12 @@ const MET={head:new THREE.Sprite(glowMat(0xffb060)),core:new THREE.Sprite(glowMa
  crater:new THREE.Sprite(glowMat(0xff5a1a,0)),state:'wait',t:0,wait:6};
 Object.values(MET).forEach(o=>{if(o&&o.isObject3D){o.visible=o!==MET.light?false:true;scene.add(o)}});
 function ROCK_GEO_SMALL(){const g=new THREE.IcosahedronGeometry(1,2),p=g.attributes.position;for(let k=0;k<p.count;k++){const v=V3(p.getX(k),p.getY(k),p.getZ(k));v.multiplyScalar(.8+fbm(v.x*2,v.y*2,v.z*2,3)*.5);p.setXYZ(k,v.x,v.y,v.z)}g.computeVertexNormals();return g}
-function launchMeteor(){const c=earth.position,d=V3(randR(-.38,.38),1,randR(-.42,-.25)).normalize();
- MET.hit=c.clone().addScaledVector(d,27.05);MET.n=d;const side=Math.random()<.5?1:-1;
+function launchMeteor(){const c=earth.position;let d,hit;
+ // pick a spot on the visible part of the planet, near the horizon and not hidden behind the players
+ for(let i=0;i<60;i++){d=V3(randR(-.6,.6),1,randR(-.62,-.3)).normalize();hit=c.clone().addScaledVector(d,27.05);
+  const toCam=camera.position.clone().sub(hit).normalize(),sp=hit.clone().project(camera),sx=(sp.x+1)/2;
+  if(d.dot(toCam)>.06&&(sx<.34||sx>.68)&&sx>.06&&sx<.94&&sp.y>-.45)break}
+ MET.hit=hit;MET.n=d;const side=Math.random()<.5?1:-1;
  MET.from=MET.hit.clone().add(V3(side*randR(12,18),randR(14,20),randR(-6,0)));MET.state='fly';MET.t=0;MET.dur=randR(2,2.8);
  for(const k of['head','core','tail','rock'])MET[k].visible=true}
 function updateBackground(dt){
@@ -565,7 +569,7 @@ function updateBackground(dt){
   u.g.position.set(u.p.x,u.p.y+bob,u.p.z);u.g.rotation.set(Math.sin(TIME*.9+u.ph)*.12,TIME*.8,Math.cos(TIME*1.1+u.ph)*.1-u.v.x*.08);
   u.alien.rotation.y=-TIME*.8+Math.sin(TIME*2+u.ph)*.6;
   u.lights.forEach((m,i)=>m.material.emissive.setHSL(((TIME*.3+i/10)%1),1,.55));
-  u.beamT-=dt;if(u.beamT<-randR(6,12))u.beamT=randR(1.5,2.5);u.beam.material.opacity=u.beamT>0?.22+.08*Math.sin(TIME*20):Math.max(0,u.beam.material.opacity-dt);
+  u.beamT-=dt;if(u.beamT<-randR(6,12))u.beamT=randR(1.5,2.5);u.beam.material.opacity=u.beamT>0?.1+.04*Math.sin(TIME*20):Math.max(0,u.beam.material.opacity-dt);
   if(Math.abs(u.p.x)>Math.abs(u.p.z)*1.3+8){u.active=false;u.wait=randR(4,12)}}
  // shooting stars
  for(const s of STARS){if(!s.m.visible){s.wait-=dt;if(s.wait<=0)launchStar(s);continue}
