@@ -51,7 +51,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><button id="again">PLAY AGAIN</button></div></div>
-</div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 10 seconds to pick, or a random card is played. Three hearts each — first to lose all hearts loses the match. Move the mouse to look around.</footer></main>
+</div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 20 seconds to pick, or a random card is played. Three hearts each — first to lose all hearts loses the match. Move the mouse to look around.</footer></main>
 
 <script>
 /* 3D scene placeholder until the Three.js module loads; the game works even if it never does */
@@ -117,7 +117,7 @@ const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':
 let pickTimer=null,pickLeft=0;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false;
-function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;
+function startPick(){stopPick();pickLeft=20;count.textContent=pickLeft;if(!started)return;
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();play(MOVES[Math.floor(Math.random()*3)]);return}
     count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
