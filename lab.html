@@ -557,7 +557,7 @@ function ROCK_GEO_SMALL(){const g=new THREE.IcosahedronGeometry(1,2),p=g.attribu
 function launchMeteor(){const c=earth.position;let d,hit;
  // pick a spot on the visible part of the planet, near the horizon and not hidden behind the players
  let best=-1e9;
- for(let i=0;i<300;i++){const dd=V3(randR(-.9,.9),1,randR(-.7,-.1)).normalize(),hh=c.clone().addScaledVector(dd,27.05);
+ for(let i=0;i<300;i++){const dd=V3(randR(-.9,.9),1,randR(-.6,.6)).normalize(),hh=c.clone().addScaledVector(dd,27.05);
   const toCam=camera.position.clone().sub(hh).normalize(),sp=hh.clone().project(camera),sx=(sp.x+1)/2,vis=dd.dot(toCam);
   const score=(vis>.02?1:-5)+(sx<.35||sx>.65?1:-3)+(sx>.05&&sx<.95?1:-3)+sp.y*1.5;
   if(score>best){best=score;d=dd;hit=hh}}
