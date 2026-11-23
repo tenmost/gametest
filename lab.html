@@ -374,6 +374,8 @@ async function loadSkinned(url,o){
  const root=g.scene,B={},mats=[];
  root.traverse(x=>{if(x.isBone)B[x.name.replace(/^mixamorig:?/,'')]=x;if(x.isMesh){x.castShadow=x.receiveShadow=true;x.frustumCulled=false;mats.push(x.material)}});
  const holder=grp();holder.add(root);root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
+ // keep every animation in place (no walking off): lock the hips' horizontal movement
+ for(const c of g.animations)for(const tr of c.tracks)if(/Hips\.position$/.test(tr.name)){const v=tr.values;for(let i=0;i<v.length;i+=3){v[i]=v[0];v[i+2]=v[2]}}
  const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
  const side=o.side,F=['Index','Middle','Ring','Pinky'],rest=new Map();
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
@@ -560,7 +562,7 @@ function update(dt){
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
-  if(st.shaking){const b=(TIME-st.shakeT0)*Math.PI/.35,punch=Math.max(0,Math.sin(b));p[0]+=sgn*punch*.32;p[1]+=.22+Math.cos(b)*.08;p[2]+=punch*.1;rz+=.1}
+  if(st.shaking){const b=(TIME-st.shakeT0)*Math.PI/.35,punch=Math.max(0,Math.sin(b));p[0]+=sgn*punch*.18;p[1]+=.22+Math.cos(b)*.08;p[2]+=punch*.12;rz+=.1}
   const res=st.res&&!st.shaking?st.res[key]:null;
   if(res){const t=Math.min(st.revT/.25,1),pop=Math.sin(t*Math.PI)*.25,q=Math.min(st.revT*4,1);
    if(res==='win'){p[0]+=sgn*(.06+pop*.5);p[1]+=.04}
