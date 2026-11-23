@@ -27,6 +27,12 @@ main{width:min(100vw,1100px);padding:8px}
 .overlay.show{display:grid;animation:fade .4s}@keyframes fade{from{opacity:0}}
 .overlay h2{margin:0;font-size:clamp(24px,6vw,72px);text-shadow:0 0 20px #ff6cff}.overlay p{font-size:clamp(12px,1.8vw,22px);margin:.6em 0 1.2em}
 .overlay button{font-size:clamp(12px,2vw,24px);font-weight:900;padding:.6em 1.4em;border-radius:16px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7c,#6a2fa5);color:#fff;cursor:pointer;box-shadow:0 0 20px #52d4ff}
+
+
+.bubble{position:absolute;z-index:3;transform:translate(-50%,-100%) scale(.6);opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;background:#fff;color:#1d1236;padding:.45em .75em;border-radius:16px;font-weight:900;font-size:clamp(10px,1.45vw,18px);max-width:26%;text-align:center;box-shadow:0 6px 18px #000a,0 0 0 3px #7de7ff;white-space:normal}
+.bubble::after{content:'';position:absolute;bottom:-10px;left:50%;margin-left:-10px;border:10px solid transparent;border-bottom:0;border-top-color:#fff}
+.bubble.a{box-shadow:0 6px 18px #000a,0 0 0 3px #ffa04a}.bubble.g{box-shadow:0 6px 18px #000a,0 0 0 3px #ff5ad8}
+.bubble.show{opacity:1;transform:translate(-50%,-100%) scale(1)}
 footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 </style>
 <main><div class="stage" id="stage">
@@ -86,19 +92,41 @@ function render(){
   $('sp').textContent=`Matches won: ${stats.wins} · Streak: ${stats.streak} · Best: ${stats.best}`;
   $('sc').textContent=`Matches won: ${stats.losses}`;
 }
+
+/* talking: speech bubbles + browser text-to-speech (free, no files) */
+const LINES={
+  start:{g:["Let's go!","You're going down!","Watch this!","Ready or not!","Eyes on the card!"],a:["Ready for liftoff!","Houston, prepare to lose!","Calculating your doom...","Countdown engaged!","Zero gravity, zero mercy!"]},
+  gWin:{g:["Yes!","Too easy!","Boom!","Gotcha!","Who's the star now?"],a:["Oof!","Lucky shot!","Houston, we have a problem.","My helmet fogged up!","Not fair!"]},
+  aWin:{g:["Hey!","No way!","Rematch!","Ugh, seriously?","That doesn't count!"],a:["One small step for me!","Gravity wins!","Nice try, cadet!","Mission accomplished!","Beep boop, victory!"]},
+  tie:{g:["Great minds!","Copy cat!","Again!"],a:["Copy that, again!","Mirror match!","Stalemate in space!"]},
+  matchWin:{g:["I am the champion of the galaxy!","Space Duel queen!"],a:["I'll be back... from orbit.","Abort mission!"]},
+  matchLose:{g:["Next time, astronaut!","I want a rematch!"],a:["The galaxy is mine!","Houston, the champion has landed!"]},
+  hurry:{a:["Tick tock, cadet!","Any day now!","Did you fall asleep?","Pick a card, any card!"],g:["Hmm, let me think...","Don't rush me!"]}
+};
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+let voices=[];const canSpeak='speechSynthesis' in window;
+if(canSpeak){const lv=()=>voices=speechSynthesis.getVoices();lv();speechSynthesis.onvoiceschanged=lv}
+function voiceFor(who){const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.length)return null;
+  const fem=/female|zira|samantha|susan|hazel|karen|victoria|aria|jenny|libby|sonia|moira|tessa|fiona/i,mal=/(^|\W)male|david|daniel|mark|guy|george|alex|fred|ryan|thomas|rishi/i;
+  return who==='g'?(en.find(v=>fem.test(v.name))||en[0]):(en.find(v=>mal.test(v.name)&&!/female/i.test(v.name))||en[en.length>1?1:0])}
+const talkTimers=[];
+function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scene3D.say(who,text);if(muted||!canSpeak)return;
+  const u=new SpeechSynthesisUtterance(text),v=voiceFor(who);if(v)u.voice=v;u.pitch=who==='g'?1.4:.7;u.rate=who==='g'?1.1:.95;u.volume=.9;speechSynthesis.speak(u)},delay))}
+function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSynthesis.cancel()}
+const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false;
 function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();play(MOVES[Math.floor(Math.random()*3)]);return}
-    count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
+    count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
 function idle(){
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   startPick();statusEl.textContent='CHOOSE YOUR MOVE';statusEl.className='';
 }
-function reset(){stopPick();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
+function reset(){stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 async function play(choice){
@@ -107,7 +135,7 @@ async function play(choice){
   buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
   Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','rock');statusEl.className='';
   const other=MOVES[Math.floor(Math.random()*3)];
-  Scene3D.setShaking(true);
+  Scene3D.setShaking(true);hush();chat('start',Math.random()<.5?'g':'a',1000);
   for(let n=3;n>=1;n--){
     count.textContent=n;count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
     statusEl.textContent=['ROCK…','PAPER…','SCISSORS…'][3-n];sfx.tick();
@@ -128,6 +156,7 @@ async function play(choice){
   flash.style.background=win>0?'#2cff86':win<0?'#ff2050':'#ffffff';
   flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go');
   (win>0?sfx.win:win<0?sfx.lose:sfx.draw)();
+  hush();if(p&&c)chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);else chat(c===0?'matchWin':'matchLose',c===0?'g':'a',1300);
 
   if(!p||!c){
     const youWon=c===0;
@@ -145,7 +174,7 @@ async function play(choice){
 
 buttons.forEach(b=>b.onclick=()=>play(b.dataset.m));
 $('restart').onclick=reset;$('again').onclick=reset;
-$('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND'};
+$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND'};
 document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),m={'1':'rock',r:'rock','2':'paper',p:'paper','3':'scissors',s:'scissors'}[k];
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
@@ -416,7 +445,7 @@ function poseSkinned(R,h,dt){
  if(R.ikW<.999)[arm,fore,hand].forEach((b,i)=>b.quaternion.copy(save[i].clone().slerp(b.quaternion,R.ikW)));
  if(R.ikW<.999)arm.updateWorldMatrix(false,true);
  // 3) fingers stay as the model animates them (gestures are shown on cards)
- if(!RIG.fingers){if(R.headDown>.001)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45);return}
+ if(!RIG.fingers){if(R.headDown>.001||R.nod)rotWorld(B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0));return}
  for(const b of R.rest.keys())b.quaternion.copy(R.rest.get(b));hand.updateWorldMatrix(false,true);
  const f=wp(B[s+'HandMiddle1']).sub(wp(hand)).normalize(),sv=wp(B[s+'HandIndex1']).sub(wp(B[s+'HandPinky1']));sv.addScaledVector(f,-sv.dot(f)).normalize();
  const n=_v().crossVectors(f,sv).multiplyScalar(RIG.palmSign[s]),curlAx=_v().crossVectors(f,n).normalize(),sprAx=_v().crossVectors(f,sv).normalize();
@@ -543,6 +572,10 @@ function updateCards(dt,pulse){
   const m=c.front.material;m.emissiveIntensity=res==='win'?.6+.9*pulse:res==='tie'?.6:.45;m.color.setScalar(res==='lose'?.45:1);m.emissive.setScalar(res==='lose'?.4:1);
  }}
 
+const bubbles={};
+function bubbleEl(k){let b=bubbles[k];if(!b){b=document.createElement('div');b.className='bubble '+k;stage.appendChild(b);bubbles[k]=b}return b}
+function positionBubbles(){for(const k of['g','a']){const b=bubbles[k];if(!b)continue;const head=k==='g'?(HS?HS.B.Head:hero.head):astro.head;
+ const p=head.getWorldPosition(V3(0,0,0)).add(V3(k==='g'?-.62:.62,.42,.2)).project(camera);b.style.left=((p.x+1)/2*100)+'%';b.style.top=((1-p.y)/2*100)+'%'}}
 /* ---------- state ---------- */
 const st={shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
 let TIME=0;
@@ -552,6 +585,7 @@ Object.assign(API,{
  clear(){st.res=null},
  matchEnd(won){st.match=won?'win':'lose'},
  reset(){st.match=null},
+ say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);(who==='g'?hero:astro).talkT=Math.min(2.2,.35+text.length*.06)},
  reveal(res){st.res=res;st.revT=0;st.camShake=.12;
   const gp=SLOT.g.clone(),ap=SLOT.a.clone();
   if(res.g==='win')burst(gp,[.3,1,.55]);else if(res.a==='win')burst(ap,[1,.28,.45]);else burst(gp.clone().lerp(ap,.5),[.55,.75,1],80,2.4)}});
@@ -589,7 +623,9 @@ function update(dt){
   if(res==='lose')c.body.rotation.x=-.07*q;
   if(st.shaking&&key==='a'){const b=(TIME-st.shakeT0)*Math.PI/.35;c.root.position.y=FLOOR+Math.abs(Math.sin(b*.5))*.16;c.body.rotation.y=Math.sin(b*.5)*.4;c.body.rotation.x=.08;c.cheer=.5+.5*Math.sin(b)}
   c.head.rotation.set((res==='lose'?.3*q:st.shaking?.08:0)+Math.sin(TIME*.9+ph)*.03,-sgn*.5+st.smx*.15,0);
-  setFace(c.face,res==='win'?'win':res==='lose'?'lose':st.shaking?'focus':'idle',dt)}
+  setFace(c.face,res==='win'?'win':res==='lose'?'lose':st.shaking?'focus':'idle',dt);
+  c.talkT=Math.max(0,(c.talkT||0)-dt);if(c.talkT>0){const o=Math.sin(TIME*22)>0;c.face.open.visible=o;c.face.smile.visible=!o;c.face.frown.visible=false}}
+ positionBubbles();
  earthM.rotation.y=TIME*.02;clouds.rotation.y=TIME*.028;giantM.rotation.y=TIME*.05;nebula.material.uniforms.uT.value=TIME;
  rocks.forEach(r=>{r.m.rotation.set(TIME*r.sp[0]+r.ph,TIME*r.sp[1],TIME*r.sp[2]);r.m.position.y=r.base[1]+Math.sin(TIME*.5+r.ph)*.3});
  let n=0;for(let i=plist.length-1;i>=0;i--){const q=plist[i];q.age+=dt;if(q.age>q.life){plist.splice(i,1);continue}q.v.y-=dt*1.2;q.v.multiplyScalar(Math.exp(-dt*1.5));q.p.addScaledVector(q.v,dt)}
@@ -603,6 +639,7 @@ function update(dt){
   if(st.match==='win'){HS.play('Victory_Cheer');HS.ikW=0}
   else if(st.match==='lose'){HS.play('Dead',{loop:false});HS.ikW=0}
   else{HS.ikW=0;const hit=res==='lose'&&HS.act.Hit_Reaction;HS.play(st.shaking?RIG.showoff:res==='win'?'Victory_Cheer':hit?'Hit_Reaction':'Idle_15',{loop:!hit,fade:.25})}
+  HS.nod=hero.talkT>0?Math.sin(TIME*13)*.09:0;
   HS.headDown=lerp(HS.headDown,res==='lose'&&!HS.act.Hit_Reaction?1:0,e(6));HS.mixer.update(dt)}
  scene.updateMatrixWorld();if(HS)poseSkinned(HS,HG,dt);else poseFigure(hero,HG,1);poseFigure(astro,HA,-1);
 }
