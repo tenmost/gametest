@@ -187,7 +187,7 @@ async function runRound(choice,other){
   for(let n=5;n>=1;n--){
     count.textContent=n;count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
     statusEl.textContent=['READY…','SET…','ROCK…','PAPER…','SCISSORS…'][5-n];sfx.tick();
-    await wait(700);if(run!==token)return;
+    await wait(1000);if(run!==token)return;
   }
   Scene3D.setShaking(false);sfx.go();
 
@@ -217,7 +217,7 @@ async function runRound(choice,other){
     over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
     return;
   }
-  await wait(1800);if(run!==token)return;
+  await wait(3500);if(run!==token)return;
   idle();
 }
 
