@@ -413,7 +413,7 @@ function poseFigure(c,h,side){
 
 const hero=buildHero(),astro=buildAstro();
 hero.root.position.set(-1.3,FLOOR,-.25);hero.root.rotation.y=1.0;hero.root.scale.setScalar(CS);
-astro.root.position.set(1.0,FLOOR,-.25);astro.root.rotation.y=-1.0;astro.root.scale.setScalar(CS);
+astro.root.position.set(1.85,FLOOR,-.25);astro.root.rotation.y=-.75;astro.root.scale.setScalar(CS);
 scene.add(hero.root,astro.root);rigLimbs(hero);rigLimbs(astro);
 /* ---------- skinned GLB characters (Meshy / Mixamo rig) ---------- */
 const RIG={showoff:'Boxing_Practice',cardAbove:[.62,.55],fingers:false,proxyHand:false,skinColor:0xf2c4a6,thumbSign:-1,palmSign:{Right:1,Left:-1},handN:[0,-.2,-1],curlK:[.95,1.05,.85],pole:[0,-1,-.45],wristBack:.17,
@@ -484,7 +484,7 @@ const CHARS=[
  {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=1',voice:'m',optional:true,anim:{idle:'Walking',show:['Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop',select:'Arm_Circle_Shuffle'}},
  {key:'astro',name:'ASTRONAUT',voice:'m',proc:true,opponentOnly:true}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
-const POS={g:{p:[-.8,FLOOR,-.25],r:1.0},a:{p:[.85,FLOOR,-.25],r:-1.0}};
+const POS={g:{p:[-1.75,FLOOR,-.25],r:.75},a:{p:[1.8,FLOOR,-.25],r:-.75}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
 const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,playable:!c.opponentOnly}));
 function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
@@ -741,7 +741,7 @@ function update(dt){
  st.smx=lerp(st.smx,st.mx,1-Math.exp(-dt*3));st.smy=lerp(st.smy,st.my,1-Math.exp(-dt*3));
  st.revT+=dt;st.camShake*=Math.exp(-dt*6);
  const k=1-Math.exp(-dt*(st.shaking?10:14));blendPose(HG,k);blendPose(HA,k);applyPose(HG);applyPose(HA);
- const base={g:[-.35,-.33,.45],a:[.35,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
+ const base={g:[-1.2,-.33,.45],a:[1.2,-.33,.45]};const pulse=.6+.4*Math.sin(TIME*6);
  for(const[h,key,sgn]of[[HG,'g',1],[HA,'a',-1]]){
   const p=[...base[key]];let rz=.08;
   p[1]+=Math.sin(TIME*1.7+(sgn>0?0:1.5))*.03;
