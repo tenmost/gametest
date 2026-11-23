@@ -73,12 +73,15 @@ def components(nv, tris):
     return parent
 
 
-def simplify(P, N, UV, J, W, tris, cell):
+def simplify(P, N, UV, J, W, tris, cell, fine_mask=None, fine_cell=None):
     nv = len(P)
     chart = components(nv, tris)
     mn = P.min(0)
-    c = np.floor((P - mn) / cell).astype(np.int64)
-    ckey = (c[:, 0] * 73856093) ^ (c[:, 1] * 19349663) ^ (c[:, 2] * 83492791)
+    if fine_mask is None:
+        fine_mask = np.zeros(nv, bool)
+    csz = np.where(fine_mask, fine_cell or cell, cell)[:, None]
+    c = np.floor((P - mn) / csz).astype(np.int64)
+    ckey = (c[:, 0] * 73856093) ^ (c[:, 1] * 19349663) ^ (c[:, 2] * 83492791) ^ (fine_mask.astype(np.int64) << 60)
     _, cell_id = np.unique(ckey, return_inverse=True)
     # shared position per spatial cell
     ncell = cell_id.max() + 1
@@ -138,6 +141,7 @@ def main():
     ap.add_argument('--cell', type=float, default=0.009)
     ap.add_argument('--tex', type=int, default=1024)
     ap.add_argument('--keep', default='')
+    ap.add_argument('--fine-cell', type=float, default=0.0, help='smaller cell for vertices driven by hand/finger bones')
     a = ap.parse_args()
     j, binb = load(a.inp)
     keep = [k for k in a.keep.split(',') if k]
@@ -161,7 +165,14 @@ def main():
     J = acc_array(j, binb, at['JOINTS_0'])
     W = acc_array(j, binb, at['WEIGHTS_0']).astype(np.float32)
     T = acc_array(j, binb, prim['indices']).reshape(-1, 3).astype(np.int64)
-    nP, nN, nUV, nJ, nW, nT = simplify(P, N, UV, J, W, T, a.cell)
+    fine = None
+    if a.fine_cell > 0 and j.get('skins'):
+        names = [j['nodes'][n].get('name', '') for n in j['skins'][0]['joints']]
+        hand = np.array(['Hand' in n for n in names])
+        dom = J[np.arange(len(J)), np.argmax(W, 1)].astype(int)
+        fine = hand[dom]
+        print('fine (hand) vertices:', int(fine.sum()))
+    nP, nN, nUV, nJ, nW, nT = simplify(P, N, UV, J, W, T, a.cell, fine, a.fine_cell)
     print(f'mesh: {len(P)} verts / {len(T)} tris  ->  {len(nP)} verts / {len(nT)} tris')
     idx = nT.reshape(-1).astype(np.uint16 if len(nP) < 65535 else np.uint32)
     prim2 = {'attributes': {'POSITION': w.acc(nP, 'VEC3', 34962, True), 'NORMAL': w.acc(nN, 'VEC3', 34962),
