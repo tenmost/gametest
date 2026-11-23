@@ -40,6 +40,19 @@ main{width:min(100vw,1100px);padding:8px}
 #selBtns{display:flex;gap:2%;justify-content:center;width:100%}
 #selBtns button{min-width:18%;padding:.7em 1.2em;font-size:clamp(11px,1.7vw,22px);font-weight:900;border-radius:16px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7cdd,#6a2fa5dd);color:#fff;cursor:pointer;box-shadow:0 0 18px #52d4ff88}
 #selBtns button:hover,#selBtns button:focus-visible{outline:3px solid #fff;transform:scale(1.05)}
+#modeBtns{margin-top:.6em;display:flex;gap:.6em;justify-content:center}
+#modeBtns button{font-weight:900;font-size:clamp(10px,1.3vw,16px);padding:.45em .9em;border-radius:12px;border:2px solid #7de7ff55;background:#0d1838cc;color:#c7e9ff;cursor:pointer}
+#modeBtns button.on{border-color:#7de7ff;background:linear-gradient(135deg,#1d3b7c,#6a2fa5);color:#fff;box-shadow:0 0 14px #52d4ff88}
+#online{background:#050818cc;backdrop-filter:blur(3px)}
+#online .onBox{background:#0d1638ee;border:2px solid #7de7ff;border-radius:18px;padding:1.2em 1.6em;min-width:52%;box-shadow:0 0 30px #52d4ff66}
+#online h2{font-size:clamp(20px,3.5vw,40px);margin-bottom:.4em}#online p{margin:.4em 0;font-size:clamp(11px,1.5vw,18px)}#online .small{opacity:.8}
+#online button{font-weight:900;font-size:clamp(11px,1.6vw,20px);padding:.5em 1em;border-radius:12px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7c,#6a2fa5);color:#fff;cursor:pointer;margin:.3em}
+#online button.ghost{background:transparent;border-color:#7de7ff66;font-size:clamp(10px,1.2vw,14px)}
+#online input{font:900 clamp(12px,1.8vw,22px) Arial;padding:.45em .6em;border-radius:10px;border:2px solid #7de7ff88;background:#050a1e;color:#fff;text-align:center;width:9em;text-transform:uppercase}
+.onOr{margin:.7em 0 .3em;opacity:.75;font-size:clamp(10px,1.3vw,15px)}
+.onCodeBig{font:900 clamp(28px,6vw,72px) Arial;letter-spacing:.15em;color:#7de7ff;text-shadow:0 0 20px #52d4ff}
+.onLinkRow{display:flex;justify-content:center;align-items:center;flex-wrap:wrap}#online .onLinkRow input{width:20em;font-size:clamp(9px,1.1vw,13px);text-transform:none}
+#onStatus{color:#ffd36b;font-weight:900}
 footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 </style>
 <main><div class="stage" id="stage">
@@ -57,8 +70,13 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
-<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p></div><div id="selBtns"></div></div></div>
+<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selBtns"></div></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
+<div class="overlay" id="online"><div class="onBox">
+<h2>🌐 ONLINE DUEL</h2>
+<div id="onMenu"><button id="onCreate">CREATE ROOM</button><div class="onOr">or join your friend's room</div><input id="onCode" maxlength="6" placeholder="ROOM CODE" autocomplete="off"><button id="onJoin">JOIN</button></div>
+<div id="onWait" hidden><p>Room code</p><div id="onRoom" class="onCodeBig"></div><p class="small">Send this link to your friend:</p><div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY</button><button id="onShare">SHARE</button></div><p id="onStatus">Waiting for your friend…</p></div>
+<button id="onCancel" class="ghost">BACK</button></div></div>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><button id="again">PLAY AGAIN</button></div></div>
 </div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 15 seconds to pick, or a random card is played. Three hearts each — first to lose all hearts loses the match. Move the mouse to look around.</footer></main>
 
@@ -132,6 +150,7 @@ function startPick(){stopPick();pickLeft=15;count.textContent=pickLeft;if(!start
     if(pickLeft<=0){stopPick();play(MOVES[Math.floor(Math.random()*3)]);return}
     count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
 function idle(){
+  if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   startPick();statusEl.textContent='CHOOSE YOUR MOVE';statusEl.className='';
@@ -139,12 +158,20 @@ function idle(){
 function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
-async function play(choice){
+function play(choice){
   if(selecting||busy||!p||!c)return;
+  if(NET&&NET.live){if(NET.myPick)return;NET.myPick=choice;stopPick();started=true;
+    buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
+    NET.ch.send({type:'broadcast',event:'pick',payload:{round:NET.round,move:choice}});
+    if(!NET.oppPicks[NET.round]){statusEl.textContent='WAITING FOR '+SEL.a.name+'…';statusEl.className=''}
+    tryReveal();return}
+  runRound(choice,MOVES[Math.floor(Math.random()*3)]);
+}
+async function runRound(choice,other){
+  if(busy)return;
   busy=true;started=true;stopPick();const run=++token;
   buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
   Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','rock');statusEl.className='';
-  const other=MOVES[Math.floor(Math.random()*3)];
   Scene3D.setShaking(true);hush();chat('start',Math.random()<.5?'g':'a',1000);
   for(let n=5;n>=1;n--){
     count.textContent=n;count.classList.remove('tick');void count.offsetWidth;count.classList.add('tick');
@@ -183,7 +210,8 @@ async function play(choice){
 }
 
 buttons.forEach(b=>b.onclick=()=>play(b.dataset.m));
-$('restart').onclick=reset;$('again').onclick=reset;$('changeP').onclick=()=>openSelect();
+$('restart').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'rematch',payload:{}});reset()};
+$('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'rematch',payload:{}});reset()};$('changeP').onclick=()=>openSelect();
 /* character select */
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
@@ -191,9 +219,10 @@ function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.in
   pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
   selHint.textContent=pl.length?'Pick your fighter — the computer gets one of the others':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
-function choosePlayer(key){const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
+function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
+  const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
 $('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND'};
@@ -202,6 +231,48 @@ document.addEventListener('keydown',e=>{
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
   else if((k==='enter'||k===' ')&&over.classList.contains('show')){e.preventDefault();reset()}
 });
+/* ---------- online multiplayer (Supabase Realtime: no database tables, just a live channel per room) ---------- */
+const SB_URL='https://mrrqfrmgblbgrvkbrwvt.supabase.co',SB_KEY='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
+const myId=Math.random().toString(36).slice(2,10),urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+let NET=null,MODE=urlRoom?'online':'cpu',onChar=null;
+const onEl=$('online'),charName=k=>((Scene3D.roster&&Scene3D.roster().find(c=>c.key===k))||{name:k.toUpperCase()}).name;
+document.querySelectorAll('#modeBtns button').forEach(b=>{b.classList.toggle('on',b.dataset.mode===MODE);b.onclick=()=>{MODE=b.dataset.mode;document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x===b))}});
+async function sbClient(){if(!window.__sb){const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');window.__sb=createClient(SB_URL,SB_KEY)}return window.__sb}
+const newCode=()=>Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
+function openOnline(key){onChar=key;onEl.classList.add('show');$('onMenu').hidden=false;$('onWait').hidden=true;$('onCode').value=urlRoom||'';if(urlRoom)joinRoom(urlRoom)}
+function showWait(code){$('onMenu').hidden=true;$('onWait').hidden=false;$('onRoom').textContent=code;
+  const link=location.origin+location.pathname+'?room='+code;$('onLink').value=link;$('onStatus').textContent='Waiting for your friend…';
+  $('onShare').hidden=!navigator.share}
+$('onCreate').onclick=()=>joinRoom(newCode());
+$('onJoin').onclick=()=>{const code=$('onCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length>=4)joinRoom(code)};
+$('onCode').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')$('onJoin').click()};
+$('onCopy').onclick=()=>{const i=$('onLink');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>$('onCopy').textContent='COPIED!',()=>document.execCommand('copy'))};
+$('onShare').onclick=()=>navigator.share&&navigator.share({title:'Space Duel',text:'Duel me in Space Duel! Room '+$('onRoom').textContent,url:$('onLink').value}).catch(()=>{});
+$('onCancel').onclick=()=>{leaveOnline();onEl.classList.remove('show')};
+async function joinRoom(code){leaveOnline();showWait(code);$('onStatus').textContent='Connecting…';
+  try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},opp:null};const net=NET;
+    ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
+      const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
+      if(!net.opp&&others.length){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full — create a new one.';return}startOnline(others[0])}
+      else if(net.opp&&!others.some(o=>o.id===net.opp.id))oppLeft()});
+    ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net)return;net.oppPicks[payload.round]=payload.move;if(payload.round===net.round){oppReady();tryReveal()}});
+    ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
+    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar});$('onStatus').textContent='Waiting for your friend…'}
+      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
+  }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
+function leaveOnline(){if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null}}
+async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
+  if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
+  const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
+  SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent='YOU · '+r.g.name;document.querySelector('.label.c').textContent='FRIEND · '+r.a.name;
+  net.live=true;net.round=0;onEl.classList.remove('show');selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');
+  stats0();reset();say('a','Let\'s duel!',400)}
+function stats0(){}
+function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=SEL.a.name+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
+function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
+function oppLeft(){if(!NET)return;NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
+  setTimeout(()=>{if(!NET||!NET.live)openSelect()},2500)}
 idle();render();openSelect();
 </script>
 <script type="module">
@@ -492,9 +563,11 @@ function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach
 function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
  list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,4.2/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
-function assign(playerKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key),opp=opts[Math.floor(Math.random()*opts.length)]||CHARS.find(c=>c.proc);
- SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:LOADED[opp.key]};HS=SL.g.R;
- for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
+function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
+ let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||CHARS.find(c=>c.proc);
+ const twin=opp.key===me.key&&LOADED[me.key+'#2'];
+ SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
+ for(const R of Object.values(LOADED))R.holder.visible=false;
  for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice},a:{name:opp.name,voice:opp.voice}}}
 for(const c of CHARS)if(!c.proc)loadSkinned(c.url,{height:3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
@@ -725,7 +798,9 @@ Object.assign(API,{
  matchEnd(won){st.match=won?'win':'lose'},
  reset(){st.match=null},
  showSelect(){st.select=true;st.res=null;st.match=null;st.shaking=false;layoutSelect();return rosterInfo()},
- choose(key){st.select=false;return assign(key)},
+ choose(key,oppKey){st.select=false;return assign(key,oppKey)},
+ prepareTwin(key){const c=CHARS.find(x=>x.key===key);if(!c||c.proc||LOADED[key+'#2'])return Promise.resolve();
+  return loadSkinned(c.url,{height:3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle}).then(R=>{R.cfg=c;R.holder.visible=false;LOADED[key+'#2']=R}).catch(()=>{})},
  roster:()=>rosterInfo(),
  say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);TALK[who]=Math.min(2.2,.35+text.length*.06)},
  reveal(res){st.res=res;st.revT=0;st.camShake=.12;
