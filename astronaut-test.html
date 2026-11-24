@@ -244,7 +244,7 @@ document.addEventListener('keydown',e=>{
   else if((k==='enter'||k===' ')&&over.classList.contains('show')){e.preventDefault();reset()}
 });
 /* ---------- online multiplayer (Supabase Realtime: no database tables, just a live channel per room) ---------- */
-const SB_URL='https://mrrqfrmgblbgrvkbrwvt.supabase.co',SB_KEY='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
+const SB_URL='https://urfdxhnkyytcypexrogo.supabase.co',SB_KEY='sb_publishable_TLnhb713JKvd1ZHRiA2Upg_1TmGyi7B';
 const myId=Math.random().toString(36).slice(2,10),urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 let NET=null,MODE=urlRoom?'online':'cpu',onChar=null;
 const onEl=$('online'),charName=k=>((Scene3D.roster&&Scene3D.roster().find(c=>c.key===k))||{name:k.toUpperCase()}).name;
