@@ -83,12 +83,12 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
-<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selBtns"></div><button id="readyPlayer" disabled>✓ READY</button></div></div>
+<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selBtns"></div><label id="mapPick" style="position:absolute;left:2%;top:13%;color:white">ARENA <select id="arenaChoice"><option value="temple">Orbital Temple</option><option value="city">Neon City</option><option value="ice">Frozen Temple</option><option value="lava">Volcanic Cavern</option><option value="random">Random Map</option></select></label><button id="readyPlayer" disabled>✓ READY</button></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
 <h2>🌐 ONLINE DUEL</h2>
 <div id="onMenu"><div class="lobHead"><span>PLAYERS ONLINE</span><label>Your name <input id="myName" maxlength="14"></label></div><div id="lobbyList"><p class="small">Connecting…</p></div><p id="lobStatus"></p><div class="onOr">or play with a room code</div><button id="onCreate">CREATE ROOM</button><input id="onCode" maxlength="6" placeholder="ROOM CODE" autocomplete="off"><button id="onJoin">JOIN</button></div>
-<div id="onWait" hidden><p>Room code</p><div id="onRoom" class="onCodeBig"></div><p class="small">Send this link to your friend:</p><div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY</button><button id="onShare">SHARE</button></div><p id="onStatus">Waiting for your friend…</p></div>
+<div id="onWait" hidden><p>Room code</p><div id="onRoom" class="onCodeBig"></div><p class="small">Send this link to your friend:</p><div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY</button><button id="onShare">SHARE</button></div><p id="onStatus">Waiting for your friend…</p><div id="roomSetup" hidden><label id="hostMap">HOST MAP <select id="roomMap"><option value="temple">Orbital Temple</option><option value="city">Neon City</option><option value="ice">Frozen Temple</option><option value="lava">Volcanic Cavern</option><option value="random">Random Map</option></select></label><p id="roomMapName"></p><button id="roomReady">✓ READY</button></div></div>
 <button id="onCancel" class="ghost">BACK</button></div></div>
 <div class="overlay" id="invite"><div class="onBox"><h2>⚔ DUEL INVITE</h2><p id="invText"></p><p id="invTimer" class="small"></p><button id="invYes">ACCEPT</button><button id="invNo" class="ghost">DECLINE</button></div></div>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><button id="again">PLAY AGAIN</button></div></div>
@@ -233,7 +233,7 @@ $('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'re
 /* character select */
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
-let selectedKey=null;const readyPlayer=$('readyPlayer');readyPlayer.onclick=()=>{if(!selectedKey||readyPlayer.disabled)return;readyPlayer.disabled=true;choosePlayer(selectedKey)};
+const maps=['temple','city','ice','lava'];const resolveMap=m=>maps.includes(m)?m:maps[Math.floor(Math.random()*maps.length)];window.arenaMap='temple';let selectedKey=null;const readyPlayer=$('readyPlayer');readyPlayer.onclick=()=>{if(!selectedKey||readyPlayer.disabled)return;readyPlayer.disabled=true;window.arenaMap=resolveMap($('arenaChoice').value);choosePlayer(selectedKey)};
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
   pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyPlayer.disabled=false;selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
   if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyPlayer.disabled=!selectedKey;selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
@@ -266,25 +266,27 @@ function openOnline(key){onChar=key;lobbyTrack();onEl.classList.add('show');$('o
 function showWait(code){$('onMenu').hidden=true;$('onWait').hidden=false;$('onRoom').textContent=code;
   const link=location.origin+location.pathname+'?room='+code;$('onLink').value=link;$('onStatus').textContent='Waiting for your friend…';
   $('onShare').hidden=!navigator.share}
-$('onCreate').onclick=()=>joinRoom(newCode());
+$('onCreate').onclick=()=>joinRoom(newCode(),true);
 $('onJoin').onclick=()=>{const code=$('onCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length>=4)joinRoom(code)};
 $('onCode').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')$('onJoin').click()};
 $('onCopy').onclick=()=>{const i=$('onLink');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>$('onCopy').textContent='COPIED!',()=>document.execCommand('copy'))};
 $('onShare').onclick=()=>navigator.share&&navigator.share({title:'Space Duel',text:'Duel me in Space Duel! Room '+$('onRoom').textContent,url:$('onLink').value}).catch(()=>{});
 $('onCancel').onclick=()=>{leaveOnline();onEl.classList.remove('show')};
-async function joinRoom(code){leaveOnline();showWait(code);$('onStatus').textContent='Connecting…';
+async function joinRoom(code,host=false){leaveOnline();showWait(code);$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
-    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},opp:null};const net=NET;
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},opp:null,host,ready:false,map:host?window.arenaMap:null,starting:false};const net=NET;$('roomSetup').hidden=true;$('roomReady').disabled=true;
     ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
-      if(!net.opp&&others.length){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full — create a new one.';return}startOnline(others[0])}
+      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full — create a new one.';return}const o=others[0];net.opp=o;const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;$('roomSetup').hidden=false;$('hostMap').hidden=!isHost;$('roomReady').disabled=net.ready||(!isHost&&!maps.includes(o.map));$('roomMapName').textContent='Arena: '+(isHost?net.map:o.map||'waiting for host');$('onStatus').textContent=(net.ready?'You are ready':'Press READY')+' · '+(o.ready?'Friend ready':'Friend not ready');if(net.ready&&o.ready&&maps.includes(isHost?net.map:o.map)){window.arenaMap=isHost?net.map:o.map;net.starting=true;startOnline(o)}}
       else if(net.opp&&!others.some(o=>o.id===net.opp.id))oppLeft()});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net)return;net.oppPicks[payload.round]=payload.move;if(payload.round===net.round){oppReady();tryReveal()}});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
-    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:myName});$('onStatus').textContent='Waiting for your friend…'}
+    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:myName,host:net.host,ready:false,map:net.map});$('onStatus').textContent='Waiting for your friend…'}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
-function leaveOnline(){if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}}
+function trackRoom(){if(NET)NET.ch.track({char:onChar,name:myName,host:NET.host,ready:NET.ready,map:NET.map})}
+$('roomMap').onchange=()=>{if(!NET||!NET.isHost||NET.ready)return;NET.map=resolveMap($('roomMap').value);trackRoom()};$('roomReady').onclick=()=>{if(!NET||NET.ready)return;NET.ready=true;$('roomReady').disabled=true;$('roomMap').disabled=true;trackRoom()};
+function leaveOnline(){$('roomMap').disabled=false;if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}}
 async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
   if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
   const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
@@ -329,7 +331,7 @@ function answerInvite(ok){const p=incoming;if(!p)return;closeInvite();LOBBY.ch.s
     onChar=pick;onEl.classList.add('show');joinRoom(p.code)}}
 $('invYes').onclick=()=>answerInvite(true);$('invNo').onclick=()=>answerInvite(false);
 function gotAnswer(p){if(!pendingInvite||pendingInvite.code!==p.code)return;clearTimeout(pendingInvite.t);const name=pendingInvite.name;pendingInvite=null;
-  if(p.ok){$('lobStatus').textContent=`${name} accepted! Connecting…`;joinRoom(p.code)}else{$('lobStatus').textContent=p.busy?`${name} is in another duel.`:`${name} declined.`;renderLobby()}}
+  if(p.ok){$('lobStatus').textContent=`${name} accepted! Connecting…`;joinRoom(p.code,true)}else{$('lobStatus').textContent=p.busy?`${name} is in another duel.`:`${name} declined.`;renderLobby()}}
 joinLobby();
 idle();render();openSelect();
 </script>
@@ -780,8 +782,9 @@ deck.visible=false;
 for(const x of [-6,-3.9,3.9,6]){templeBlock(1.15,.3,1.1,x,arenaY+.15,-3.6,trim);templeBlock(.72,4.5,.72,x,arenaY+2.4,-3.6);for(let j=0;j<7;j++)templeBlock(.82,.07,.82,x,arenaY+.55+j*.56,-3.6,trim);templeBlock(1.15,.32,1.1,x,arenaY+4.65,-3.6,trim);}
 for(const x of [-5,5]){templeBlock(2.7,.55,.9,x,arenaY+4.9,-3.6);templeBlock(.65,.45,.65,x,arenaY+.35,-2.8,trim);const flame=new THREE.Mesh(new THREE.ConeGeometry(.17,.55,12),ember);flame.position.set(x,arenaY+.85,-2.8);temple.add(flame);const light=new THREE.PointLight(0xff873c,12,5);light.position.copy(flame.position);temple.add(light);}
 for(let i=0;i<12;i++){const x=-7+i*1.25;templeBlock(1.18,.18,.5,x,arenaY+.08,-4.5);}
+const alternate={};for(const kind of ['city','ice','lava']){const g=new THREE.Group();fightArena.add(g);alternate[kind]=g;const palette={city:[0x222a40,0x00cfff],ice:[0x9db9d4,0x91eaff],lava:[0x35201c,0xff591b]}[kind];const mat=new THREE.MeshStandardMaterial({color:palette[0],roughness:.85});const glow=new THREE.MeshBasicMaterial({color:palette[1]});function block(w,h,d,x,y,z,m=mat){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);g.add(b);return b}block(16,.4,8,0,arenaY-.2,-1);for(let j=0;j<15;j++){const x=-9+j*1.3,h=2+rand()*6;if(kind==='city'){block(1,h,1,x,arenaY+h/2,-5);for(let k=0;k<h;k+=.55)block(.7,.09,.03,x,arenaY+k,-4.48,glow)}else{const b=new THREE.Mesh(new THREE.ConeGeometry(.7+rand(),h,kind==='ice'?5:7),mat);b.position.set(x,arenaY+h/2,-5);g.add(b)}}for(let j=0;j<12;j++){const b=block(.035,.015,3,-6+j,arenaY+.01,-1,glow);b.rotation.y=(rand()-.5)*.8}const l=new THREE.PointLight(palette[1],18,12);l.position.set(0,arenaY+3,-2);g.add(l);g.visible=false;}
 fightArena.visible=false;scene.add(fightArena);
-function updateBackground(dt){fightArena.visible=!st.select;
+function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const k in alternate)alternate[k].visible=k===map;
  // UFOs
  for(const u of UFOS){if(!u.active){u.wait-=dt;if(u.wait<=0)launchUFO(u);u.g.visible=false;continue}
   u.g.visible=true;u.p.addScaledVector(u.v,dt);const bob=Math.sin(TIME*1.3+u.ph)*.35;
