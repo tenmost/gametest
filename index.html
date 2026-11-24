@@ -659,13 +659,13 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
  if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
  if(phase==='wait')waitingPose(R);
- else {const pool=names.filter(n=>patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
- const p=String(preferred[phase]||'').split('*')[0];if(names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
+ else {const cosmic=/cosmic/i.test(R.cfg.key+' '+R.cfg.name);const pool=names.filter(n=>(!cosmic||!/spin|shuffle|circle|head/i.test(n))&&patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
+ const p=String(preferred[phase]||'').split('*')[0];if((!cosmic||!/spin|shuffle|circle|head/i.test(p))&&names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
  const rotate=phase==='menu'||phase==='fight'||phase==='champ';
  if(!R.phaseClip||(rotate&&TIME-R.phaseAt>Math.max(1.6,R.cur?.getClip().duration||2))){const choices=pool.filter(n=>n!==R.lastPhaseClip);R.phaseClip=(choices.length?choices:pool)[Math.floor(Math.random()*(choices.length||pool.length))]||null;R.phaseAt=TIME;if(R.phaseClip)R.lastPhaseClip=R.phaseClip;}
- if(R.phaseClip)R.play(R.phaseClip,{loop:phase!=='lose'&&phase!=='dead',fade:.25});else waitingPose(R);
+ if(cosmic&&phase==='fight'&&R.phaseClip){R.play(R.phaseClip,{loop:false,fade:.25});if(R.cur)R.cur.timeScale=.85;}else if(R.phaseClip)R.play(R.phaseClip,{loop:phase!=='lose'&&phase!=='dead',fade:.25});else waitingPose(R);
  }
- R.headDown=lerp(R.headDown,(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt)}
+ R.headDown=lerp(R.headDown,(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt);if(/cosmic/i.test(R.cfg.key+' '+R.cfg.name)&&phase==='fight'&&R.B.Head){if(!R.cosmicHeadNeutral)R.cosmicHeadNeutral=R.B.Head.quaternion.clone();R.B.Head.quaternion.copy(R.cosmicHeadNeutral);}}
 function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
 
 
