@@ -78,7 +78,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fightHUD{position:absolute;top:1%;left:39%;width:22%;z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}#stage.selecting #fightHUD{visibility:hidden}.fightNumber{font-size:clamp(10px,1.7vw,23px);font-weight:900;color:#ffe17a;letter-spacing:.08em;text-shadow:0 0 9px #fbbf24,0 2px 4px #000;white-space:nowrap}.fightTrack{display:flex;width:100%;gap:8px;align-items:center}.fightMarks{display:flex;flex:1;gap:4px}.fightMarks i{flex:1;height:clamp(7px,1.2vw,15px);border:1px solid #8499b6;background:#17243c;transform:skewX(-15deg);border-radius:2px}.fightMarks i.won{background:linear-gradient(#fff4a3,#e9a71b);border-color:#fff0a0;box-shadow:0 0 10px #ffbf35}.fightVS{font-size:clamp(8px,1vw,13px);font-weight:900;color:#d9e9ff}.score{top:11%}
 #fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
-.moveHistory{position:absolute;top:16%;display:flex;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%;flex-direction:row-reverse}.moveHistory span{display:grid;place-items:center;width:clamp(26px,3.8vw,49px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(15px,2.25vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
+.moveHistory{position:absolute;top:16%;display:flex;flex-direction:column;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%}.moveHistory span{display:grid;place-items:center;width:clamp(26px,3.8vw,49px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(15px,2.25vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -164,7 +164,7 @@ function clashSound(){if(muted)return;try{ac=ac||new (window.AudioContext||windo
 const sfx={tick:()=>{},go:()=>{},win:clashSound,lose:clashSound,draw:clashSound,match:()=>{},gameover:()=>{}};
 
 let historyP=[],historyC=[];
-function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<2;i++){const card=document.createElement('span');const move=moves[i];card.textContent=({rock:'✊',paper:'✋',scissors:'✌️'})[move]||'–';card.title=move||'No previous move';if(!move)card.className='empty';el.appendChild(card)}}
+function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<3;i++){const card=document.createElement('span');const move=moves[i];card.textContent=({rock:'✊',paper:'✋',scissors:'✌️'})[move]||'–';card.title=['Most recent','Previous','Oldest'][i]+': '+(move||'No previous move');if(!move)card.className='empty';el.appendChild(card)}}
   for(const [bar,lives] of [[hp,p],[hc,c]]){if(bar.children.length!==3){bar.replaceChildren(...Array.from({length:3},()=>document.createElement('span')));bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','3');}bar.setAttribute('aria-valuenow',String(lives));bar.setAttribute('aria-label',bar===hp?'Player health':'Opponent health');Array.from(bar.children).forEach((segment,i)=>segment.classList.toggle('full',i<lives));}
   $('sp').textContent=`Matches won: ${stats.wins} · Streak: ${stats.streak} · Best: ${stats.best}`;
   $('sc').textContent=`Matches won: ${stats.losses}`;
@@ -238,7 +238,7 @@ async function runRound(choice,other){
   Scene3D.reveal(win>0?{g:'win',a:'lose'}:win<0?{g:'lose',a:'win'}:{g:'tie',a:'tie'});
   count.textContent='';statusEl.textContent='';
   await wait(560);if(run!==token)return; // cards flip, wind up and smash together
-  historyP.unshift(choice);historyC.unshift(other);historyP.length=Math.min(2,historyP.length);historyC.length=Math.min(2,historyC.length);
+  historyP.unshift(choice);historyC.unshift(other);historyP.length=Math.min(3,historyP.length);historyC.length=Math.min(3,historyC.length);
   if(win>0){c--;shake(hc)}
   if(win<0){p--;perfectMatch=false;shake(hp)}
   render();
