@@ -670,6 +670,7 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
  if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
  if(phase==='menu'&&/mush/i.test(R.cfg.key+' '+R.cfg.name)&&mushroomDance(R))R.play('MushTVMenuDance',{fade:.25});
+ else if(/cosmic/i.test(R.cfg.key+' '+R.cfg.name)&&(phase==='menu'||phase==='wait'||phase==='champ'||phase==='win')&&R.act.Arm_Circle_Shuffle){R.play('Arm_Circle_Shuffle',{fade:.3,loop:true});if(R.cur){R.cur.paused=false;R.cur.timeScale=phase==='wait'?.3:1;}}
  else if(phase==='wait')waitingPose(R);
  else {const cosmic=/cosmic/i.test(R.cfg.key+' '+R.cfg.name);const pool=names.filter(n=>(!cosmic||!/shuffle|arm.circle/i.test(n))&&patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
  const p=String(preferred[phase]||'').split('*')[0];if((!cosmic||!/shuffle|arm.circle/i.test(p))&&names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
