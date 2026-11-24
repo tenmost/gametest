@@ -129,6 +129,8 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .acBtn.danger:hover{background:#3a1030;outline:3px solid #ff5a8a55}
 .acBtn.small{font-size:14px;padding:.6em 1em;border-radius:10px}
 .acMsg{min-height:1.3em;margin:12px 0 0;color:#ffd27a;font-weight:bold;line-height:1.4}
+.acLink{background:none;border:0;padding:4px 0;margin:10px 0 0;color:#7de7ff;font-weight:bold;font-size:14px;cursor:pointer;text-decoration:underline}.acLink:hover{color:#fff}
+.acPwd{display:grid;gap:10px}
 .acHint{color:#a9c4e8;font-size:14px;line-height:1.5;margin:0 0 16px}
 .acHero{display:flex;align-items:center;gap:18px;margin:6px 0 18px}
 .acAvatar{flex:none;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;font-size:56px;background:radial-gradient(circle,#2a3f88,#120f35);border:3px solid #7de7ff;box-shadow:0 0 24px #52d4ff99,inset 0 0 18px #6a2fa5}
@@ -163,6 +165,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
    <label class="acField">Password<input id="accountPass" type="password" autocomplete="current-password"></label>
    <button class="acBtn wide" id="accountSubmit" type="submit">LOG IN</button>
   </form>
+  <button class="acLink" id="acForgotLink" type="button">Forgot password?</button>
   <p class="acMsg" id="acMsgAuth" role="status"></p>
   <div class="acFoot"><button class="acBtn ghost" type="button" data-close>▶ PLAY AS GUEST</button></div>
  </div>
@@ -171,6 +174,17 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
   <div class="acRow"><label class="acField">Player name<input id="setupName" maxlength="24" autocomplete="nickname"></label><button class="acBtn" id="setupSave" type="button">SAVE</button></div>
   <p class="acMsg" id="acMsgSetup" role="status"></p>
   <div class="acFoot"><button class="acBtn danger small" type="button" data-logout>LOG OUT</button></div>
+ </div>
+ <div class="acBody" id="acForgot" hidden>
+  <p class="acHint">Enter your account email. We will send you a link to set a new password.</p>
+  <form id="acForgotForm"><label class="acField">Email<input id="acForgotEmail" type="email" autocomplete="email"></label><button class="acBtn wide" id="acForgotSend" type="submit">SEND RESET LINK</button></form>
+  <p class="acMsg" id="acMsgForgot" role="status"></p>
+  <div class="acFoot"><button class="acBtn ghost" type="button" id="acBackToLogin">← BACK TO LOG IN</button></div>
+ </div>
+ <div class="acBody" id="acRecovery" hidden>
+  <p class="acHint">Choose a new password for your account (at least 8 characters).</p>
+  <form id="acRecoveryForm" class="acPwd"><label class="acField">New password<input id="acNewPass1" type="password" autocomplete="new-password"></label><label class="acField">Repeat new password<input id="acNewPass2" type="password" autocomplete="new-password"></label><button class="acBtn wide" type="submit">SAVE NEW PASSWORD</button></form>
+  <p class="acMsg" id="acMsgRecovery" role="status"></p>
  </div>
  <div class="acBody" id="acProfile" hidden>
   <div class="acHero"><div class="acAvatar" id="acAvatar" aria-hidden="true">🧑‍🚀</div><div><div class="acName" id="acName"></div><div class="acEmail" id="acEmail"></div></div></div>
@@ -181,6 +195,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
    <div class="acStat"><b id="acStMaps">1/6</b><span>🗺️ Arenas</span></div>
   </div>
   <div class="acSection"><h3>AVATAR</h3><div class="acAvatars" id="acAvatars" role="radiogroup" aria-label="Avatar"></div></div>
+  <div class="acSection"><h3>PASSWORD</h3><button class="acBtn ghost small" type="button" id="acPwdToggle">🔒 CHANGE PASSWORD</button><form id="acPwdForm" class="acPwd" hidden style="margin-top:10px"><label class="acField">New password<input id="acPwd1" type="password" autocomplete="new-password"></label><label class="acField">Repeat new password<input id="acPwd2" type="password" autocomplete="new-password"></label><button class="acBtn small" type="submit">SAVE PASSWORD</button></form></div>
   <div class="acSection"><h3>PLAYER NAME</h3><div class="acRow"><label class="acField"><span hidden>Player name</span><input id="acRename" maxlength="24" autocomplete="nickname" aria-label="Player name"></label><button class="acBtn small" id="acRenameSave" type="button">SAVE</button></div></div>
   <p class="acMsg" id="accountMessage" role="status"></p>
   <div class="acFoot"><button class="acBtn" type="button" data-close>▶ PLAY</button><button class="acBtn danger small" type="button" data-logout id="accountLogout">LOG OUT</button></div>
@@ -193,8 +208,9 @@ const ARENAS=6;window.SD_AV=AV;
 const dlg=q('accountDialog');
 let client,lastSession=null,profile=null,tab='login';
 const nice=e=>{const m=String(e&&e.message||e);return m==='Username already taken'?'That player name is taken — choose another one.':m==='Invalid username'?'Player name: 3–24 letters, numbers, spaces, _ . -':m;};
-function view(){const v=!lastSession?'auth':profile?'profile':'setup';q('acAuth').hidden=v!=='auth';q('profileSetup').hidden=v!=='setup';q('acProfile').hidden=v!=='profile';q('acTitle').textContent=v==='auth'?(tab==='register'?'CREATE ACCOUNT':'WELCOME BACK'):v==='setup'?'CHOOSE A NAME':'PLAYER PROFILE';q('accountLoginMenu').hidden=q('demoRegister').hidden=!!lastSession;return v;}
-function msg(t,where){q(where||({auth:'acMsgAuth',setup:'acMsgSetup',profile:'accountMessage'})[view()]).textContent=t||'';}
+let mode=null;
+function view(){const v=mode||(!lastSession?'auth':profile?'profile':'setup');q('acForgot').hidden=v!=='forgot';q('acRecovery').hidden=v!=='recovery';q('acAuth').hidden=v!=='auth';q('profileSetup').hidden=v!=='setup';q('acProfile').hidden=v!=='profile';q('acTitle').textContent=v==='forgot'?'RESET PASSWORD':v==='recovery'?'NEW PASSWORD':v==='auth'?(tab==='register'?'CREATE ACCOUNT':'WELCOME BACK'):v==='setup'?'CHOOSE A NAME':'PLAYER PROFILE';q('accountLoginMenu').hidden=q('demoRegister').hidden=!!lastSession;return v;}
+function msg(t,where){q(where||({auth:'acMsgAuth',setup:'acMsgSetup',profile:'accountMessage',forgot:'acMsgForgot',recovery:'acMsgRecovery'})[view()]).textContent=t||'';}
 function setTab(t){tab=t;q('acTabLogin').classList.toggle('on',t==='login');q('acTabRegister').classList.toggle('on',t==='register');q('acTabLogin').setAttribute('aria-selected',String(t==='login'));q('acTabRegister').setAttribute('aria-selected',String(t==='register'));q('acNameField').hidden=t!=='register';q('accountSubmit').textContent=t==='register'?'CREATE ACCOUNT':'LOG IN';q('accountPass').autocomplete=t==='register'?'new-password':'current-password';q('acAuthHint').textContent=t==='register'?'Create an account — your crystals, wins and arenas are saved and follow you to any device.':'Log in to save your crystals, wins and unlocked arenas.';q('acMsgAuth').textContent='';view();}
 function open(t){if(t)setTab(t);const v=view();if(!dlg.open)dlg.showModal();const f=v==='auth'?(tab==='register'?q('accountName'):q('accountEmail')):v==='setup'?q('setupName'):null;if(f)setTimeout(()=>f.focus(),30);}
 function paint(){const s=q('accountSummary');if(!lastSession){s.textContent='Guest';view();return;}if(!profile){s.textContent='Choose a name';view();return;}
@@ -218,10 +234,18 @@ async function refreshProfile(session){
 for(const [k,e] of Object.entries(AV)){const b=document.createElement('button');b.type='button';b.dataset.av=k;b.textContent=e;b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' '));b.onclick=async()=>{if(!profile||profile.avatar===k)return;const prev=profile.avatar;profile.avatar=k;paint();const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error){profile.avatar=prev;paint();msg(nice(r.error));}else msg('Avatar saved!');};q('acAvatars').appendChild(b);}
 q('acRenameSave').onclick=async()=>{const n=q('acRename').value.trim();if(!profile||n===profile.username)return;const r=await client.rpc('sd_set_username',{p_username:n});if(r.error){msg(nice(r.error));return;}profile.username=r.data;q('acRename').blur();paint();msg('Player name saved!');};
 q('setupSave').onclick=async()=>{const n=q('setupName').value.trim();if(n.length<3){msg('Player name must be at least 3 characters.','acMsgSetup');return;}const r=await client.rpc('sd_init_player_profile',{p_username:n});if(r.error){msg(nice(r.error),'acMsgSetup');return;}await refreshProfile(lastSession);msg('Profile created! Win matches vs computer to earn crystals.','accountMessage');};
+const pwCheck=(a,b)=>a.length<8?'Password must be at least 8 characters.':a!==b?'The two passwords do not match.':null;
+q('acForgotLink').onclick=()=>{mode='forgot';q('acForgotEmail').value=q('accountEmail').value;q('acMsgForgot').textContent='';view();q('acForgotEmail').focus();};
+q('acBackToLogin').onclick=()=>{mode=null;setTab('login');};
+q('acForgotForm').onsubmit=async e=>{e.preventDefault();const email=q('acForgotEmail').value.trim(),btn=q('acForgotSend');if(!email){msg('Enter your email.','acMsgForgot');return;}if(!client){msg('Account service unavailable.','acMsgForgot');return;}btn.disabled=true;try{const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;msg('If this email has an account, a reset link is on its way. Open it on this device — the game will ask for your new password. (Check spam too.)','acMsgForgot');}catch(err){msg(/rate|security purposes/i.test(err.message)?'Too many emails right now — please wait a few minutes and try again.':err.message,'acMsgForgot');}finally{btn.disabled=false;}};
+q('acRecoveryForm').onsubmit=async e=>{e.preventDefault();const a=q('acNewPass1').value,b=q('acNewPass2').value,bad=pwCheck(a,b);if(bad){msg(bad,'acMsgRecovery');return;}const {error}=await client.auth.updateUser({password:a});if(error){msg(error.message,'acMsgRecovery');return;}q('acNewPass1').value=q('acNewPass2').value='';mode=null;view();msg('Password changed! You are logged in.');};
+q('acPwdToggle').onclick=()=>{const f=q('acPwdForm');f.hidden=!f.hidden;if(!f.hidden)q('acPwd1').focus();};
+q('acPwdForm').onsubmit=async e=>{e.preventDefault();const a=q('acPwd1').value,b=q('acPwd2').value,bad=pwCheck(a,b);if(bad){msg(bad);return;}const {error}=await client.auth.updateUser({password:a});if(error){msg(/reauthentic/i.test(error.message)?'For security, log out and log in again, then change the password.':error.message);return;}q('acPwd1').value=q('acPwd2').value='';q('acPwdForm').hidden=true;msg('Password changed!');};
 q('acTabLogin').onclick=()=>setTab('login');q('acTabRegister').onclick=()=>setTab('register');
 q('accountForm').onsubmit=async e=>{e.preventDefault();const register=tab==='register',btn=q('accountSubmit');try{if(!client)throw Error('Account service unavailable');const email=q('accountEmail').value.trim(),password=q('accountPass').value,username=q('accountName').value.trim();if(!email||!password)throw Error('Enter your email and password.');if(register&&(username.length<3||password.length<8))throw Error('Choose a player name of at least 3 characters and a password of at least 8 characters.');btn.disabled=true;const result=register?await client.auth.signUp({email,password,options:{data:{username}}}):await client.auth.signInWithPassword({email,password});if(result.error)throw result.error;q('accountPass').value='';if(register&&!result.data.session&&result.data.user&&Array.isArray(result.data.user.identities)&&result.data.user.identities.length===0){setTab('login');msg('This email already has an account (the same account as on tenmost.com). Log in with that password instead.','acMsgAuth');return;}if(result.data.session){await refreshProfile(result.data.session);msg(register?'Account created! Win matches vs computer to earn crystals.':'Welcome back!','accountMessage');}else msg('Check your email to confirm your account, then log in.','acMsgAuth');}catch(err){msg(err.message,'acMsgAuth');}finally{btn.disabled=false;}};
 for(const b of dlg.querySelectorAll('[data-close]'))b.onclick=()=>dlg.close();
 q('accountClose').onclick=()=>dlg.close();
+dlg.addEventListener('close',()=>{mode=null;});
 dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close();});
 dlg.addEventListener('keydown',e=>{if(e.target.matches('input'))e.stopPropagation();});
 q('acRename').addEventListener('keydown',e=>{if(e.key==='Enter')q('acRenameSave').click();});q('setupName').addEventListener('keydown',e=>{if(e.key==='Enter')q('setupSave').click();});
@@ -229,7 +253,7 @@ for(const b of dlg.querySelectorAll('[data-logout]'))b.onclick=async()=>{const {
 const toggle=q('accountToggle'),menu=q('accountMenu');function closeMenu(){menu.hidden=true;toggle.setAttribute('aria-expanded','false');}toggle.onclick=()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden));};document.addEventListener('click',e=>{if(!q('accountBar').contains(e.target))closeMenu();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
 q('accountOpen').onclick=()=>{closeMenu();open();};q('accountLoginMenu').onclick=()=>{closeMenu();open('login');};q('demoRegister').onclick=()=>{closeMenu();open('register');};
 setTab('login');paint();
-try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshProfile(session).catch(e=>msg(e.message)),0);});}catch(e){msg('Account service unavailable: '+e.message,'acMsgAuth');}
+try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>{refreshProfile(session).catch(e=>msg(e.message)).finally(()=>{if(event==='PASSWORD_RECOVERY'){mode='recovery';q('acMsgRecovery').textContent='';open();q('acNewPass1').focus();}});},0);});}catch(e){msg('Account service unavailable: '+e.message,'acMsgAuth');}
 window.__acTest={setClient:c=>{client=c},refreshProfile};
 </script>
 <div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="heroCollection"><div class="heroCollectionTitle">HERO COLLECTION</div><div id="selBtns"></div></div><div id="selectionBottom"><div id="mapPick"><span>CHOOSE ARENA</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="arenaChoice" value="temple"></div></div><button id="readyPlayer" aria-disabled="true" title="Choose a hero first">✓ READY</button><div id="readyNotice" role="status" aria-live="polite"></div></div></div>
