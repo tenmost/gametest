@@ -159,22 +159,25 @@ function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSyn
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
-let started=false;
+let started=false,awaitingMatchReady=false;
+const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:30;padding:12px 24px;border:1px solid #65ffad;border-radius:9px;background:#163b30;color:white;font-weight:bold;cursor:pointer';matchReady.hidden=true;document.body.appendChild(matchReady);
+function releaseMatchReady(){if(!awaitingMatchReady)return;if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';startPick();}
+matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;statusEl.textContent='WAITING FOR FRIEND TO READY';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 function startPick(){stopPick();pickLeft=15;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
     count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
-function idle(){
+function idle(waitForReady=false){
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
-  startPick();statusEl.textContent='CHOOSE YOUR MOVE';statusEl.className='';
+  if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='15';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='PRESS READY TO FIGHT';}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
 }
-function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle();render()}
+function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 function play(choice){
-  if(selecting||busy||!p||!c)return;
+  if(selecting||busy||awaitingMatchReady||!p||!c)return;
   if(NET&&NET.live){if(NET.myPick)return;NET.myPick=choice;stopPick();started=true;
     buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
     NET.ch.send({type:'broadcast',event:'pick',payload:{round:NET.round,move:choice}});
@@ -239,7 +242,7 @@ function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.in
   pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyPlayer.disabled=false;selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
   if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyPlayer.disabled=!selectedKey;selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){selectedKey=null;readyPlayer.disabled=true;stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){awaitingMatchReady=false;matchReady.hidden=true;selectedKey=null;readyPlayer.disabled=true;stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
@@ -275,12 +278,13 @@ $('onShare').onclick=()=>navigator.share&&navigator.share({title:'Space Duel',te
 $('onCancel').onclick=()=>{leaveOnline();onEl.classList.remove('show')};
 async function joinRoom(code,host=false){leaveOnline();showWait(code);$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
-    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},opp:null,host,ready:false,map:host?window.arenaMap:null,starting:false};const net=NET;$('roomSetup').hidden=true;$('roomReady').disabled=true;
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},opp:null,host,ready:false,map:host?window.arenaMap:null,starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;$('roomSetup').hidden=true;$('roomReady').disabled=true;
     ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
       if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full — create a new one.';return}const o=others[0];net.opp=o;const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;$('roomSetup').hidden=false;$('hostMap').hidden=!isHost;$('roomReady').disabled=net.ready||(!isHost&&!maps.includes(o.map));$('roomMapName').textContent='Arena: '+(isHost?net.map:o.map||'waiting for host');$('onStatus').textContent=(net.ready?'You are ready':'Press READY')+' · '+(o.ready?'Friend ready':'Friend not ready');if(net.ready&&o.ready&&maps.includes(isHost?net.map:o.map)){window.arenaMap=isHost?net.map:o.map;net.starting=true;startOnline(o)}}
       else if(net.opp&&!others.some(o=>o.id===net.opp.id))oppLeft()});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net)return;net.oppPicks[payload.round]=payload.move;if(payload.round===net.round){oppReady();tryReveal()}});
+    ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
     ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:myName,host:net.host,ready:false,map:net.map});$('onStatus').textContent='Waiting for your friend…'}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
@@ -297,7 +301,7 @@ async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent=
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=SEL.a.name+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
 function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
-function oppLeft(){if(!NET)return;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
+function oppLeft(){if(!NET)return;awaitingMatchReady=false;matchReady.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
   setTimeout(()=>{if(!NET||!NET.live)openSelect()},2500)}
 /* ---------- lobby: who is online right now + duel invites (no registration) ---------- */
 let LOBBY=null,lobbyUsers=[],pendingInvite=null,incoming=null,invTick=null;
