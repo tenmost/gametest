@@ -22,6 +22,7 @@ main{width:min(100vw,1100px);padding:8px}
 #status.win{color:#6dffa8}#status.lose{color:#ff7a90}
 .corner{position:absolute;bottom:1.5%;background:#112c65dd;border:1px solid #83dfff;border-radius:8px;color:white;padding:clamp(4px,1vw,10px);font-weight:bold;cursor:pointer;font-size:clamp(9px,1.1vw,14px)}
 #restart{right:1%}#mute{left:1%}#changeP{right:13%}
+#stage.selecting #mute{top:1.5%;bottom:auto;left:auto;right:1.5%;z-index:5}
 .flash{position:absolute;inset:0;pointer-events:none;opacity:0}.flash.go{animation:fl .5s}@keyframes fl{0%{opacity:.3}100%{opacity:0}}
 .overlay{position:absolute;inset:0;background:#050818bb;display:none;place-items:center;text-align:center;backdrop-filter:blur(3px)}
 .overlay.show{display:grid;animation:fade .4s}@keyframes fade{from{opacity:0}}
@@ -110,7 +111,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 let ac;
 function beep(freq,dur=.12,type='square',vol=.08,when=0){
   if(muted)return;
-  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});
   const t=ac.currentTime+when,o=ac.createOscillator(),g=ac.createGain();
   o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
   o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur)}catch(e){}
@@ -231,7 +232,7 @@ $('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'re
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
-  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
+  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.onclick=()=>{beep(660,.09,'triangle',.045);choosePlayer(c.key)};selBtns.appendChild(b)});
   selHint.textContent=pl.length?'Pick your fighter — the computer plays one of the others':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
 function openSelect(){leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
@@ -241,7 +242,7 @@ async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
-$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND'};
+$('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));if(!muted)beep(660,.1,'triangle',.05)};
 document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),m={'1':'rock',r:'rock','2':'paper',p:'paper','3':'scissors',s:'scissors'}[k];
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
