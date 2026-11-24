@@ -178,16 +178,25 @@ const ANN={
  'Round won!':{top:'FIGHT',big:'WON!',c:'#2cff86',s:'won'},
  'Round lost!':{top:'FIGHT',big:'LOST',c:'#ff2050',s:'lost'},
  'Victory!':{s:'victory'},'Defeat!':{s:'defeat'}};
+function boom(vol=.35,when=0,f1=140,f2=32,dur=1){if(muted)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});const t=ac.currentTime+when,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur*.6);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur);
+ const n=ac.createBuffer(1,Math.floor(ac.sampleRate*.25),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*7);const src=ac.createBufferSource(),f=ac.createBiquadFilter(),ng=ac.createGain();src.buffer=n;f.type='lowpass';f.frequency.value=1800;ng.gain.value=vol*.6;src.connect(f).connect(ng).connect(ac.destination);src.start(t)}catch(e){}}
+function brass(freqs,dur=.8,vol=.05,when=0,cut=1400){if(muted)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});const t=ac.currentTime+when,f=ac.createBiquadFilter(),g=ac.createGain();f.type='lowpass';f.frequency.setValueAtTime(cut*.4,t);f.frequency.exponentialRampToValueAtTime(cut,t+.08);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.05);g.gain.setValueAtTime(vol,t+dur*.6);g.gain.exponentialRampToValueAtTime(.001,t+dur);f.connect(g).connect(ac.destination);
+ for(const fr of freqs)for(const det of[-7,7]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.detune.value=det;o.connect(f);o.start(t);o.stop(t+dur+.05)}}catch(e){}}
 const ANN_SFX={
- fight:()=>{sweep(180,900,.35,'sawtooth',.05);impact(60,.5,.2,.32);gong(98,1.8,.1,.32);beep(392,.18,'square',.06,.34);beep(587,.3,'square',.06,.46)},
- point:()=>{beep(880,.12,'square',.07);beep(660,.12,'square',.07,.16);beep(880,.12,'square',.07,.32);beep(660,.22,'square',.07,.48)},
- won:()=>{[523,659,784,1047].forEach((f,i)=>beep(f,.16,'square',.06,i*.09))},
- lost:()=>{[392,330,262,196].forEach((f,i)=>beep(f,.2,'triangle',.08,i*.12))},
- victory:()=>{[523,659,784].forEach((f,i)=>beep(f,.14,'square',.06,i*.12));beep(1047,.6,'square',.07,.38);beep(784,.6,'triangle',.05,.38);gong(131,2,.07,.38)},
- defeat:()=>{[330,311,294].forEach((f,i)=>beep(f,.3,'sawtooth',.05,i*.3));beep(220,1,'sawtooth',.05,.9);impact(50,.8,.15,.9)}};
+ fight:()=>{sweep(120,700,.4,'sawtooth',.04);boom(.45,.38);gong(73,2.2,.12,.38);brass([110,165,220],.9,.05,.38,1100)},
+ point:()=>{boom(.3,0,110,40,.6);boom(.3,.35,110,40,.6);brass([147,220],.5,.04,.35,900)},
+ won:()=>{boom(.3);brass([196,247,294],.35,.045,.05);brass([262,330,392],.7,.05,.32)},
+ lost:()=>{boom(.3,0,90,28,1.2);brass([147,175],.5,.045,.05,700);brass([110,131],1,.05,.4,500)},
+ victory:()=>{boom(.4);brass([196,247,294],.3,.05,.05);brass([220,277,330],.3,.05,.32);brass([262,330,392,523],1.4,.055,.6);boom(.35,.6);gong(98,2.4,.08,.6)},
+ defeat:()=>{boom(.35,0,80,25,1.6);brass([110,131],.6,.05,.05,600);brass([98,117],.6,.05,.55,500);brass([73,87],1.6,.05,1.05,400)}};
+/* deep male announcer voice (browser text-to-speech) */
+const ANN_SAY={fight:1,point:1,won:1,lost:1,victory:1,defeat:1};
+function announcerVoice(){const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.length)return null;const mal=/(^|\W)male|david|daniel|mark|guy|george|fred|ryan|thomas|rishi|arthur|aaron|gordon|oliver|james|google uk english male/i;return en.find(v=>mal.test(v.name)&&!/female/i.test(v.name))||null}
+function announceVoice(text,kind){if(muted||!canSpeak||!ANN_SAY[kind])return;try{const u=new SpeechSynthesisUtterance(text.replace(/\./g,' ...'));const v=announcerVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.pitch=0.1;u.rate=kind==='fight'?0.78:0.85;u.volume=1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 let annEl=null;
 function announce(words){const a=ANN[words]||{big:String(words).toUpperCase(),c:'#5cf'};
  try{if(a.s&&ANN_SFX[a.s])ANN_SFX[a.s]()}catch(e){}
+ announceVoice(String(words),a.s);
  if(!a.big)return;
  if(!annEl){annEl=document.createElement('div');annEl.className='announcer';annEl.setAttribute('aria-live','polite');stage.appendChild(annEl)}
  annEl.style.setProperty('--ann',a.c||'#5cf');annEl.replaceChildren();
@@ -195,7 +204,7 @@ function announce(words){const a=ANN[words]||{big:String(words).toUpperCase(),c:
  const b=document.createElement('b');b.textContent=a.big;annEl.appendChild(b);
  annEl.classList.remove('go');void annEl.offsetWidth;annEl.classList.add('go')}
 function clashSound(){if(muted)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});const t=ac.currentTime,dur=.32,n=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++){const x=i/ac.sampleRate;d[i]=(Math.random()*2-1)*Math.exp(-x*22)}const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=n;f.type='bandpass';f.frequency.value=1350;f.Q.value=.65;g.gain.value=.23;s.connect(f).connect(g).connect(ac.destination);s.start(t);impact(58,.23,.11)}catch(e){}}
-const sfx={tick:()=>beep(1200,.05,'square',.05),go:()=>sweep(300,1400,.22,'triangle',.05),win:clashSound,lose:clashSound,draw:clashSound,match:()=>{beep(784,.1,'square',.06);beep(1047,.18,'square',.06,.1)},gameover:()=>{}};
+const sfx={tick:()=>{beep(180,.08,'triangle',.12);boom(.12,0,90,40,.25)},go:()=>sweep(300,1400,.22,'triangle',.05),win:clashSound,lose:clashSound,draw:clashSound,match:()=>{beep(784,.1,'square',.06);beep(1047,.18,'square',.06,.1)},gameover:()=>{}};
 
 let historyP=[],historyC=[];
 function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<3;i++){const card=document.createElement('span');const move=moves[i];if(move){card.dataset.move=move;const img=document.createElement('img');img.alt=move;if(window.duelCardArt?.[move])img.src=window.duelCardArt[move];card.appendChild(img)}else card.textContent='–';card.title=['Most recent','Previous','Oldest'][i]+': '+(move||'No previous move');if(!move)card.className='empty';el.appendChild(card)}}
