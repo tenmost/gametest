@@ -173,3 +173,47 @@ end;
 $$;
 revoke all on function public.sd_set_username(text) from public, anon;
 grant execute on function public.sd_set_username(text) to authenticated;
+-- ---------- reward codes (migration "sd_reward_codes") ----------
+-- Only the SHA-256 of each code is stored. Each account can redeem a code once.
+create table if not exists public.sd_reward_codes (
+ code_hash text primary key,
+ crystals integer not null check (crystals > 0),
+ active boolean not null default true,
+ note text,
+ created_at timestamptz not null default now()
+);
+alter table public.sd_reward_codes enable row level security;
+revoke all on public.sd_reward_codes from anon, authenticated;
+create table if not exists public.sd_code_redemptions (
+ user_id uuid not null references public.sd_player_profiles(id) on delete cascade,
+ code_hash text not null references public.sd_reward_codes(code_hash) on delete cascade,
+ crystals integer not null,
+ redeemed_at timestamptz not null default now(),
+ primary key (user_id, code_hash)
+);
+alter table public.sd_code_redemptions enable row level security;
+revoke all on public.sd_code_redemptions from anon, authenticated;
+-- the existing GameTest test code (same hash that was in index.html), 1000 blue crystals
+insert into public.sd_reward_codes(code_hash, crystals, note)
+values ('b0e0ef0e0bb0e96c998ba25ad690e6fd8473582f8aac907986db363e56765e48', 1000, 'GameTest test code (was local-only)')
+on conflict (code_hash) do nothing;
+
+create or replace function public.sd_redeem_code(p_code text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_hash text; v_code public.sd_reward_codes%rowtype; v_bal int; v_recent int;
+begin
+ if auth.uid() is null then raise exception 'Sign in required'; end if;
+ if not exists (select 1 from public.sd_player_profiles where id = auth.uid()) then raise exception 'Profile missing'; end if;
+ if p_code is null or char_length(trim(p_code)) not between 1 and 32 then raise exception 'Invalid reward code'; end if;
+ v_hash := encode(sha256(convert_to(upper(trim(p_code)), 'UTF8')), 'hex');
+ select * into v_code from public.sd_reward_codes where code_hash = v_hash and active;
+ if not found then raise exception 'Invalid reward code'; end if;
+ insert into public.sd_code_redemptions(user_id, code_hash, crystals) values (auth.uid(), v_hash, v_code.crystals)
+ on conflict do nothing;
+ if not found then raise exception 'Code already redeemed'; end if;
+ update public.sd_player_profiles set crystals = crystals + v_code.crystals where id = auth.uid() returning crystals into v_bal;
+ return jsonb_build_object('added', v_code.crystals, 'crystals', v_bal);
+end;
+$$;
+revoke all on function public.sd_redeem_code(text) from public, anon;
+grant execute on function public.sd_redeem_code(text) to authenticated;
