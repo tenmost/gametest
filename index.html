@@ -39,6 +39,7 @@ main{width:min(100vw,1100px);padding:8px}
 #select .selWrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:3% 2% 4%}
 #stage.selecting .controls,#stage.selecting .count,#stage.selecting .hearts,#stage.selecting .score,#stage.selecting .label,#stage.selecting #status,#stage.selecting #changeP,#stage.selecting #restart{visibility:hidden}
 #select h2{font-size:clamp(22px,4.5vw,56px)}#selHint{margin:0;font-size:clamp(11px,1.5vw,18px);color:#c7e9ff}
+#readyPlayer{position:absolute;right:2%;top:13%;padding:.55em 1.3em;border:2px solid #7de7ff;border-radius:10px;background:#174e42;color:white;font-weight:900;cursor:pointer}#readyPlayer:disabled{opacity:.4;cursor:default}#selBtns button.chosen{outline:3px solid #7affbb;background:#175e48}
 #selBtns{display:flex;gap:2%;justify-content:center;width:100%}
 #selBtns button{flex:1 1 0;min-width:0;padding:.35em .3em;font-size:clamp(9px,1.2vw,15px);font-weight:900;border-radius:10px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7cdd,#6a2fa5dd);color:#fff;cursor:pointer;box-shadow:0 0 18px #52d4ff88}
 #selBtns button:hover,#selBtns button:focus-visible{outline:3px solid #fff;transform:scale(1.05)}
@@ -82,7 +83,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
-<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selBtns"></div></div></div>
+<div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selBtns"></div><button id="readyPlayer" disabled>✓ READY</button></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
 <h2>🌐 ONLINE DUEL</h2>
@@ -232,11 +233,12 @@ $('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'re
 /* character select */
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
+let selectedKey=null;const readyPlayer=$('readyPlayer');readyPlayer.onclick=()=>{if(!selectedKey||readyPlayer.disabled)return;readyPlayer.disabled=true;choosePlayer(selectedKey)};
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
-  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.onclick=()=>{beep(660,.09,'triangle',.045);choosePlayer(c.key)};selBtns.appendChild(b)});
-  selHint.textContent=pl.length?'Pick your fighter — the computer plays one of the others':'Loading characters…'}
+  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyPlayer.disabled=false;selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
+  if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyPlayer.disabled=!selectedKey;selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){selectedKey=null;readyPlayer.disabled=true;stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
