@@ -159,7 +159,7 @@ function impact(freq=75,dur=.35,vol=.16,delay=0){
  const n=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*9);const src=ac.createBufferSource(),f=ac.createBiquadFilter(),ng=ac.createGain();src.buffer=n;f.type='lowpass';f.frequency.value=650;ng.gain.value=vol*.8;src.connect(f).connect(ng).connect(ac.destination);src.start(t);
  }catch(e){}
 }
-function announce(words){if(muted)return;impact(65,.65,.2);if(!canSpeak)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);u.lang='en-US';u.pitch=.35;u.rate=.82;u.volume=1;const v=voices.find(v=>/^en/i.test(v.lang)&&/david|daniel|mark|guy|george|alex|fred|ryan|thomas|male/i.test(v.name)&&!/female/i.test(v.name));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function announce(words){if(muted)return;impact(48,.75,.22);impact(85,.3,.13,.16);impact(42,.65,.2,.38);}
 const sfx={
  tick:()=>impact(52,.15,.08),
  go:()=>impact(95,.22,.1),
@@ -256,7 +256,7 @@ async function runRound(choice,other){
   flash.style.background=win>0?'#2cff86':win<0?'#ff2050':'#ffffff';
   flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go');
   (win>0?sfx.win:win<0?sfx.lose:sfx.draw)();
-  hush();if(p&&c){if((p===1&&opponentFights===1)||(c===1&&playerFights===1))announce('Match point!');else chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);}else announce(c===0?'Round won!':'Round lost!');
+  hush();if(p&&c){if((p===1&&opponentFights===1)||(c===1&&playerFights===1))announce('Match point!');}else announce(c===0?'Round won!':'Round lost!');
 
   if(!p||!c){
     const youWon=c===0;if(youWon)playerFights++;else opponentFights++;render();
