@@ -652,15 +652,19 @@ fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loa
 function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
- if(st.select||mine||st.shaking||res)R.waitFrozen=false;
- if(st.select)R.play(A.select||A.idle);
- else if(mine==='win')R.play(A.champ||A.win);
- else if(mine==='lose')R.play(A.dead,{loop:false});
- else if(st.shaking){const target=/misspike|mispike|spacehead/i.test((R.cfg.name+' '+R.cfg.key).replace(/[^a-z0-9]/gi,''));const clip=R.showNow||A.show[0];const combat=Object.keys(R.act).filter(n=>/box|punch|guard|jab|fight|kick|combat|dodge/i.test(n)&&!/dance|break|hit.reaction|dead|defeat/i.test(n));const safe=combat.find(n=>/box|guard|jab|punch/i.test(n))||combat[0];R.play(target||/break.?dance/i.test(String(clip))?safe||A.idle:clip,{fade:.25});}
- else if(res==='win')R.play(A.win,{fade:.25});
- else if(res==='lose'&&A.hit)R.play(A.hit,{loop:false,fade:.2});
- else waitingPose(R);
- R.headDown=lerp(R.headDown,res==='lose'&&!A.hit?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt)}
+ const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='win'?'win':res==='lose'?'lose':'wait';
+ const names=Object.keys(R.act), reject=/walk|run|strut|march|sprint|break.?dance/i;
+ const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
+ const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
+ if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
+ if(phase==='wait')waitingPose(R);
+ else {const pool=names.filter(n=>patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
+ const p=String(preferred[phase]||'').split('*')[0];if(names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
+ const rotate=phase==='menu'||phase==='fight'||phase==='champ';
+ if(!R.phaseClip||(rotate&&TIME-R.phaseAt>Math.max(1.6,R.cur?.getClip().duration||2))){const choices=pool.filter(n=>n!==R.lastPhaseClip);R.phaseClip=(choices.length?choices:pool)[Math.floor(Math.random()*(choices.length||pool.length))]||null;R.phaseAt=TIME;if(R.phaseClip)R.lastPhaseClip=R.phaseClip;}
+ if(R.phaseClip)R.play(R.phaseClip,{loop:phase!=='lose'&&phase!=='dead',fade:.25});else waitingPose(R);
+ }
+ R.headDown=lerp(R.headDown,(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt)}
 function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
 
 
