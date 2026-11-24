@@ -26,8 +26,9 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - During a match the HUD name tags (`.label.p` / `.label.c`, set by `setHud()`) show the player's avatar + player name, not the character's name. Vs computer the opponent is "🤖 COMPUTER"; online the opponent's name and avatar come from presence (`name`, `av`). Status texts use `oppName()`.
 - Tall stylized toy-figure characters with normal proportions (not chibi).
 - Match = best of three fights, each fight has three health segments; 10-second pick timer, random card if time runs out.
-- Crystals: blue (💎, spendable) and pink (future rewards). Signed-in players: blue crystals, wins/losses and unlocked arenas live in `sd_player_profiles` (server). Guests: local test balance in the browser (`sd_demo_progress_v1`). Reward codes are redeemed only inside the profile window (signed in) via `sd_redeem_code(code)`: the server compares SHA-256(upper(code)) with `sd_reward_codes` (only hashes stored, `active` flag) and allows each account one redemption per code (`sd_code_redemptions`).
-- Account menu (☰): guests see LOG IN + REGISTER; signed-in players see PROFILE + LOG OUT.
+- Crystals: blue (💎, spendable) and pink (future rewards). Signed-in players: blue crystals, wins/losses and unlocked arenas live in `sd_player_profiles` (server). Guests: no crystals at all (the old local test balance `sd_demo_progress_v1` is no longer used). Reward codes are redeemed only inside the profile window (signed in) via `sd_redeem_code(code)`: the server compares SHA-256(upper(code)) with `sd_reward_codes` (only hashes stored, `active` flag) and allows each account one redemption per code (`sd_code_redemptions`).
+- Account menu (☰): guests see LOG IN + REGISTER + PLAY AS GUEST; signed-in players see PROFILE + LOG OUT.
+- Guests get no rewards: no crystals, only the free arena (Orbital Temple), no name entry (they appear as "Guest123"). Crystals, unlocks, player name, avatar and friends need an account.
 
 ## Supabase
 - Project URL and the publishable key are in `index.html` / `admin.html` (the publishable key is public by design).
