@@ -30,6 +30,12 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - Account menu (☰): guests see LOG IN + REGISTER + PLAY AS GUEST; signed-in players see PROFILE + LOG OUT.
 - Guests get no rewards: no crystals, only the free arena (Orbital Temple), no name entry (they appear as "Guest123"). Crystals, unlocks, player name, avatar and friends need an account.
 
+## Arenas (performance rules)
+- Arenas are built in code (`temple` + `alternate.{city,ice,lava,jungle,factory}`), then `bakeStatic()` merges all static scenery into a few meshes per arena (one per material type, colours become vertex colours). This cut draw calls ~5–10× (e.g. graveyard ~1270 → ~210 per 2 frames).
+- What gets baked: opaque Standard/Basic meshes that are direct children of the arena group, or inside a group with `userData.staticDecor=true`. Anything that moves or changes material at runtime (animals, flames, hands, mist, particles) must be in its own sub-Group or have `userData.dynamic=true` on the mesh or its material — otherwise it will be frozen into the baked mesh.
+- New scenery must be added before the bake call (just above `fightArena.visible=false;scene.add(fightArena)`).
+- Ambient particles (`PARTS`, `updateParticles`): snow in Frozen Temple, embers in Volcanic Cavern — one `Points` draw call each.
+
 ## Supabase
 - Project URL and the publishable key are in `index.html` / `admin.html` (the publishable key is public by design).
 - NEVER put a `service_role` key, database password or any secret in the repo, a chat or a screenshot.

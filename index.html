@@ -619,6 +619,7 @@ idle();render();openSelect();
 <script type="module">
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -1105,7 +1106,7 @@ for(const kind of ['jungle','factory']){
  }else{
  const earth=mat(0x34382e),grave=mat(0x777b80),edge=mat(0x41464b),iron=mat(0x24282c),bark=mat(0x392d28);
  box(26,.7,15,0,arenaY-.36,-5,earth);
- for(let i=0;i<20;i++){const x=-10+(i%10)*2.2+(rand()-.5)*.65,z=-5.4-Math.floor(i/10)*3+(rand()-.5)*.9,h=.65+rand()*.65;const t=new THREE.Group();g.add(t);t.position.set(x,arenaY,z);t.rotation.z=(rand()-.5)*.32;t.rotation.y=(rand()-.5)*.45;
+ for(let i=0;i<20;i++){const x=-10+(i%10)*2.2+(rand()-.5)*.65,z=-5.4-Math.floor(i/10)*3+(rand()-.5)*.9,h=.65+rand()*.65;const t=new THREE.Group();t.userData.staticDecor=true;g.add(t);t.position.set(x,arenaY,z);t.rotation.z=(rand()-.5)*.32;t.rotation.y=(rand()-.5)*.45;
  const part=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m===grave?localStone:m);o.position.set(x,y,z);t.add(o);return o};
  part(new THREE.BoxGeometry(.9,.15,.65),edge,0,.075,0);
  const style=[0,2,3,1,4,2,0,3,4,1,3,1,4,0,2,4,2,1,3,0][i];const localStone=grave.clone();localStone.color.setHex([0x777b80,0x8b8980,0x62696b,0x77766b,0x91938d][i%5]);
@@ -1178,6 +1179,7 @@ const bird=new THREE.Group();alternate.jungle.add(bird);bird.position.set(5,aren
 for(let i=0;i<2;i++){const bat=new THREE.Group();alternate.factory.add(bat);oval(bat,0x25242c,0,0,0,.075,.095,.075);const wings=[];for(const s of [-1,1]){const wing=new THREE.Group();bat.add(wing);const shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(s*.38,.13);shape.lineTo(s*.29,-.12);shape.lineTo(s*.18,-.04);shape.lineTo(s*.09,-.15);shape.closePath();wing.add(new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0x302b36,side:THREE.DoubleSide})));wings.push(wing);}ambientActors.push({g:bat,kind:'factory',phase:i*2.8,wings});}
 // Additional arena-specific scenery.
 const citySign=document.createElement('canvas');citySign.width=512;citySign.height=128;const nc=citySign.getContext('2d');nc.fillStyle='#10152c';nc.fillRect(0,0,512,128);nc.strokeStyle='#ff42d7';nc.lineWidth=6;nc.strokeRect(5,5,502,118);nc.font='bold 65px sans-serif';nc.textAlign='center';nc.textBaseline='middle';nc.shadowColor='#00eaff';nc.shadowBlur=18;nc.fillStyle='#aaffff';nc.fillText('NEON CITY',256,64);const ns=new THREE.Mesh(new THREE.PlaneGeometry(3.1,.78),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(citySign)}));ns.position.set(-5.5,arenaY+2.25,-3.77);alternate.city.add(ns);
+{const c2=document.createElement('canvas');c2.width=512;c2.height=128;const n2=c2.getContext('2d');n2.fillStyle='#10152c';n2.fillRect(0,0,512,128);n2.strokeStyle='#00eaff';n2.lineWidth=6;n2.strokeRect(5,5,502,118);n2.font='bold 62px sans-serif';n2.textAlign='center';n2.textBaseline='middle';n2.shadowColor='#ff42d7';n2.shadowBlur=18;n2.fillStyle='#ffd6f6';n2.fillText('SPACE DUEL',256,66);const t2=new THREE.CanvasTexture(c2);t2.colorSpace=THREE.SRGBColorSpace;const s2=new THREE.Mesh(new THREE.PlaneGeometry(3.1,.78),new THREE.MeshBasicMaterial({map:t2}));s2.position.set(5.5,arenaY+2.25,-3.77);alternate.city.add(s2);}
 for(const [x,z,col] of [[-8,-4.3,0xff36bc],[8,-4.3,0x00eaff],[-3,-4.3,0x784cff],[3,-4.3,0x00ffbb]]){const m=new THREE.Mesh(new THREE.BoxGeometry(.08,1.9,.08),new THREE.MeshBasicMaterial({color:col}));m.position.set(x,arenaY+1,-4.3);alternate.city.add(m);const l=new THREE.PointLight(col,5,4);l.position.set(x,arenaY+1,z);alternate.city.add(l);}
 const iceCrackMat=new THREE.MeshBasicMaterial({color:0x4b819e});for(const path of [[[-7,-1],[-5,.2],[-3,-.5],[-1,.7],[1,-.3],[3,1],[6,.1]], [[-3,-.5],[-2,-2],[-.8,-3]],[[1,-.3],[2,-1.6],[4,-2.5]]])for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],dx=b[0]-a[0],dz=b[1]-a[1];const m=new THREE.Mesh(new THREE.PlaneGeometry(.035,Math.hypot(dx,dz)+.03),iceCrackMat);m.rotation.x=-Math.PI/2;m.rotation.z=Math.atan2(dx,dz);m.position.set((a[0]+b[0])/2,arenaY+.025,(a[1]+b[1])/2);iceG.add(m);}
 const bear=new THREE.Group();iceG.add(bear);bear.position.set(4.1,arenaY,-2.7);bear.rotation.y=-.65;oval(bear,0xf4f2df,0,.68,0,.43,.45,.8);oval(bear,0xf4f2df,0,.9,.62,.32,.32,.36);oval(bear,0xe8e5d6,0,.8,.91,.22,.19,.25);oval(bear,0x22252a,0,.84,1.12,.09,.07,.06);for(const s of [-1,1]){oval(bear,0xf4f2df,s*.23,1.15,.58,.1,.11,.08);oval(bear,0x22252a,s*.18,.98,.87,.035,.035,.035);for(const z of [-.43,.45])oval(bear,0xf4f2df,s*.27,.3,z,.17,.33,.2);}
@@ -1199,12 +1201,56 @@ const arenaLightProfiles={city:[0xc9e5ff,0xff49bd,0x29dfff],ice:[0xeaf7ff,0x9bbf
 const surfaceCanvas=document.createElement('canvas');surfaceCanvas.width=surfaceCanvas.height=128;const surfaceCtx=surfaceCanvas.getContext('2d');const surfacePixels=surfaceCtx.createImageData(128,128);for(let i=0;i<128*128;i++){const x=i%128,y=i>>7,v=Math.round(128+14*Math.sin(x*.21+y*.13)+9*Math.cos(y*.31-x*.17)+((i*73%31)-15));surfacePixels.data.set([v,v,v,255],i*4);}surfaceCtx.putImageData(surfacePixels,0,0);const surfaceBump=new THREE.CanvasTexture(surfaceCanvas);surfaceBump.wrapS=surfaceBump.wrapT=THREE.RepeatWrapping;
 for(const [kind,g] of Object.entries(alternate)){const palette=arenaLightProfiles[kind];if(!palette)continue;const [warm,left,right]=palette;const a=new THREE.PointLight(left,kind==='lava'?14:7,12,2);a.position.set(-5,arenaY+2.6,-2.8);g.add(a);const b=new THREE.PointLight(right,kind==='city'?9:6,12,2);b.position.set(5,arenaY+3,-3);g.add(b);const top=new THREE.DirectionalLight(warm,.48);top.position.set(0,8,4);g.add(top);
 const processed=new Set();g.traverse(o=>{if(!o.isMesh)return;const p=o.geometry.parameters||{};if(o.geometry.type==='BoxGeometry'&&Math.min(p.width,p.height,p.depth)>.18&&Math.max(p.width,p.height,p.depth)<12){o.geometry=new RoundedBoxGeometry(p.width,p.height,p.depth,2,Math.min(.065,Math.min(p.width,p.height,p.depth)*.12));}if(o.geometry.type==='ConeGeometry'&&p.radius>.15&&p.radialSegments<12){o.geometry=new THREE.ConeGeometry(p.radius,p.height,16,2);}const m=o.material;if(!m||!m.isMeshStandardMaterial)return;o.receiveShadow=true;if(o.position.y>arenaY+.3&&o.geometry.type!=='PlaneGeometry')o.castShadow=true;if(processed.has(m))return;processed.add(m);m.roughness=kind==='ice'?.34:kind==='city'?.56:kind==='lava'?.83:.78;m.metalness=kind==='city'?.12:kind==='ice'?.05:0;if(!m.bumpMap&&!m.map){m.bumpMap=surfaceBump;m.bumpScale=kind==='ice'?.018:.028;}m.needsUpdate=true;});}
+/* ---------- ambient particles: falling snow (ice), rising embers (lava) — one draw call each ---------- */
+const PARTS=[];
+{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');const gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);const dot=new THREE.CanvasTexture(c);
+ for(const [kind,count,color,size,blend,z0,z1] of [['ice',320,0xf4fbff,.17,THREE.NormalBlending,-11,2],['lava',220,0xff7a2a,.22,THREE.AdditiveBlending,-11,-2.5]]){
+  const pos=new Float32Array(count*3),seed=new Float32Array(count);for(let i=0;i<count;i++){pos[i*3]=-12+rand()*24;pos[i*3+1]=arenaY+rand()*8;pos[i*3+2]=z0+rand()*(z1-z0);seed[i]=rand()*6.283;}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({color,size,map:dot,transparent:true,depthWrite:false,blending:blend}));pts.frustumCulled=false;pts.userData.dynamic=true;alternate[kind].add(pts);PARTS.push({kind,pts,seed});}}
+function updateParticles(dt,map){for(const P of PARTS){if(P.kind!==map)continue;const a=P.pts.geometry.attributes.position,arr=a.array,n=P.seed.length;for(let i=0;i<n;i++){const j=i*3,s=P.seed[i];
+  if(P.kind==='ice'){arr[j+1]-=dt*(.35+s*.05);arr[j]+=Math.sin(TIME*.8+s)*dt*.25;if(arr[j+1]<arenaY)arr[j+1]+=8;}
+  else{arr[j+1]+=dt*(.45+s*.09);arr[j]+=Math.sin(TIME*1.3+s)*dt*.2;if(arr[j+1]>arenaY+7)arr[j+1]-=7;}}a.needsUpdate=true;}}
+
+/* ---------- performance: bake static arena scenery into a few meshes ----------
+   Every arena was hundreds of separate meshes (= hundreds of draw calls per frame). Meshes that are direct children
+   of an arena group (or inside a group marked userData.staticDecor) with an opaque material are merged into one mesh
+   per material type; their colours become vertex colours. Anything animated must sit in its own sub-Group or have
+   userData.dynamic=true (on the mesh or its material) so it is left alone. */
+function bakeStatic(g){
+ g.updateMatrixWorld(true);const inv=g.matrixWorld.clone().invert(),M=new THREE.Matrix4(),buckets=new Map();
+ const tex=t=>t?t.uuid:'';
+ const underStatic=o=>{let p=o.parent;while(p&&p!==g){if(!p.userData.staticDecor||!p.visible)return false;p=p.parent}return p===g};
+ const list=[];g.traverse(o=>list.push(o));
+ for(const o of list){
+  if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||!o.visible||o.userData.dynamic||Array.isArray(o.material)||!underStatic(o))continue;
+  const m=o.material;if(m.userData.dynamic||m.transparent||m.opacity<1||m.alphaTest>0||m.vertexColors||!(m.isMeshStandardMaterial||m.isMeshBasicMaterial)||!o.geometry.attributes.position)continue;
+  const key=[m.type,tex(m.map),tex(m.bumpMap),m.bumpScale,tex(m.normalMap),tex(m.roughnessMap),tex(m.metalnessMap),tex(m.emissiveMap),tex(m.aoMap),m.roughness,m.metalness,m.emissive?m.emissive.getHex():'',m.emissiveIntensity,m.side,m.flatShading,m.toneMapped,m.fog,m.envMapIntensity,o.castShadow,o.receiveShadow].join('|');
+  let bk=buckets.get(key);if(!bk){bk={mat:m,cast:o.castShadow,recv:o.receiveShadow,geos:[],objs:[]};buckets.set(key,bk)}
+  const geo=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();
+  for(const name of Object.keys(geo.attributes))if(!['position','normal','uv'].includes(name))geo.deleteAttribute(name);
+  geo.morphAttributes={};geo.clearGroups();if(!geo.attributes.normal)geo.computeVertexNormals();
+  const n=geo.attributes.position.count;if(!geo.attributes.uv)geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(n*2),2));
+  M.multiplyMatrices(inv,o.matrixWorld);geo.applyMatrix4(M);
+  if(M.determinant()<0)for(const att of Object.values(geo.attributes)){const sz=att.itemSize,arr=att.array;for(let t=0;t<n;t+=3)for(let k=0;k<sz;k++){const i1=(t+1)*sz+k,i2=(t+2)*sz+k,tmp=arr[i1];arr[i1]=arr[i2];arr[i2]=tmp}}
+  const col=new Float32Array(n*3),c=m.color;for(let i=0;i<n;i++){col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  bk.geos.push(geo);bk.objs.push(o);}
+ let before=0,after=0;
+ for(const bk of buckets.values()){before+=bk.objs.length;
+  const merged=bk.geos.length>1?mergeGeometries(bk.geos,false):null;
+  if(!merged){after+=bk.objs.length;bk.geos.forEach(x=>x.dispose());continue}
+  const mat=bk.mat.clone();mat.vertexColors=true;mat.color.set(0xffffff);
+  const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=bk.cast;mesh.receiveShadow=bk.recv;mesh.userData.baked=true;g.add(mesh);after++;
+  for(const o of bk.objs){o.parent.remove(o);o.geometry.dispose()}bk.geos.forEach(x=>x.dispose());}
+ return {before,after};
+}
+const bakeReport={};for(const [k,grp] of Object.entries({temple,...alternate}))bakeReport[k]=bakeStatic(grp);
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
 
  for(const a of ambientActors){if(a.kind!==map||st.select)continue;if(a.kind==='ice'){a.g.position.x=a.x+Math.sin(TIME*.6+a.phase)*.22;a.g.rotation.z=Math.sin(TIME*3+a.phase)*.09;}else if(a.kind==='jungle'){a.g.rotation.y=Math.sin(TIME*.7)*.7;}else{a.g.position.set(Math.sin(TIME*.38+a.phase)*7,arenaY+3.4+Math.sin(TIME*.9+a.phase)*.45,-7.2+Math.cos(TIME*.38+a.phase));a.wings.forEach((w,i)=>w.rotation.y=Math.sin(TIME*9+a.phase)*(i?1:-1)*.9);}}
- if(!st.select){if(map==='factory'){owls.forEach((head,i)=>head.rotation.y=Math.sin(TIME*.65+i*2)*.45);wrist.rotation.z=Math.sin(TIME*.85)*.065;graveFingers.forEach((f,i)=>f.rotation.x=.12+Math.sin(TIME*1.1+i*.35)*.10);}if(map==='jungle')snake.rotation.y=Math.sin(TIME*.8)*.12;if(map==='ice')bear.rotation.y=-.65+Math.sin(TIME*.5)*.12;}
+ if(!st.select){updateParticles(dt,map);if(map==='factory'){owls.forEach((head,i)=>head.rotation.y=Math.sin(TIME*.65+i*2)*.45);wrist.rotation.z=Math.sin(TIME*.85)*.065;graveFingers.forEach((f,i)=>f.rotation.x=.12+Math.sin(TIME*1.1+i*.35)*.10);}if(map==='jungle')snake.rotation.y=Math.sin(TIME*.8)*.12;if(map==='ice')bear.rotation.y=-.65+Math.sin(TIME*.5)*.12;}
  // UFOs
  for(const u of UFOS){if(!u.active){u.wait-=dt;if(u.wait<=0)launchUFO(u);u.g.visible=false;continue}
   u.g.visible=true;u.p.addScaledVector(u.v,dt);const bob=Math.sin(TIME*1.3+u.ph)*.35;
