@@ -630,13 +630,13 @@ function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
- list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,7.6/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+1.45,.2);R.holder.rotation.y=-x*.15;R.cur=null;if(stationaryProblem(R))stationaryHold(R);else R.play(c.anim.select||c.anim.idle)})}
+ list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,7.6/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+1.45,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
  let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||me;
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.waitFrozen=false;if(stationaryProblem(R))stationaryHold(R);else waitingPose(R)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.waitFrozen=false;waitingPose(R)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
@@ -650,8 +650,6 @@ async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co
    anim:{...x.anim,show:(Array.isArray(x.anim.show)&&x.anim.show.length?x.anim.show:[x.anim.idle])}}));
   return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
 fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loadChar(c)});
-function stationaryProblem(R){return /mush|misspike|mispike|spacehat|spacehead/i.test((R.cfg.key+' '+R.cfg.name).replace(/[^a-z0-9]/gi,''))}
-function stationaryHold(R){const names=Object.keys(R.act);const safe=names.find(n=>/idle|stand|breath|rest|guard|stance/i.test(n)&&!/walk|run|shuffle|dance|strut/i.test(n));const name=safe||names.find(n=>/walk|run|strut/i.test(n))||names[0];if(!name)return;const a=R.act[name];if(R.cur!==a||!R.stationaryHeld){R.mixer.stopAllAction();R.cur=null;R.play(name,{fade:0});a.time=a.getClip().duration*.12;R.stationaryHeld=true;}a.paused=true;R.mixer.update(0);}
 function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
@@ -659,9 +657,8 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  const names=Object.keys(R.act), reject=/walk|run|strut|march|sprint|break.?dance/i;
  const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
- if(R.animPhase!==phase){if(R.stationaryHeld){if(R.cur)R.cur.paused=false;R.mixer.stopAllAction();R.cur=null;R.stationaryHeld=false;}R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
- if(stationaryProblem(R)&&(phase==='menu'||phase==='wait'))stationaryHold(R);
- else if(phase==='wait')waitingPose(R);
+ if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
+ if(phase==='wait')waitingPose(R);
  else {const cosmic=/cosmic/i.test(R.cfg.key+' '+R.cfg.name);const pool=names.filter(n=>(!cosmic||!/shuffle|arm.circle/i.test(n))&&patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
  const p=String(preferred[phase]||'').split('*')[0];if((!cosmic||!/shuffle|arm.circle/i.test(p))&&names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
  const rotate=phase==='menu'||phase==='fight'||phase==='champ';
