@@ -198,11 +198,11 @@ const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':
 let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false,awaitingMatchReady=false;
-const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:70%;transform:translateX(-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
-const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:25%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
+const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:26%;transform:translate(-50%,-15%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
+const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:17%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
 function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=name+' · '+(ready?'✓ READY':'NOT READY');readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
 function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';hush();announce(['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
-matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='WAITING FOR FRIEND TO READY';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
+matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
@@ -211,7 +211,7 @@ function idle(waitForReady=false){
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
-  if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='10';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='PRESS READY TO FIGHT';updateFightReady();}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
+  if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='10';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='';updateFightReady();}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
 }
 function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;historyP=[];historyC=[];Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
@@ -258,7 +258,7 @@ async function runRound(choice,other){
       statusEl.textContent=(youWon?'YOU WIN THE FIGHT!':SEL.a.name+' WINS THE FIGHT!')+' · '+playerFights+'–'+opponentFights;
       count.textContent='★';await wait(3500);if(run!==token)return;
       p=3;c=3;Scene3D.reset&&Scene3D.reset();render();idle(true);
-      statusEl.textContent=(playerFights===1&&opponentFights===1?'FINAL FIGHT':'FIGHT 2')+' — PRESS READY';return;
+      statusEl.textContent='';return;
     }
     window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
