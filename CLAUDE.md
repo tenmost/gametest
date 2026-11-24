@@ -14,7 +14,7 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - `admin.html` — admin panel: upload/remove characters, view stats. Admins only (checked server-side).
 - `astronaut-test.html` — older experiment page, not linked from the game.
 - `assets/*.glb` — built-in character models (Meshy, rigged/animated). Other characters are uploaded through the admin panel to Supabase storage (`sd-models` bucket).
-- `supabase/player_profiles.sql` — prepared migration for player accounts (not applied yet).
+- `supabase/player_profiles.sql` — player accounts migration (applied as `sd_player_profiles`): profiles, server-verified matches vs computer, arena unlocks.
 - `tools/optimize_glb.py` — shrink a new Meshy/Mixamo GLB (mesh, textures, keep chosen animations).
 - `tools/reduce_keyframes.py` — drop redundant animation keyframes; run with `--verify` to see the max motion error.
 
@@ -25,7 +25,7 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - Announcer ("ROUND 1 – FIGHT!", "MATCH POINT", fight won/lost, victory/defeat) = big on-screen text + heavy Web Audio sounds (booms, gong, brass chords) + a deep male announcer voice via browser text-to-speech (`announceVoice`, pitch 0.1). The brothers chose this; characters themselves still have no voice. No audio files yet — a recorded, commercially licensed announcer voice may replace the TTS later.
 - Tall stylized toy-figure characters with normal proportions (not chibi).
 - Match = best of three fights, each fight has three health segments; 10-second pick timer, random card if time runs out.
-- Crystals: blue (💎, spendable) and pink (future rewards). Currently local-only in the browser (`sd_demo_progress_v1`), not real progress yet.
+- Crystals: blue (💎, spendable) and pink (future rewards). Signed-in players: blue crystals, wins/losses and unlocked arenas live in `sd_player_profiles` (server). Guests: local test balance in the browser (`sd_demo_progress_v1`); redeem codes only work for guests.
 
 ## Supabase
 - Project URL and the publishable key are in `index.html` / `admin.html` (the publishable key is public by design).
@@ -34,7 +34,10 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - The game runs on the shared Supabase project `mrrqfrmgblbgrvkbrwvt` ("tenmost's Project"), which it shares with Dainis's site tenmost.com. The separate "Space Duel" project (`urfdxhnkyytcypexrogo`) was deleted in Nov 2026.
 - In that project, only touch the game's own objects: `sd_*` tables and functions and the `sd-models` storage bucket. Never change or delete any other table, function, policy, bucket or setting — they belong to tenmost.com.
 - Admins are listed in `sd_admins` (email only). The owner is decided by tenmost.com's `user_roles` table via `has_role(..., 'admin')` inside `sd_is_owner()` — read it, never change it. Only the owner can add/remove admins and set their passwords.
-- Player accounts are not built yet. `supabase/player_profiles.sql` is not applied; when it is, the table must be `sd_player_profiles` because `player_profiles` already belongs to tenmost.com.
+- Player accounts: Supabase Auth (email + password, shared with tenmost.com's auth) + `sd_player_profiles` (unique player name, crystals, wins, losses, unlocked arenas/characters). Clients can only SELECT their own row; every change goes through security-definer RPCs.
+- Matches vs computer for signed-in players are server-verified: `sd_match_start()` creates a row in `sd_cpu_matches`, `sd_match_play(match, move)` picks the computer's card on the server, tracks health/fights and, when the match ends, adds crystals (win 8 perfect / 5, loss 1) and wins/losses. Min. 1 s between rounds. The client just plays the animation with the card the server returned.
+- Arena unlocks: `sd_unlock_map(map)` checks price + balance on the server (prices: city 20, jungle 35, ice 50, lava 75, factory 100 — keep them in sync with `prices` in index.html).
+- Online matches do not give crystals yet (no trusted verifier for two-browser matches).
 - Rewards (crystals, unlocks) must never be granted by a browser call that trusts the client. Spending must be checked server-side (price + balance).
 
 ## Online multiplayer

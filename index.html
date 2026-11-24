@@ -103,24 +103,30 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
 <div id="accountBar" style="position:absolute;top:12px;left:12px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:48%"><span id="accountSummary">Guest</span><span id="demoGemBalance" title="Local test crystals" style="color:#d9b4ff;font-weight:900;text-shadow:0 0 12px #a56cff">💎 0</span><span id="pinkGemBalance" title="Pink Crystals — future rewards" aria-label="Pink Crystals: 0" style="display:inline-flex;align-items:center;gap:4px;color:#ff8bda;font-weight:900;text-shadow:0 0 10px #ff45b5"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l5 7-11 12L1 10Z" fill="#ff65bc" stroke="#ffd1ee"/><path d="M6 3l6 19 6-19M1 10h22M6 3l6 7 6-7" fill="none" stroke="#ffe1f4" stroke-width="1"/></svg>0</span><button id="accountToggle" type="button" aria-label="Account menu" aria-expanded="false" title="Account menu">☰</button><div id="accountMenu" hidden><button id="accountOpen" type="button">👤 PROFILE</button><button id="accountLoginMenu" type="button">LOG IN</button><button id="demoRegister" type="button">REGISTER</button><button id="redeemTestCode" type="button">REDEEM CODE</button></div></div>
-<dialog id="accountDialog" style="z-index:100;background:#14152c;color:white;border:1px solid #8274d8;border-radius:14px;padding:20px;max-width:90vw;width:340px"><h2>PLAYER PROFILE</h2><div id="accountForm"><label>Username (registration)<input id="accountName" maxlength="24" autocomplete="nickname" style="display:block;width:95%"></label><label>Email<input id="accountEmail" type="email" autocomplete="email" style="display:block;width:95%"></label><label>Password<input id="accountPass" type="password" autocomplete="current-password" style="display:block;width:95%"></label><p><button id="accountLogin">LOG IN</button> <button id="accountRegister">REGISTER</button></p></div><p id="accountStats"></p><p id="accountMessage" role="status"></p><button id="accountLogout" hidden>LOG OUT</button> <button id="accountClose">CLOSE / PLAY</button></dialog>
+<dialog id="accountDialog" style="z-index:100;background:#14152c;color:white;border:1px solid #8274d8;border-radius:14px;padding:20px;max-width:90vw;width:340px"><h2>PLAYER PROFILE</h2><div id="accountForm"><label>Username (registration)<input id="accountName" maxlength="24" autocomplete="nickname" style="display:block;width:95%"></label><label>Email<input id="accountEmail" type="email" autocomplete="email" style="display:block;width:95%"></label><label>Password<input id="accountPass" type="password" autocomplete="current-password" style="display:block;width:95%"></label><p><button id="accountLogin">LOG IN</button> <button id="accountRegister">REGISTER</button></p></div><div id="profileSetup" hidden><label>Choose your player name<input id="setupName" maxlength="24" autocomplete="nickname" style="display:block;width:95%"></label><p><button id="setupSave" type="button">SAVE NAME</button></p></div><p id="accountStats"></p><p id="accountMessage" role="status"></p><button id="accountLogout" hidden>LOG OUT</button> <button id="accountClose">CLOSE / PLAY</button></dialog>
 <script type="module">
 const q=id=>document.getElementById(id);
 const msg=t=>q('accountMessage').textContent=t;
 let client;
+let lastSession=null;
+function publish(profile){window.sdAccount=profile?{client,userId:lastSession.user.id,profile,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:profile}));}
 async function refreshProfile(session){
+ lastSession=session;q('profileSetup').hidden=true;
  q('accountForm').hidden=!!session;q('accountLogout').hidden=!session;q('accountStats').textContent='';q('accountSummary').textContent=session?'Signed in':'Guest';
- if(!session)return;
+ if(!session){publish(null);return;}
  const name=session.user.user_metadata?.username;
- if(name){const init=await client.rpc('sd_init_player_profile',{p_username:name});if(init.error){msg('Profile setup pending: '+init.error.message);return;}}
- const {data,error}=await client.from('sd_player_profiles').select('username,crystals,wins,losses,unlocked_characters,unlocked_maps').eq('id',session.user.id).maybeSingle();
- if(error||!data){msg('Profile database setup pending.');return;}
+ let {data,error}=await client.from('sd_player_profiles').select('username,crystals,wins,losses,unlocked_characters,unlocked_maps').eq('id',session.user.id).maybeSingle();
+ if(!data&&!error&&name){const init=await client.rpc('sd_init_player_profile',{p_username:name});if(!init.error)({data,error}=await client.from('sd_player_profiles').select('username,crystals,wins,losses,unlocked_characters,unlocked_maps').eq('id',session.user.id).maybeSingle());else msg(init.error.message==='Username already taken'?'That player name is taken — choose another one.':init.error.message);}
+ if(error){publish(null);msg('Could not load profile: '+error.message);return;}
+ if(!data){publish(null);q('accountSummary').textContent='Choose a name';q('profileSetup').hidden=false;q('setupName').value=name||'';if(!q('accountDialog').open)q('accountDialog').showModal();return;}
+ publish(data);
  q('accountSummary').textContent=data.username+' · 💎 '+data.crystals;
  q('accountStats').textContent='Wins: '+data.wins+' | Losses: '+data.losses+' | Crystals: '+data.crystals+' | Characters: '+data.unlocked_characters.length+' | Maps: '+data.unlocked_maps.length;
- msg('Profile loaded. Match rewards are not enabled yet.');
+ msg('Profile loaded. Win matches vs computer to earn crystals — they are saved to your account.');
 }
 const toggle=q('accountToggle'),menu=q('accountMenu');function closeMenu(){menu.hidden=true;toggle.setAttribute('aria-expanded','false');}toggle.onclick=()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden));};document.addEventListener('click',e=>{if(!q('accountBar').contains(e.target))closeMenu();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});q('accountOpen').onclick=()=>{closeMenu();q('accountDialog').showModal();};q('accountLoginMenu').onclick=()=>{closeMenu();q('accountDialog').showModal();q('accountEmail').focus();};q('demoRegister').onclick=()=>{closeMenu();q('accountDialog').showModal();q('accountName').focus();};q('accountClose').onclick=()=>q('accountDialog').close();
 async function auth(register){try{if(!client)throw Error('Account service unavailable');const email=q('accountEmail').value.trim(),password=q('accountPass').value,username=q('accountName').value.trim();if(register&&(username.length<3||password.length<8))throw Error('Choose a username of at least 3 characters and a password of at least 8 characters.');const result=register?await client.auth.signUp({email,password,options:{data:{username}}}):await client.auth.signInWithPassword({email,password});if(result.error)throw result.error;q('accountPass').value='';if(result.data.session)await refreshProfile(result.data.session);else msg('Check your email to confirm your account.');}catch(e){msg(e.message);}}
+q('setupSave').onclick=async()=>{const n=q('setupName').value.trim();if(n.length<3){msg('Player name must be at least 3 characters.');return;}const r=await client.rpc('sd_init_player_profile',{p_username:n});if(r.error){msg(r.error.message==='Username already taken'?'That player name is taken — choose another one.':r.error.message);return;}await refreshProfile(lastSession);};q('setupName').addEventListener('keydown',e=>e.stopPropagation());['accountName','accountEmail','accountPass'].forEach(id=>q(id).addEventListener('keydown',e=>e.stopPropagation()));
 q('accountLogin').onclick=()=>auth(false);q('accountRegister').onclick=()=>auth(true);q('accountLogout').onclick=async()=>{const {error}=await client.auth.signOut();if(error)msg(error.message);else{await refreshProfile(null);msg('Logged out.');}};
 try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshProfile(session).catch(e=>msg(e.message)),0);});}catch(e){msg('Account service unavailable: '+e.message);}
 </script>
@@ -256,7 +262,10 @@ function idle(waitForReady=false){
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='10';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='';updateFightReady();}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
 }
-function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;historyP=[];historyC=[];Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
+/* signed-in players vs computer: the server picks the computer's card and awards crystals */
+let srvMatch=null,srvPending=false,srvLast=null;
+function startServerMatch(){srvLast=null;srvPending=false;const acc=window.sdAccount;srvMatch=(acc&&acc.profile&&!(NET&&NET.live))?acc.client.rpc('sd_match_start').then(r=>{if(r.error)throw r.error;return r.data}).catch(e=>{console.warn('sd_match_start',e);return null}):null}
+function reset(){if(selecting)return;stopPick();hush();started=true;token++;startServerMatch();p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;historyP=[];historyC=[];Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 function play(choice){
@@ -267,6 +276,11 @@ function play(choice){
     pickHash(round,choice,salt).then(hash=>{if(NET!==net||!net.live)return;net.ch.send({type:'broadcast',event:'pick',payload:{round,hash}});net.hashSent[round]=true;sendReveal(net,round)});
     if(!NET.oppHashes[NET.round]){statusEl.textContent='WAITING FOR '+SEL.a.name+'…';statusEl.className=''}
     tryReveal();return}
+  if(srvMatch){if(srvPending)return;srvPending=true;stopPick();buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});const pm=srvMatch,run=token;
+    pm.then(id=>{if(!id)throw Error('match not started');return window.sdAccount.client.rpc('sd_match_play',{p_match:id,p_move:choice})}).then(r=>{if(r.error)throw r.error;return r.data})
+    .then(d=>{srvPending=false;if(run!==token||srvMatch!==pm)return;srvLast=d;runRound(choice,d.opp)})
+    .catch(e=>{srvPending=false;console.warn('sd_match_play',e);if(run!==token)return;srvMatch=null;srvLast=null;runRound(choice,MOVES[Math.floor(Math.random()*3)]);statusEl.textContent='SERVER UNAVAILABLE — THIS MATCH GIVES NO CRYSTALS'});
+    return}
   runRound(choice,MOVES[Math.floor(Math.random()*3)]);
 }
 async function runRound(choice,other){
@@ -304,12 +318,12 @@ async function runRound(choice,other){
       p=3;c=3;Scene3D.reset&&Scene3D.reset();render();idle(true);
       statusEl.textContent='';return;
     }
-    window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
+    const srvWin=srvLast&&srvLast.match_over;if(srvWin)window.demoProgress?.setServer?.({crystals:srvLast.crystals});else window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
     save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+SEL.a.name+' WINS THE MATCH!';
-    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`;
+    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+(srvWin?` · 💎 +${srvLast.reward}`:window.sdAccount?.profile?' · no crystals (match not saved)':` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`);
     awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');announce(youWon?'Victory!':'Defeat!');$('again').focus();
     return;
   }
@@ -1225,7 +1239,12 @@ API.ready=true;document.getElementById('nogl').style.display='none';
 (()=>{const prices={temple:0,city:20,jungle:35,ice:50,lava:75,factory:100};let state={balance:0,owned:['temple'],wins:0,losses:0};try{const x=JSON.parse(localStorage.getItem('sd_demo_progress_v1'));if(x&&Number.isFinite(x.balance)&&Array.isArray(x.owned))state=x;}catch(e){}
 function paint(){document.getElementById('demoGemBalance').textContent='💎 '+state.balance;for(const b of document.querySelectorAll('#mapPick [data-map]')){const k=b.dataset.map;if(!(k in prices))continue;if(!b.dataset.originalLabel)b.dataset.originalLabel=b.textContent;b.textContent=b.dataset.originalLabel+(state.owned.includes(k)?'':' · 🔒 '+prices[k]+' 💎');} }
 function mapNotice(title,message,action){let d=document.getElementById('mapUnlockDialog');if(!d){d=document.createElement('dialog');d.id='mapUnlockDialog';d.innerHTML='<h3></h3><p></p><div class="mapNoticeActions"><button type="button" data-cancel>Cancel</button><button type="button" data-ok>Unlock</button></div>';document.querySelector('.stage').appendChild(d);}d.querySelector('h3').textContent=title;d.querySelector('p').textContent=message;const cancel=d.querySelector('[data-cancel]'),ok=d.querySelector('[data-ok]');cancel.hidden=!action;cancel.onclick=()=>d.close();ok.textContent=action?'Unlock':'OK';ok.onclick=()=>{d.close();if(action)action();};if(!d.open)d.showModal();}
-function save(){try{localStorage.setItem('sd_demo_progress_v1',JSON.stringify(state));}catch(e){}paint();}
+let guest=state;
+function save(){if(!state.server){try{localStorage.setItem('sd_demo_progress_v1',JSON.stringify(state));}catch(e){}}paint();}
+/* signed in: balance and unlocked arenas come from the server profile (sd_player_profiles) */
+window.addEventListener('sd-profile',e=>{const pr=e.detail;if(pr){state={server:true,balance:pr.crystals,owned:pr.unlocked_maps.slice(),wins:pr.wins,losses:pr.losses};}else{state=guest;}
+ document.getElementById('demoGemBalance').title=pr?'Blue crystals (saved to your profile)':'Local test crystals';
+ const cur=document.querySelector('#mapPick .chosen');if(cur&&cur.dataset.map in prices&&!state.owned.includes(cur.dataset.map))document.querySelector('#mapPick [data-map="temple"]')?.click();paint();});
 /* local test reward code: only its SHA-256 is stored here, so the code itself is not readable in the page source */
 const TEST_CODE_HASH='b0e0ef0e0bb0e96c998ba25ad690e6fd8473582f8aac907986db363e56765e48';
 async function sha256Hex(t){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return Array.from(new Uint8Array(d),x=>x.toString(16).padStart(2,'0')).join('')}
@@ -1235,12 +1254,14 @@ function redeemDialog(){let d=document.getElementById('redeemDialog');if(!d){d=d
   d.querySelector('form').onsubmit=async e=>{e.preventDefault();if(ok.dataset.done){d.close();return}const code=input.value.trim().toUpperCase();if(!code){input.focus();return}
     const good=await sha256Hex(code)===TEST_CODE_HASH;
     if(!good){msg.textContent='Invalid reward code.';input.select();return}
-    if(state.test1000Redeemed){msg.textContent='This code has already been redeemed in this browser.';return}
+    if(state.server){msg.textContent='Test codes only work for the guest test balance. Log out to use them.';return}if(state.test1000Redeemed){msg.textContent='This code has already been redeemed in this browser.';return}
     state.balance+=1000;state.test1000Redeemed=true;save();msg.textContent='Success! 1,000 blue crystals added to your local test balance.';input.hidden=true;cancel.hidden=true;ok.textContent='OK';ok.dataset.done='1'};}
   const input=d.querySelector('[data-code]'),ok=d.querySelector('[data-ok]');d.querySelector('[data-msg]').textContent='Enter your GameTest reward code:';input.value='';input.hidden=false;d.querySelector('[data-cancel]').hidden=false;ok.textContent='Redeem';delete ok.dataset.done;
   if(!d.open)d.showModal();input.focus()}
 document.getElementById('redeemTestCode').onclick=()=>{const menu=document.getElementById('accountMenu');menu.hidden=true;document.getElementById('accountToggle').setAttribute('aria-expanded','false');redeemDialog()};
-window.demoProgress={reward(win,perfect){state.balance+=win?(perfect?8:5):1;state[win?'wins':'losses']++;save();}};
-document.addEventListener('click',e=>{const b=e.target.closest('#mapPick [data-map]');if(!b)return;const k=b.dataset.map;if(k==='random'){e.stopImmediatePropagation();const owned=state.owned.filter(x=>x in prices);document.querySelector('#mapPick [data-map="'+owned[Math.floor(Math.random()*owned.length)]+'"]').click();return;}if(!(k in prices)||state.owned.includes(k))return;e.stopImmediatePropagation();if(state.balance<prices[k]){mapNotice('NOT ENOUGH CRYSTALS','You need '+(prices[k]-state.balance)+' more blue crystals.',null);return;}mapNotice('UNLOCK ARENA','Unlock '+b.dataset.originalLabel+' for '+prices[k]+' blue crystals? Your balance: '+state.balance+'.',()=>{if(state.owned.includes(k)||state.balance<prices[k])return;state.balance-=prices[k];state.owned.push(k);save();b.click();});},true);
+window.demoProgress={reward(win,perfect){if(state.server)return;state.balance+=win?(perfect?8:5):1;state[win?'wins':'losses']++;save();},setServer(x){if(!state.server)return;if(Number.isFinite(x.crystals))state.balance=x.crystals;if(Array.isArray(x.unlocked_maps))state.owned=x.unlocked_maps.slice();paint();window.sdAccount?.refresh?.();}};
+document.addEventListener('click',e=>{const b=e.target.closest('#mapPick [data-map]');if(!b)return;const k=b.dataset.map;if(k==='random'){e.stopImmediatePropagation();const owned=state.owned.filter(x=>x in prices);document.querySelector('#mapPick [data-map="'+owned[Math.floor(Math.random()*owned.length)]+'"]').click();return;}if(!(k in prices)||state.owned.includes(k))return;e.stopImmediatePropagation();if(state.balance<prices[k]){mapNotice('NOT ENOUGH CRYSTALS','You need '+(prices[k]-state.balance)+' more blue crystals.',null);return;}mapNotice('UNLOCK ARENA','Unlock '+b.dataset.originalLabel+' for '+prices[k]+' blue crystals? Your balance: '+state.balance+'.',()=>{if(state.owned.includes(k)||state.balance<prices[k])return;
+ if(state.server){const acc=window.sdAccount;if(!acc){mapNotice('NOT SIGNED IN','Please log in again.',null);return}acc.client.rpc('sd_unlock_map',{p_map:k}).then(r=>{if(r.error)throw r.error;window.demoProgress.setServer(r.data);b.click()}).catch(err=>mapNotice('UNLOCK FAILED',String(err.message||err),null));return}
+ state.balance-=prices[k];state.owned.push(k);save();b.click();});},true);
 paint();})();
 </script><script>(()=>{const panel=document.getElementById('heroCollection'),wrap=panel.parentElement,mode=document.getElementById('modeBtns'),maps=document.getElementById('selectionBottom');function fit(){const w=wrap.getBoundingClientRect(),m=mode.getBoundingClientRect(),a=maps.getBoundingClientRect();if(!w.height||!m.height||!a.height)return;panel.style.top=Math.max(0,m.bottom-w.top+8)+'px';panel.style.bottom=Math.max(0,w.bottom-a.top+8)+'px';}const ro=new ResizeObserver(fit);[wrap,mode,maps].forEach(x=>ro.observe(x));window.addEventListener('resize',fit);fit();})();</script></html>
