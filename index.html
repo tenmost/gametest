@@ -887,13 +887,22 @@ const bear=new THREE.Group();iceG.add(bear);bear.position.set(4.1,arenaY,-2.7);b
 const jungleG=alternate.jungle;const snake=new THREE.Group();jungleG.add(snake);snake.position.set(-4.6,arenaY+.13,-2.8);const snakePoints=[];for(let i=0;i<42;i++){const t=i/41;snakePoints.push(new THREE.Vector3(t*1.7-.85,.04+Math.max(0,t-.8)*.7,Math.sin(t*12)*.23));}animalPart(snake,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(snakePoints),48,.065,8,false),0x718b35,0,0,0);const tip=snakePoints[41];oval(snake,0x819b3c,tip.x,tip.y,tip.z,.13,.085,.09);for(const s of [-1,1])oval(snake,0x151b13,tip.x+.05,tip.y+.045,tip.z+s*.065,.018,.018,.018);
 for(const x of [-5,5]){const vine=[];for(let i=0;i<32;i++){const t=i/31;vine.push(new THREE.Vector3(x+Math.cos(t*15)*.68,arenaY+t*3.1,-3.5+Math.sin(t*15)*.55));}animalPart(jungleG,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(vine),40,.045,6,false),0x3b602d,0,0,0);for(let i=2;i<30;i+=4){const p=vine[i];oval(jungleG,0x527e36,p.x,p.y,p.z,.16,.055,.1).rotation.z=i%3-.8;}}
 const graveG=alternate.factory;
+// Stylized weathered stone hand emerging from a small mound, with rounded articulated fingers.
+const graveHand=new THREE.Group();graveG.add(graveHand);graveHand.position.set(2.1,arenaY,-4.5);
+oval(graveG,0x393b30,2.1,arenaY+.025,-4.5,.36,.065,.28);
+const wrist=new THREE.Group();graveHand.add(wrist);wrist.position.y=.06;
+const skin=0x92988a;oval(wrist,skin,0,.12,0,.085,.17,.075);oval(wrist,skin,0,.29,0,.13,.15,.065);
+function roundedDigit(parent,x,y,z,length,r,angle){const g=new THREE.Group();parent.add(g);g.position.set(x,y,z);g.rotation.z=angle;const m=new THREE.Mesh(new THREE.CapsuleGeometry(r,length-2*r,6,12),new THREE.MeshStandardMaterial({color:skin,roughness:.85}));m.position.y=length/2;g.add(m);return g;}
+const graveFingers=[];for(let i=0;i<4;i++){const len=[.17,.23,.25,.19][i];const f=roundedDigit(wrist,(i-1.5)*.062,.37,0,len,.029,(1.5-i)*.09);graveFingers.push(f);}
+roundedDigit(wrist,-.105,.23,.025,.17,.037,.7);
+
 const owls=[];for(const [x,y,z,scale] of [[-5.8,2.6746,-9,1],[4.2,3.2052,-9,.85]]){const owl=new THREE.Group();graveG.add(owl);owl.position.set(x,arenaY+y,z);owl.scale.setScalar(scale);oval(owl,0x594b40,0,.24,0,.19,.24,.16);oval(owl,0xb5a18a,0,.23,.12,.13,.17,.07);for(const s of [-1,1]){oval(owl,0x413831,s*.16,.24,0,.085,.19,.13);oval(owl,0x9b7846,s*.07,.035,.045,.055,.035,.09);}const head=new THREE.Group();owl.add(head);head.position.y=.45;oval(head,0x665344,0,0,0,.21,.17,.16);for(const s of [-1,1]){oval(head,0xc4b39a,s*.09,0,.13,.10,.11,.045);oval(head,0x241d19,s*.09,.005,.17,.057,.065,.027);const eye=new THREE.Mesh(new THREE.SphereGeometry(.036,12,8),new THREE.MeshBasicMaterial({color:0xffc247}));eye.position.set(s*.09,.005,.193);head.add(eye);oval(head,0x171313,s*.09,.005,.224,.013,.024,.009);const tuft=animalPart(head,new THREE.ConeGeometry(.065,.15,5),0x594b40,s*.14,.15,0);tuft.rotation.z=-s*.25;}oval(head,0x9c7138,0,-.065,.18,.045,.045,.065);owls.push(head);}
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
 
  for(const a of ambientActors){if(a.kind!==map||st.select)continue;if(a.kind==='ice'){a.g.position.x=a.x+Math.sin(TIME*.6+a.phase)*.22;a.g.rotation.z=Math.sin(TIME*3+a.phase)*.09;}else if(a.kind==='jungle'){a.g.rotation.y=Math.sin(TIME*.7)*.7;}else{a.g.position.set(Math.sin(TIME*.38+a.phase)*7,arenaY+3.4+Math.sin(TIME*.9+a.phase)*.45,-7.2+Math.cos(TIME*.38+a.phase));a.wings.forEach((w,i)=>w.rotation.y=Math.sin(TIME*9+a.phase)*(i?1:-1)*.9);}}
- if(!st.select){if(map==='factory'){owls.forEach((head,i)=>head.rotation.y=Math.sin(TIME*.65+i*2)*.45);}if(map==='jungle')snake.rotation.y=Math.sin(TIME*.8)*.12;if(map==='ice')bear.rotation.y=-.65+Math.sin(TIME*.5)*.12;}
+ if(!st.select){if(map==='factory'){owls.forEach((head,i)=>head.rotation.y=Math.sin(TIME*.65+i*2)*.45);wrist.rotation.z=Math.sin(TIME*.85)*.065;graveFingers.forEach((f,i)=>f.rotation.x=.12+Math.sin(TIME*1.1+i*.35)*.10);}if(map==='jungle')snake.rotation.y=Math.sin(TIME*.8)*.12;if(map==='ice')bear.rotation.y=-.65+Math.sin(TIME*.5)*.12;}
  // UFOs
  for(const u of UFOS){if(!u.active){u.wait-=dt;if(u.wait<=0)launchUFO(u);u.g.visible=false;continue}
   u.g.visible=true;u.p.addScaledVector(u.v,dt);const bob=Math.sin(TIME*1.3+u.ph)*.35;
