@@ -80,6 +80,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 #fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
 .moveHistory{position:absolute;top:16%;display:flex;flex-direction:column;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%}.moveHistory span{display:grid;place-items:center;width:clamp(26px,3.8vw,49px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(15px,2.25vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
 .controls button{top:auto;bottom:1.5%;height:19%;width:15%;padding:0;border:0;border-radius:8px;background:transparent;box-shadow:none;backdrop-filter:none;display:flex;align-items:center;justify-content:center;gap:0}.controls button .moveArt{height:100%;width:100%;max-width:none;object-fit:contain;filter:drop-shadow(0 0 5px #7de7ff66)}.controls button .moveText{display:none}.controls button:hover:not(:disabled),.controls button:focus-visible{background:transparent;outline:none;filter:brightness(1.25)}.controls button.picked{box-shadow:none;filter:drop-shadow(0 0 8px white)}.controls button:focus-visible .moveArt{outline:2px solid white;outline-offset:2px}.controls button:disabled{opacity:.65}@media(max-width:700px){.controls button{height:22%;width:19%}.controls .rock{left:20%}.controls .paper{left:40.5%}.controls .scissors{left:61%}}
+.controls button{transition:opacity .22s ease,filter .22s ease}#stage.move-resolving .controls button,#stage.move-resolving .controls button.picked{opacity:.10;filter:none;pointer-events:none}#stage.move-resolving .controls button .moveArt{filter:none}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -208,6 +209,7 @@ function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!start
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
     count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
 function idle(waitForReady=false){
+ stage.classList.remove('move-resolving');
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
@@ -218,7 +220,7 @@ function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.a
 
 function play(choice){
   if(selecting||busy||awaitingMatchReady||!p||!c)return;
-  if(NET&&NET.live){if(NET.myPick)return;NET.myPick=choice;stopPick();started=true;
+  if(NET&&NET.live){if(NET.myPick)return;NET.myPick=choice;stage.classList.add('move-resolving');stopPick();started=true;
     buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
     NET.ch.send({type:'broadcast',event:'pick',payload:{round:NET.round,move:choice}});
     if(!NET.oppPicks[NET.round]){statusEl.textContent='WAITING FOR '+SEL.a.name+'…';statusEl.className=''}
@@ -227,7 +229,7 @@ function play(choice){
 }
 async function runRound(choice,other){
   if(busy)return;
-  busy=true;started=true;stopPick();const run=++token;
+  busy=true;stage.classList.add('move-resolving');started=true;stopPick();const run=++token;
   buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
   Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','rock');statusEl.className='';
   hush();count.textContent='';statusEl.textContent='';
@@ -285,7 +287,7 @@ function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.in
   pl.forEach(c=>{const b=document.createElement('button');const pic=document.createElement('img');pic.alt='';const portrait=Scene3D.heroPortrait?.(c.key);if(portrait){pic.src=portrait;b.appendChild(pic)}const name=document.createElement('span');name.textContent=c.name;b.appendChild(name);b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;Scene3D.selectHeroPreview?.(c.key);selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyState();selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
   if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyState();selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){stage.classList.remove('move-resolving');awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
@@ -344,7 +346,7 @@ async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent=
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=SEL.a.name+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
 function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
-function oppLeft(){if(!NET)return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
+function oppLeft(){if(!NET)return;stage.classList.remove('move-resolving');awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
   setTimeout(()=>{if(!NET||!NET.live)openSelect()},2500)}
 /* ---------- lobby: who is online right now + duel invites (no registration) ---------- */
 let LOBBY=null,lobbyUsers=[],pendingInvite=null,incoming=null,invTick=null;
@@ -1050,7 +1052,7 @@ function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.ad
  front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
-const SLOT={g:V3(-.48,-.40,2.2),a:V3(.48,-.40,2.2)};
+const SLOT={g:V3(-.48,.11,2.2),a:V3(.48,.11,2.2)};
 const MID=SLOT.g.clone().lerp(SLOT.a,.5),SHARDS=[],CLASH_IN=.48-CARD_W*.55;
 function shatter(c){c.broken=true;const tex=c.front.material.map;
  const mat=new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.55,transparent:true,alphaTest:.05,side:THREE.DoubleSide,depthWrite:false});
