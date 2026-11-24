@@ -82,6 +82,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .controls button{top:auto;bottom:1.5%;height:19%;width:15%;padding:0;border:0;border-radius:8px;background:transparent;box-shadow:none;backdrop-filter:none;display:flex;align-items:center;justify-content:center;gap:0}.controls button .moveArt{height:100%;width:100%;max-width:none;object-fit:contain;filter:drop-shadow(0 0 5px #7de7ff66)}.controls button .moveText{display:none}.controls button:hover:not(:disabled),.controls button:focus-visible{background:transparent;outline:none;filter:brightness(1.25)}.controls button.picked{box-shadow:none;filter:drop-shadow(0 0 8px white)}.controls button:focus-visible .moveArt{outline:2px solid white;outline-offset:2px}.controls button:disabled{opacity:.65}@media(max-width:700px){.controls button{height:22%;width:19%}.controls .rock{left:20%}.controls .paper{left:40.5%}.controls .scissors{left:61%}}
 .controls button{transition:opacity .22s ease,filter .22s ease}#stage.move-resolving .controls button,#stage.move-resolving .controls button.picked{opacity:.10;filter:none;pointer-events:none}#stage.move-resolving .controls button .moveArt{filter:none}
 .count{position:relative;top:auto;left:auto;width:clamp(26px,5.4vw,64px);height:auto;aspect-ratio:1;border-radius:5px;border:1px solid #83cbe2;background:linear-gradient(145deg,#172c44b0,#101426a0);box-shadow:0 0 10px #43b9ed44,inset 0 0 8px #83cbe222;font:900 clamp(17px,3.3vw,42px)/1 'Trebuchet MS',sans-serif;color:#e2f8ff;text-shadow:0 0 8px #54c9ff;box-sizing:border-box}#status{top:19%;font-family:'Trebuchet MS',Arial,sans-serif;font-size:clamp(10px,2vw,24px);font-weight:900;letter-spacing:.12em;color:#d4f4ff;text-shadow:0 0 9px #49bfff,0 2px 5px #000;opacity:.88}#status.win{color:#6dffa8;text-shadow:0 0 12px #29d98b,0 2px 5px #000}#status.lose{color:#ff7a90;text-shadow:0 0 12px #ff4768,0 2px 5px #000}#fightHUD{gap:3px}
+#fightReadyStatus{inset:0!important;width:100%!important;transform:none!important;display:block!important}.fightReadyBadge{position:absolute;top:23%;transform:translate(-50%,-50%);width:max-content;padding:5px 9px;background:#14203a88;font-size:clamp(9px,1.2vw,15px);letter-spacing:.07em}.fightReadyBadge:first-child{left:25%}.fightReadyBadge:last-child{left:75%}#stage.waiting-fight-ready .controls{visibility:hidden}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -200,10 +201,10 @@ const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':
 let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false,awaitingMatchReady=false;
-const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:19%;transform:translate(-50%,-15%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
+const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
 const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:11%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
-function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=name+' · '+(ready?'✓ READY':'NOT READY');readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
-function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';hush();announce(['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
+function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;stage.classList.toggle('waiting-fight-ready',awaitingMatchReady);readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=ready?'✓ READY':'○ NOT READY';readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
+function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';hush();announce(['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
 matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
@@ -269,7 +270,7 @@ async function runRound(choice,other){
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+SEL.a.name+' WINS THE MATCH!';
     $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`;
-    awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();announce(youWon?'Victory!':'Defeat!');$('again').focus();
+    awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();announce(youWon?'Victory!':'Defeat!');$('again').focus();
     return;
   }
   await wait(1600);if(run!==token)return;
@@ -288,7 +289,7 @@ function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.in
   pl.forEach(c=>{const b=document.createElement('button');const pic=document.createElement('img');pic.alt='';const portrait=Scene3D.heroPortrait?.(c.key);if(portrait){pic.src=portrait;b.appendChild(pic)}const name=document.createElement('span');name.textContent=c.name;b.appendChild(name);b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;Scene3D.selectHeroPreview?.(c.key);selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyState();selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
   if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyState();selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){stage.classList.remove('move-resolving');awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){stage.classList.remove('move-resolving');awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
@@ -347,7 +348,7 @@ async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent=
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=SEL.a.name+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
 function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
-function oppLeft(){if(!NET)return;stage.classList.remove('move-resolving');awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
+function oppLeft(){if(!NET)return;stage.classList.remove('move-resolving');awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
   setTimeout(()=>{if(!NET||!NET.live)openSelect()},2500)}
 /* ---------- lobby: who is online right now + duel invites (no registration) ---------- */
 let LOBBY=null,lobbyUsers=[],pendingInvite=null,incoming=null,invTick=null;
@@ -1076,7 +1077,7 @@ function updateCards(dt,pulse){
  updateShards(dt);
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
-  c.g.visible=!st.select&&!c.broken;
+  c.g.visible=!st.select&&!c.broken&&!stage.classList.contains('waiting-fight-ready');
   // 1-2-3: each beat throws the card higher
   let bounce=0;if(st.shaking&&st.beatN){const t=(TIME-st.beatT)/.75;if(t<1)bounce=Math.sin(t*Math.PI)*(.08+.07*st.beatN)}
   const p=SLOT[key].clone();p.y+=Math.sin(TIME*2.2+sgn)*.04*(1-c.u)+bounce+Math.sin(c.u*Math.PI)*.1;
@@ -1098,7 +1099,7 @@ function updateCards(dt,pulse){
 
 const bubbles={};
 function bubbleEl(k){let b=bubbles[k];if(!b){b=document.createElement('div');b.className='bubble '+k;stage.appendChild(b);bubbles[k]=b}return b}
-function positionBubbles(){for(const k of['g','a']){const b=bubbles[k];if(!b)continue;if(st.select){b.classList.remove('show');continue}const R=SL[k]&&SL[k].R,head=R?R.B.Head:(k==='g'?hero.head:astro.head);
+function positionBubbles(){const badges=document.querySelectorAll('#fightReadyStatus .fightReadyBadge');if(stage.classList.contains('waiting-fight-ready')){for(const [i,k] of ['g','a'].entries()){const b=badges[i];if(!b)continue;const R=SL[k]&&SL[k].R,head=R?R.B.Head:(k==='g'?hero.head:astro.head);if(!head)continue;const p=head.getWorldPosition(V3(0,0,0)).add(V3(0,.45,0)).project(camera);b.style.left=Math.min(88,Math.max(12,(p.x+1)/2*100))+'%';b.style.top=Math.min(55,Math.max(13,(1-p.y)/2*100))+'%';}}for(const k of['g','a']){const b=bubbles[k];if(!b)continue;if(st.select){b.classList.remove('show');continue}const R=SL[k]&&SL[k].R,head=R?R.B.Head:(k==='g'?hero.head:astro.head);
  const p=head.getWorldPosition(V3(0,0,0)).add(V3(k==='g'?-.62:.62,.42,.2)).project(camera);b.style.left=Math.min(86,Math.max(14,(p.x+1)/2*100))+'%';b.style.top=Math.min(70,Math.max(20,(1-p.y)/2*100))+'%'}}
 /* ---------- state ---------- */
 const st={select:true,shaking:ST0.shaking,shakeT0:0,res:null,revT:9,camShake:0,mx:0,my:0,smx:0,smy:0,fov:42};
