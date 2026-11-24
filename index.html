@@ -757,9 +757,15 @@ function launchMeteor(){const c=earth.position;let d,hit;
  for(const k of['head','core','tail','rock'])MET[k].visible=true}
 const fightArena=new THREE.Group();
 const arenaY=FLOOR+.82;
-const deck=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.24,64),new THREE.MeshStandardMaterial({color:0x202c42,metalness:.65,roughness:.48}));deck.scale.set(4.8,1,2.1);deck.position.set(0,arenaY-.12,.35);fightArena.add(deck);
+const arenaCanvas=document.createElement('canvas');arenaCanvas.width=arenaCanvas.height=1024;const ax=arenaCanvas.getContext('2d');let seed=42;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ax.fillStyle='#283747';ax.fillRect(0,0,1024,1024);
+for(let y=0;y<1024;y+=128)for(let x=0;x<1024;x+=256){const g=ax.createLinearGradient(x,y,x,y+128);g.addColorStop(0,'#526274');g.addColorStop(.1,'#394959');g.addColorStop(.9,'#263443');g.addColorStop(1,'#141e2a');ax.fillStyle=g;ax.fillRect(x+3,y+3,250,122);ax.strokeStyle='#101923';ax.lineWidth=4;ax.strokeRect(x+3,y+3,250,122);for(const dx of [12,244])for(const dy of [12,116]){ax.fillStyle='#111a25';ax.beginPath();ax.arc(x+dx,y+dy,4,0,Math.PI*2);ax.fill();}ax.fillStyle='#57bce8';ax.fillRect(x+30,y+8,65,3);}
+for(let i=0;i<18000;i++){ax.fillStyle=rand()>.5?'rgba(255,255,255,.055)':'rgba(0,0,0,.09)';ax.fillRect(rand()*1024,rand()*1024,1+rand()*13,1);}
+for(let i=0;i<130;i++){let x=rand()*1024,y=rand()*1024;ax.strokeStyle='rgba(185,205,220,.15)';ax.lineWidth=1;ax.beginPath();ax.moveTo(x,y);ax.lineTo(x+rand()*35,y+rand()*5);ax.stroke();}
+const arenaTex=new THREE.CanvasTexture(arenaCanvas);arenaTex.colorSpace=THREE.SRGBColorSpace;arenaTex.anisotropy=4;
+const deck=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.24,64),new THREE.MeshStandardMaterial({color:0xffffff,map:arenaTex,metalness:.35,roughness:.62}));deck.scale.set(4.8,1,2.1);deck.position.set(0,arenaY-.12,.35);fightArena.add(deck);
 for(const [rad,col] of [[1,0x45caff],[.92,0x9b65ff]]){const rim=new THREE.Mesh(new THREE.RingGeometry(rad-.012,rad,96),new THREE.MeshBasicMaterial({color:col,side:THREE.DoubleSide}));rim.rotation.x=-Math.PI/2;rim.scale.set(4.8,2.1,1);rim.position.set(0,arenaY+.006,.35);fightArena.add(rim);}
-const gridPts=[];for(let x=-4;x<=4;x+=.5){const z=1.85*Math.sqrt(1-x*x/22);gridPts.push(x,arenaY+.012,.35-z,x,arenaY+.012,.35+z)}for(let z=-1.5;z<=1.5;z+=.5){const x=4.5*Math.sqrt(1-z*z/4);gridPts.push(-x,arenaY+.012,.35+z,x,arenaY+.012,.35+z)}const gridGeo=new THREE.BufferGeometry();gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gridPts,3));fightArena.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0x5b91ba,transparent:true,opacity:.22})));
+const gridPts=[];for(let x=-4;x<=4;x+=.5){const z=1.85*Math.sqrt(1-x*x/22);gridPts.push(x,arenaY+.012,.35-z,x,arenaY+.012,.35+z)}for(let z=-1.5;z<=1.5;z+=.5){const x=4.5*Math.sqrt(1-z*z/4);gridPts.push(-x,arenaY+.012,.35+z,x,arenaY+.012,.35+z)}const gridGeo=new THREE.BufferGeometry();gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gridPts,3));fightArena.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0x5b91ba,transparent:true,opacity:.07})));
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;
  // UFOs
