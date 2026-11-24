@@ -78,7 +78,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fightHUD{position:absolute;top:1%;left:39%;width:22%;z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}#stage.selecting #fightHUD{visibility:hidden}.fightNumber{font-size:clamp(10px,1.7vw,23px);font-weight:900;color:#ffe17a;letter-spacing:.08em;text-shadow:0 0 9px #fbbf24,0 2px 4px #000;white-space:nowrap}.fightTrack{display:flex;width:100%;gap:8px;align-items:center}.fightMarks{display:flex;flex:1;gap:4px}.fightMarks i{flex:1;height:clamp(7px,1.2vw,15px);border:1px solid #8499b6;background:#17243c;transform:skewX(-15deg);border-radius:2px}.fightMarks i.won{background:linear-gradient(#fff4a3,#e9a71b);border-color:#fff0a0;box-shadow:0 0 10px #ffbf35}.fightVS{font-size:clamp(8px,1vw,13px);font-weight:900;color:#d9e9ff}.score{top:11%}
 #fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
-.moveHistory{position:absolute;top:16%;display:flex;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%;flex-direction:row-reverse}.moveHistory span{display:grid;place-items:center;width:clamp(23px,3.4vw,44px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(13px,2vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
+.moveHistory{position:absolute;top:16%;display:flex;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%;flex-direction:row-reverse}.moveHistory span{display:grid;place-items:center;width:clamp(26px,3.8vw,49px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(15px,2.25vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -152,14 +152,22 @@ function beep(freq,dur=.12,type='square',vol=.08,when=0){
   o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
   o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur)}catch(e){}
 }
+function impact(freq=75,dur=.35,vol=.16,delay=0){
+ if(muted)return;
+ try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});
+ const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(freq*2,t);o.frequency.exponentialRampToValueAtTime(freq/2,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur);
+ const n=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*9);const src=ac.createBufferSource(),f=ac.createBiquadFilter(),ng=ac.createGain();src.buffer=n;f.type='lowpass';f.frequency.value=650;ng.gain.value=vol*.8;src.connect(f).connect(ng).connect(ac.destination);src.start(t);
+ }catch(e){}
+}
+function announce(words){if(muted)return;impact(65,.65,.2);if(!canSpeak)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);u.lang='en-US';u.pitch=.35;u.rate=.82;u.volume=1;const v=voices.find(v=>/^en/i.test(v.lang)&&/david|daniel|mark|guy|george|alex|fred|ryan|thomas|male/i.test(v.name)&&!/female/i.test(v.name));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
 const sfx={
-  tick:()=>beep(440,.1),
-  go:()=>beep(880,.18),
-  win:()=>[523,659,784].forEach((f,i)=>beep(f,.15,'triangle',.1,i*.09)),
-  lose:()=>[330,262,196].forEach((f,i)=>beep(f,.18,'sawtooth',.06,i*.1)),
-  draw:()=>beep(392,.2,'triangle',.08),
-  match:()=>[523,659,784,1047].forEach((f,i)=>beep(f,.25,'triangle',.1,i*.13)),
-  gameover:()=>[392,330,262,196].forEach((f,i)=>beep(f,.3,'sawtooth',.06,i*.15))
+ tick:()=>impact(52,.15,.08),
+ go:()=>impact(95,.22,.1),
+ win:()=>impact(105,.35,.18),
+ lose:()=>impact(55,.45,.2),
+ draw:()=>impact(80,.25,.1),
+ match:()=>{impact(65,.6,.2);impact(95,.5,.15,.2)},
+ gameover:()=>impact(45,.8,.22)
 };
 
 let historyP=[],historyC=[];
@@ -199,12 +207,12 @@ let started=false,awaitingMatchReady=false;
 const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:70%;transform:translateX(-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.92);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
 const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:25%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
 function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=name+' · '+(ready?'✓ READY':'NOT READY');readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
-function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';startPick();}
+function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';hush();announce(['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
 matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='WAITING FOR FRIEND TO READY';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
-    count.textContent=pickLeft;if(pickLeft===5)say(Math.random()<.75?'a':'g',rnd(LINES.hurry[Math.random()<.75?'a':'g']));if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
+    count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
 function idle(waitForReady=false){
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
@@ -248,7 +256,7 @@ async function runRound(choice,other){
   flash.style.background=win>0?'#2cff86':win<0?'#ff2050':'#ffffff';
   flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go');
   (win>0?sfx.win:win<0?sfx.lose:sfx.draw)();
-  hush();if(p&&c)chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);else chat(c===0?'matchWin':'matchLose',c===0?'g':'a',1300);
+  hush();if(p&&c){if((p===1&&opponentFights===1)||(c===1&&playerFights===1))announce('Match point!');else chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);}else announce(c===0?'Round won!':'Round lost!');
 
   if(!p||!c){
     const youWon=c===0;if(youWon)playerFights++;else opponentFights++;render();
@@ -264,7 +272,7 @@ async function runRound(choice,other){
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+SEL.a.name+' WINS THE MATCH!';
     $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`;
-    awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
+    awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();announce(youWon?'Victory!':'Defeat!');$('again').focus();
     return;
   }
   await wait(1600);if(run!==token)return;
@@ -290,7 +298,7 @@ async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
-$('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));if(!muted)beep(660,.1,'triangle',.05)};
+$('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));if(!muted)impact(80,.2,.08)};
 document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),m={'1':'rock',r:'rock','2':'paper',p:'paper','3':'scissors',s:'scissors'}[k];
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
