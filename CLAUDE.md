@@ -22,6 +22,7 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - Moves are shown as cards (rock/paper/scissors), not finger gestures. Keep the 3D character models.
 - No hand/arm pumping before the reveal; each character does a show-off move (dance, karate, etc.).
 - Characters "talk" with text speech bubbles only — no voices.
+- Announcer ("ROUND 1 – FIGHT!", "MATCH POINT", fight won/lost, victory/defeat) = big on-screen text + sounds generated with Web Audio in `announce()` / `sfx` — no voice and no audio files.
 - Tall stylized toy-figure characters with normal proportions (not chibi).
 - Match = best of three fights, each fight has three health segments; 10-second pick timer, random card if time runs out.
 - Crystals: blue (💎, spendable) and pink (future rewards). Currently local-only in the browser (`sd_demo_progress_v1`), not real progress yet.
