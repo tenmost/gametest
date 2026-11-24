@@ -30,7 +30,8 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - Project URL and the publishable key are in `index.html` / `admin.html` (the publishable key is public by design).
 - NEVER put a `service_role` key, database password or any secret in the repo, a chat or a screenshot.
 - Game tables use the `sd_` prefix: `sd_characters`, `sd_rounds`, `sd_matches`, `sd_admins`; admin RPCs `sd_is_admin`, `sd_is_owner`, `sd_admin_*`, `sd_stats`.
-- The game has its own Supabase project "Space Duel" (`urfdxhnkyytcypexrogo`). The old shared project (`mrrqfrmgblbgrvkbrwvt`) belongs to Dainis's other site tenmost.com — never change it from this repo.
+- The game runs on the shared Supabase project `mrrqfrmgblbgrvkbrwvt` ("tenmost's Project"), which it shares with Dainis's site tenmost.com. The separate "Space Duel" project (`urfdxhnkyytcypexrogo`) was deleted in Nov 2026.
+- In that project, only touch the game's own objects: `sd_*` tables and functions and the `sd-models` storage bucket. Never change or delete any other table, function, policy, bucket or setting — they belong to tenmost.com.
 - Admins are listed in `sd_admins`; `is_owner` marks the owner (only the owner can add/remove admins and set their passwords).
 - Rewards (crystals, unlocks) must never be granted by a browser call that trusts the client. Spending must be checked server-side (price + balance).
 
