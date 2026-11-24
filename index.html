@@ -77,6 +77,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .hearts span.full{background:linear-gradient(180deg,#b9ff9b,#39d76b 55%,#168c48);box-shadow:0 0 7px #39d76b88}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fightMarks{display:flex;gap:7px;margin-top:4px}.score.c .fightMarks{justify-content:flex-end}.fightMarks i{width:clamp(8px,1.1vw,15px);aspect-ratio:1;border:1px solid #9fb9d8;border-radius:50%;background:#14203a}.fightMarks i.won{background:#ffd45b;border-color:#fff2ad;box-shadow:0 0 9px #ffbd35}.score{top:11%}
+#fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -193,8 +194,10 @@ let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false,awaitingMatchReady=false;
 const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:30;padding:16px 32px;border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.55);backdrop-filter:blur(5px);color:white;font-size:clamp(16px,2.4vw,26px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
-function releaseMatchReady(){if(!awaitingMatchReady)return;if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';startPick();}
-matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;statusEl.textContent='WAITING FOR FRIEND TO READY';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
+const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:25%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
+function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=name+' · '+(ready?'✓ READY':'NOT READY');readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
+function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';startPick();}
+matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='WAITING FOR FRIEND TO READY';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 function startPick(){stopPick();pickLeft=15;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
@@ -203,7 +206,7 @@ function idle(waitForReady=false){
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppPicks[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
-  if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='15';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='PRESS READY TO FIGHT';}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
+  if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='15';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='PRESS READY TO FIGHT';updateFightReady();}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
 }
 function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
@@ -263,7 +266,7 @@ async function runRound(choice,other){
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+SEL.a.name+' WINS THE MATCH!';
     $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`;
-    awaitingMatchReady=false;matchReady.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
+    awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
     return;
   }
   await wait(3500);if(run!==token)return;
@@ -282,7 +285,7 @@ function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.in
   pl.forEach(c=>{const b=document.createElement('button');const pic=document.createElement('img');pic.alt='';const portrait=Scene3D.heroPortrait?.(c.key);if(portrait){pic.src=portrait;b.appendChild(pic)}const name=document.createElement('span');name.textContent=c.name;b.appendChild(name);b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;Scene3D.selectHeroPreview?.(c.key);selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyState();selHint.textContent=c.name+' selected — press READY'};selBtns.appendChild(b)});
   if(!pl.some(c=>c.key===selectedKey))selectedKey=null;readyState();selHint.textContent=selectedKey?pl.find(c=>c.key===selectedKey).name+' selected — press READY':pl.length?'Pick your fighter, then press READY':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
-function openSelect(){awaitingMatchReady=false;matchReady.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
+function openSelect(){awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;selectedKey=null;Scene3D.selectHeroPreview?.(null);readyState();stage.classList.remove('match-active');leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
   statusEl.textContent='';count.textContent='?';selEl.classList.add('show');stage.classList.add('selecting');renderRoster(Scene3D.showSelect?Scene3D.showSelect():[])}
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
@@ -341,7 +344,7 @@ async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent=
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=SEL.a.name+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
 function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
-function oppLeft(){if(!NET)return;awaitingMatchReady=false;matchReady.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
+function oppLeft(){if(!NET)return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
   setTimeout(()=>{if(!NET||!NET.live)openSelect()},2500)}
 /* ---------- lobby: who is online right now + duel invites (no registration) ---------- */
 let LOBBY=null,lobbyUsers=[],pendingInvite=null,incoming=null,invTick=null;
