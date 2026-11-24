@@ -76,12 +76,12 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .hearts span{flex:1;min-width:0;border-radius:2px;background:#352035;transition:background .25s,box-shadow .25s}
 .hearts span.full{background:linear-gradient(180deg,#b9ff9b,#39d76b 55%,#168c48);box-shadow:0 0 7px #39d76b88}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fightMarks{display:flex;gap:7px;margin-top:4px}.score.c .fightMarks{justify-content:flex-end}.fightMarks i{width:clamp(8px,1.1vw,15px);aspect-ratio:1;border:1px solid #9fb9d8;border-radius:50%;background:#14203a}.fightMarks i.won{background:#ffd45b;border-color:#fff2ad;box-shadow:0 0 9px #ffbd35}.score{top:11%}
+#fightHUD{position:absolute;top:1%;left:39%;width:22%;z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}#stage.selecting #fightHUD{visibility:hidden}.fightNumber{font-size:clamp(10px,1.7vw,23px);font-weight:900;color:#ffe17a;letter-spacing:.08em;text-shadow:0 0 9px #fbbf24,0 2px 4px #000;white-space:nowrap}.fightTrack{display:flex;width:100%;gap:8px;align-items:center}.fightMarks{display:flex;flex:1;gap:4px}.fightMarks i{flex:1;height:clamp(7px,1.2vw,15px);border:1px solid #8499b6;background:#17243c;transform:skewX(-15deg);border-radius:2px}.fightMarks i.won{background:linear-gradient(#fff4a3,#e9a71b);border-color:#fff0a0;box-shadow:0 0 10px #ffbf35}.fightVS{font-size:clamp(8px,1vw,13px);font-weight:900;color:#d9e9ff}.score{top:11%}
 #fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
-<div class="count" id="count">3</div>
+<div id="fightHUD"><div class="fightNumber" id="fightNumber">FIGHT 1</div><div class="fightTrack"><div class="fightMarks" id="fightP"></div><span class="fightVS">VS</span><div class="fightMarks" id="fightC"></div></div></div><div class="count" id="count">3</div>
 <div class="label p">PLAYER</div><div class="label c">COMPUTER</div>
 <div class="hearts p" id="hp"></div><div class="hearts c" id="hc"></div>
 <div class="score p" id="sp"></div><div class="score c" id="sc"></div>
@@ -165,7 +165,8 @@ function render(){
   for(const [bar,lives] of [[hp,p],[hc,c]]){if(bar.children.length!==3){bar.replaceChildren(...Array.from({length:3},()=>document.createElement('span')));bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','3');}bar.setAttribute('aria-valuenow',String(lives));bar.setAttribute('aria-label',bar===hp?'Player health':'Opponent health');Array.from(bar.children).forEach((segment,i)=>segment.classList.toggle('full',i<lives));}
   $('sp').textContent=`Matches won: ${stats.wins} · Streak: ${stats.streak} · Best: ${stats.best}`;
   $('sc').textContent=`Matches won: ${stats.losses}`;
-  for(const [id,wins] of [['sp',playerFights],['sc',opponentFights]]){const marks=document.createElement('div');marks.className='fightMarks';marks.setAttribute('aria-label',wins+' of 2 fights won');for(let i=0;i<2;i++){const dot=document.createElement('i');if(i<wins)dot.className='won';marks.appendChild(dot)}$(id).prepend(marks);}
+  $('fightNumber').textContent=(playerFights>=2||opponentFights>=2)?'MATCH OVER':(p===0||c===0)?'FIGHT '+(playerFights+opponentFights):'FIGHT '+(playerFights+opponentFights+1);
+  for(const [id,wins] of [['fightP',playerFights],['fightC',opponentFights]]){const marks=$(id);marks.replaceChildren();marks.setAttribute('aria-label',wins+' of 2 fights won');for(let i=0;i<2;i++){const stripe=document.createElement('i');if((id==='fightP'?1-i:i)<wins)stripe.className='won';marks.appendChild(stripe)}}
 }
 
 /* talking: speech bubbles + browser text-to-speech (free, no files) */
