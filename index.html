@@ -16,7 +16,7 @@ main{width:min(100vw,1100px);padding:8px}
 .controls button{position:absolute;top:88%;height:10%;width:15%;border:2px solid #7de7ff;border-radius:18px;background:linear-gradient(135deg,#122654d0,#50217dc0);box-shadow:0 0 13px #52d4ff99;cursor:pointer;color:white;font-size:clamp(10px,1.7vw,21px);font-weight:900;text-shadow:0 1px 4px #000;backdrop-filter:blur(2px)}
 .controls button:hover:not(:disabled),.controls button:focus-visible{background:linear-gradient(135deg,#1d3b7cef,#6a2fa5df);outline:3px solid #fff8}
 .controls button:disabled{opacity:.5;cursor:default}.controls button.picked{opacity:1;border-color:#fff;box-shadow:0 0 22px #fff}
-.controls small{display:block;font-size:.55em;opacity:.7;margin-top:2px}
+.controls button{display:flex;align-items:center;justify-content:center;gap:6px}.controls .moveArt{height:90%;max-width:44%;object-fit:contain;pointer-events:none}.controls .moveText{display:block}.moveHistory span img{width:100%;height:100%;object-fit:contain;display:block}.moveHistory span[data-move]:not(.empty){aspect-ratio:512/736;border:0;background:transparent;box-shadow:none}.controls small{display:block;font-size:.55em;opacity:.7;margin-top:2px}
 .controls .rock{left:25.7%}.controls .paper{left:42.5%}.controls .scissors{left:59.3%}
 #status{position:absolute;top:26%;left:22%;width:56%;text-align:center;font-size:clamp(12px,2.6vw,29px);font-weight:900;text-shadow:0 2px 8px black;pointer-events:none}
 #status.win{color:#6dffa8}#status.lose{color:#ff7a90}
@@ -88,9 +88,9 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <div class="score p" id="sp"></div><div class="score c" id="sc"></div>
 <div id="status">CHOOSE YOUR MOVE</div>
 <div class="controls">
-<button class="rock" data-m="rock" aria-label="Rock">✊ ROCK<small>key 1 / R</small></button>
-<button class="paper" data-m="paper" aria-label="Paper">✋ PAPER<small>key 2 / P</small></button>
-<button class="scissors" data-m="scissors" aria-label="Scissors">✌️ SCISSORS<small>key 3 / S</small></button>
+<button class="rock" data-m="rock" aria-label="Rock"><img class="moveArt" alt="" hidden><span class="moveText">ROCK<small>key 1 / R</small></span></button>
+<button class="paper" data-m="paper" aria-label="Paper"><img class="moveArt" alt="" hidden><span class="moveText">PAPER<small>key 2 / P</small></span></button>
+<button class="scissors" data-m="scissors" aria-label="Scissors"><img class="moveArt" alt="" hidden><span class="moveText">SCISSORS<small>key 3 / S</small></span></button>
 </div>
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
@@ -164,7 +164,7 @@ function clashSound(){if(muted)return;try{ac=ac||new (window.AudioContext||windo
 const sfx={tick:()=>{},go:()=>{},win:clashSound,lose:clashSound,draw:clashSound,match:()=>{},gameover:()=>{}};
 
 let historyP=[],historyC=[];
-function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<3;i++){const card=document.createElement('span');const move=moves[i];card.textContent=({rock:'✊',paper:'✋',scissors:'✌️'})[move]||'–';card.title=['Most recent','Previous','Oldest'][i]+': '+(move||'No previous move');if(!move)card.className='empty';el.appendChild(card)}}
+function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<3;i++){const card=document.createElement('span');const move=moves[i];if(move){card.dataset.move=move;const img=document.createElement('img');img.alt=move;if(window.duelCardArt?.[move])img.src=window.duelCardArt[move];card.appendChild(img)}else card.textContent='–';card.title=['Most recent','Previous','Oldest'][i]+': '+(move||'No previous move');if(!move)card.className='empty';el.appendChild(card)}}
   for(const [bar,lives] of [[hp,p],[hc,c]]){if(bar.children.length!==3){bar.replaceChildren(...Array.from({length:3},()=>document.createElement('span')));bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','3');}bar.setAttribute('aria-valuenow',String(lives));bar.setAttribute('aria-label',bar===hp?'Player health':'Opponent health');Array.from(bar.children).forEach((segment,i)=>segment.classList.toggle('full',i<lives));}
   $('sp').textContent=`Matches won: ${stats.wins} · Streak: ${stats.streak} · Best: ${stats.best}`;
   $('sc').textContent=`Matches won: ${stats.losses}`;
@@ -197,7 +197,7 @@ const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':
 let pickTimer=null,pickLeft=0,autoPicked=false;
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
 let started=false,awaitingMatchReady=false;
-const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:70%;transform:translateX(-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.92);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
+const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:70%;transform:translateX(-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
 const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:25%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
 function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.localMatchReady,remote=!online||!!NET.remoteMatchReady[NET.round];readyPanel.hidden=!awaitingMatchReady;readyPanel.replaceChildren();for(const [name,ready] of [[SEL.g.name,local],[SEL.a.name,remote]]){const el=document.createElement('div');el.className='fightReadyBadge'+(ready?' isReady':'');el.textContent=name+' · '+(ready?'✓ READY':'NOT READY');readyPanel.appendChild(el)}matchReady.textContent=local?'✓ READY — WAITING':'✓ READY TO FIGHT';}
 function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent='CHOOSE YOUR MOVE';hush();announce(['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
@@ -1039,6 +1039,9 @@ function cardTexture(kind){
  }
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
 const CARD_TEX={rock:cardTexture('rock'),paper:cardTexture('paper'),scissors:cardTexture('scissors'),back:cardTexture('back')};
+window.duelCardArt=Object.fromEntries(['rock','paper','scissors'].map(k=>[k,CARD_TEX[k].image.toDataURL()]));
+for(const b of document.querySelectorAll('.controls [data-m]')){const img=b.querySelector('.moveArt');if(img){img.src=window.duelCardArt[b.dataset.m];img.hidden=false}}
+for(const el of document.querySelectorAll('.moveHistory [data-move] img'))el.src=window.duelCardArt[el.parentElement.dataset.move];
 const CARD_W=.62,CARD_H=CARD_W*736/512,cardGeo=new THREE.PlaneGeometry(CARD_W,CARD_H);
 function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.add(inner);
  const mk=tex=>new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.45,transparent:true,alphaTest:.4,roughness:.35,metalness:.1,side:THREE.FrontSide});
