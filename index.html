@@ -68,6 +68,7 @@ main{width:min(100vw,1100px);padding:8px}
 #invite button{font-weight:900;font-size:clamp(12px,1.7vw,20px);padding:.5em 1.1em;border-radius:12px;border:2px solid #7de7ff;background:linear-gradient(135deg,#1d3b7c,#6a2fa5);color:#fff;cursor:pointer;margin:.3em}
 #invite button.ghost{background:transparent}
 footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
+#over{z-index:40}.endActions{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}#backToMenu{background:linear-gradient(135deg,#31244e,#5d397d)}button[hidden]{display:none!important}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -92,7 +93,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <div id="onWait" hidden><p>Room code</p><div id="onRoom" class="onCodeBig"></div><p class="small">Send this link to your friend:</p><div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY</button><button id="onShare">SHARE</button></div><p id="onStatus">Waiting for your friend…</p><div id="roomSetup" hidden><div id="hostMap"><span>HOST MAP</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="roomMap" value="temple"></div><p id="roomMapName"></p><button id="roomReady">✓ READY</button></div></div>
 <button id="onCancel" class="ghost">BACK</button></div></div>
 <div class="overlay" id="invite"><div class="onBox"><h2>⚔ DUEL INVITE</h2><p id="invText"></p><p id="invTimer" class="small"></p><button id="invYes">ACCEPT</button><button id="invNo" class="ghost">DECLINE</button></div></div>
-<div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><button id="again">PLAY AGAIN</button></div></div>
+<div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><div class="endActions"><button id="again">PLAY AGAIN</button><button id="backToMenu">BACK TO MENU</button></div></div></div>
 </div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 15 seconds to pick, or a random card is played. Three hearts each — first to lose all hearts loses the match. Move the mouse to look around.</footer></main>
 
 <script>
@@ -224,7 +225,7 @@ async function runRound(choice,other){
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 COMPUTER WINS';
     $('overText').textContent=youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`;
-    stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
+    awaitingMatchReady=false;matchReady.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
     return;
   }
   await wait(3500);if(run!==token)return;
@@ -233,7 +234,7 @@ async function runRound(choice,other){
 
 buttons.forEach(b=>b.onclick=()=>play(b.dataset.m));
 $('restart').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'rematch',payload:{}});reset()};
-$('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'rematch',payload:{}});reset()};$('changeP').onclick=()=>openSelect();
+$('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'rematch',payload:{}});reset()};$('changeP').onclick=()=>openSelect();$('backToMenu').onclick=()=>openSelect();
 /* character select */
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
