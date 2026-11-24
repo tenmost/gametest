@@ -85,6 +85,28 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
+<div id="accountBar" style="position:absolute;top:12px;right:12px;z-index:8;display:flex;gap:6px;align-items:center"><span id="accountSummary">Guest</span><button id="accountOpen" type="button">PROFILE / LOG IN</button></div>
+<dialog id="accountDialog" style="z-index:100;background:#14152c;color:white;border:1px solid #8274d8;border-radius:14px;padding:20px;max-width:90vw;width:340px"><h2>PLAYER PROFILE</h2><div id="accountForm"><label>Username (registration)<input id="accountName" maxlength="24" autocomplete="nickname" style="display:block;width:95%"></label><label>Email<input id="accountEmail" type="email" autocomplete="email" style="display:block;width:95%"></label><label>Password<input id="accountPass" type="password" autocomplete="current-password" style="display:block;width:95%"></label><p><button id="accountLogin">LOG IN</button> <button id="accountRegister">REGISTER</button></p></div><p id="accountStats"></p><p id="accountMessage" role="status"></p><button id="accountLogout" hidden>LOG OUT</button> <button id="accountClose">CLOSE / PLAY</button></dialog>
+<script type="module">
+const q=id=>document.getElementById(id);
+const msg=t=>q('accountMessage').textContent=t;
+let client;
+async function refreshProfile(session){
+ q('accountForm').hidden=!!session;q('accountLogout').hidden=!session;q('accountStats').textContent='';q('accountSummary').textContent=session?'Signed in':'Guest';
+ if(!session)return;
+ const name=session.user.user_metadata?.username;
+ if(name){const init=await client.rpc('sd_init_player_profile',{p_username:name});if(init.error){msg('Profile setup pending: '+init.error.message);return;}}
+ const {data,error}=await client.from('sd_player_profiles').select('username,crystals,wins,losses,unlocked_characters,unlocked_maps').eq('id',session.user.id).maybeSingle();
+ if(error||!data){msg('Profile database setup pending.');return;}
+ q('accountSummary').textContent=data.username+' · 💎 '+data.crystals;
+ q('accountStats').textContent='Wins: '+data.wins+' | Losses: '+data.losses+' | Crystals: '+data.crystals+' | Characters: '+data.unlocked_characters.length+' | Maps: '+data.unlocked_maps.length;
+ msg('Profile loaded. Match rewards are not enabled yet.');
+}
+q('accountOpen').onclick=()=>q('accountDialog').showModal();q('accountClose').onclick=()=>q('accountDialog').close();
+async function auth(register){try{if(!client)throw Error('Account service unavailable');const email=q('accountEmail').value.trim(),password=q('accountPass').value,username=q('accountName').value.trim();if(register&&(username.length<3||password.length<8))throw Error('Choose a username of at least 3 characters and a password of at least 8 characters.');const result=register?await client.auth.signUp({email,password,options:{data:{username}}}):await client.auth.signInWithPassword({email,password});if(result.error)throw result.error;q('accountPass').value='';if(result.data.session)await refreshProfile(result.data.session);else msg('Check your email to confirm your account.');}catch(e){msg(e.message);}}
+q('accountLogin').onclick=()=>auth(false);q('accountRegister').onclick=()=>auth(true);q('accountLogout').onclick=async()=>{const {error}=await client.auth.signOut();if(error)msg(error.message);else{await refreshProfile(null);msg('Logged out.');}};
+try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshProfile(session).catch(e=>msg(e.message)),0);});}catch(e){msg('Account service unavailable: '+e.message);}
+</script>
 <div class="overlay" id="select"><div class="selWrap"><div><h2>CHOOSE YOUR PLAYER</h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on">🤖 VS COMPUTER</button><button data-mode="online">🌐 ONLINE VS FRIEND</button></div></div><div id="selectionBottom"><div id="selBtns"></div><div id="mapPick"><span>CHOOSE ARENA</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="arenaChoice" value="temple"></div></div><button id="readyPlayer" disabled>✓ READY</button></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
