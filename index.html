@@ -159,16 +159,9 @@ function impact(freq=75,dur=.35,vol=.16,delay=0){
  const n=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*9);const src=ac.createBufferSource(),f=ac.createBiquadFilter(),ng=ac.createGain();src.buffer=n;f.type='lowpass';f.frequency.value=650;ng.gain.value=vol*.8;src.connect(f).connect(ng).connect(ac.destination);src.start(t);
  }catch(e){}
 }
-function announce(words){if(muted)return;impact(48,.75,.22);impact(85,.3,.13,.16);impact(42,.65,.2,.38);}
-const sfx={
- tick:()=>impact(52,.15,.08),
- go:()=>impact(95,.22,.1),
- win:()=>impact(105,.35,.18),
- lose:()=>impact(55,.45,.2),
- draw:()=>impact(80,.25,.1),
- match:()=>{impact(65,.6,.2);impact(95,.5,.15,.2)},
- gameover:()=>impact(45,.8,.22)
-};
+function announce(words){}
+function clashSound(){if(muted)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume().catch(()=>{});const t=ac.currentTime,dur=.32,n=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++){const x=i/ac.sampleRate;d[i]=(Math.random()*2-1)*Math.exp(-x*22)}const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=n;f.type='bandpass';f.frequency.value=1350;f.Q.value=.65;g.gain.value=.23;s.connect(f).connect(g).connect(ac.destination);s.start(t);impact(58,.23,.11)}catch(e){}}
+const sfx={tick:()=>{},go:()=>{},win:clashSound,lose:clashSound,draw:clashSound,match:()=>{},gameover:()=>{}};
 
 let historyP=[],historyC=[];
 function render(){for(const [id,moves] of [['historyP',historyP],['historyC',historyC]]){const el=$(id);el.replaceChildren();for(let i=0;i<2;i++){const card=document.createElement('span');const move=moves[i];card.textContent=({rock:'✊',paper:'✋',scissors:'✌️'})[move]||'–';card.title=move||'No previous move';if(!move)card.className='empty';el.appendChild(card)}}
@@ -298,7 +291,7 @@ async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;document.querySelector('.label.p').textContent=r.g.name;document.querySelector('.label.c').textContent=r.a.name;
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${r.g.name}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
-$('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));if(!muted)impact(80,.2,.08)};
+$('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));};
 document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),m={'1':'rock',r:'rock','2':'paper',p:'paper','3':'scissors',s:'scissors'}[k];
   if(m&&!e.ctrlKey&&!e.metaKey&&!e.altKey)play(m);
@@ -1046,15 +1039,15 @@ function cardTexture(kind){
  }
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
 const CARD_TEX={rock:cardTexture('rock'),paper:cardTexture('paper'),scissors:cardTexture('scissors'),back:cardTexture('back')};
-const CARD_W=.46,CARD_H=CARD_W*736/512,cardGeo=new THREE.PlaneGeometry(CARD_W,CARD_H);
+const CARD_W=.62,CARD_H=CARD_W*736/512,cardGeo=new THREE.PlaneGeometry(CARD_W,CARD_H);
 function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.add(inner);
  const mk=tex=>new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.45,transparent:true,alphaTest:.4,roughness:.35,metalness:.1,side:THREE.FrontSide});
  const front=new THREE.Mesh(cardGeo,mk(CARD_TEX.rock)),back=new THREE.Mesh(cardGeo,mk(CARD_TEX.back));back.rotation.y=Math.PI;front.position.z=.002;back.position.z=-.002;
  front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
 const CARD={g:makeCard(),a:makeCard()};
 function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
-const SLOT={g:V3(-.42,-.56,2.2),a:V3(.42,-.56,2.2)};
-const MID=SLOT.g.clone().lerp(SLOT.a,.5),SHARDS=[],CLASH_IN=.42-CARD_W*.55;
+const SLOT={g:V3(-.48,-.40,2.2),a:V3(.48,-.40,2.2)};
+const MID=SLOT.g.clone().lerp(SLOT.a,.5),SHARDS=[],CLASH_IN=.48-CARD_W*.55;
 function shatter(c){c.broken=true;const tex=c.front.material.map;
  const mat=new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.55,transparent:true,alphaTest:.05,side:THREE.DoubleSide,depthWrite:false});
  const cols=3,rows=4,w=CARD_W/cols,h=CARD_H/rows,q=c.g.quaternion.clone(),sc=c.g.scale.x,o=c.g.position.clone(),grp={mat,age:0,list:[]};
@@ -1084,7 +1077,7 @@ function updateCards(dt,pulse){
    if(T<.3)dx=0;
    else if(T<.42)dx=-sgn*.14*sstep(.3,.42,T);                       // wind up
    else if(T<.55){const k=(T-.42)/.13;dx=lerp(-sgn*.14,sgn*CLASH_IN,k*k)} // smash together
-   else if(res0==='win'){dx=sgn*(CLASH_IN+(.42-CLASH_IN)*sstep(.8,1.4,T));dz=.18*sstep(.8,1.4,T)} // winner takes the centre
+   else if(res0==='win'){dx=sgn*(CLASH_IN+(.48-CLASH_IN)*sstep(.8,1.4,T));dz=.18*sstep(.8,1.4,T)} // winner takes the centre
    else dx=sgn*CLASH_IN*Math.exp(-(T-.55)*7)-sgn*.05*Math.sin((T-.55)*18)*Math.exp(-(T-.55)*5); // tie: recoil
    p.x+=dx;p.z+=dz}
   c.g.position.copy(p);c.g.lookAt(camera.position);
