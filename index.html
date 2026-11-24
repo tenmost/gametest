@@ -19,6 +19,7 @@ main{width:min(100vw,1100px);padding:8px}
 .controls button:disabled{opacity:.5;cursor:default}.controls button.picked{opacity:1;border-color:#fff;box-shadow:0 0 22px #fff}
 .controls button{display:flex;align-items:center;justify-content:center;gap:6px}.controls .moveArt{height:90%;max-width:44%;object-fit:contain;pointer-events:none}.controls .moveText{display:block}.moveHistory span img{width:100%;height:100%;object-fit:contain;display:block}.moveHistory span[data-move]:not(.empty){aspect-ratio:512/736;border:0;background:transparent;box-shadow:none}.controls small{display:block;font-size:.55em;opacity:.7;margin-top:2px}
 .controls .rock{left:25.7%}.controls .paper{left:42.5%}.controls .scissors{left:59.3%}
+#pickChant{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:25;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;opacity:0}#pickChant img{height:clamp(90px,22vh,220px);filter:drop-shadow(0 0 14px #ff4060aa)}#pickChant span{font:900 clamp(20px,4vw,48px)/1 'Trebuchet MS',sans-serif;color:#ffd6de;letter-spacing:.06em;text-shadow:0 0 12px #ff2050,0 3px 8px #000}#pickChant.show{animation:chantPop .9s ease-out forwards}@keyframes chantPop{0%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}18%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(.85)}}#stage.selecting #pickChant{visibility:hidden}
 #status{position:absolute;top:26%;left:22%;width:56%;text-align:center;font-size:clamp(12px,2.6vw,29px);font-weight:900;text-shadow:0 2px 8px black;pointer-events:none}
 #status.win{color:#6dffa8}#status.lose{color:#ff7a90}
 .corner{position:absolute;bottom:1.5%;background:#112c65dd;border:1px solid #83dfff;border-radius:8px;color:white;padding:clamp(4px,1vw,10px);font-weight:bold;cursor:pointer;font-size:clamp(9px,1.1vw,14px)}
@@ -141,7 +142,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .acStat b{display:block;font-size:clamp(20px,3vw,28px);font-weight:900}
 .acStat span{display:block;margin-top:4px;font-size:11px;font-weight:900;letter-spacing:.1em;color:#a9eaff;text-transform:uppercase}
 .acStat.gem b{color:#d9b4ff;text-shadow:0 0 12px #a56cff}
-.acSection{margin:0 0 18px}
+.acSection{margin:0 0 18px}.acFrList{display:flex;flex-direction:column;gap:8px}.acFrItem{display:flex;align-items:center;gap:10px;background:#0b1430cc;border:1px solid #7de7ff44;border-radius:12px;padding:8px 10px}.acFrItem.req{border-color:#ffd27a88}.acFrAv{font-size:26px;line-height:1}.acFrInfo{flex:1;min-width:0}.acFrInfo b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.acFrInfo small{display:block;color:#a9eaff;font-size:12px;font-weight:bold;margin-top:2px}.acFrItem .acBtn.small{font-size:13px;padding:.45em .8em}.acFrEmpty{color:#a9eaffaa;font-size:14px;margin:4px 0 0}
 .acSection h3{margin:0 0 10px;font-size:13px;font-weight:900;letter-spacing:.15em;color:#a9eaff}
 .acAvatars{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
 .acAvatars button{aspect-ratio:1;border-radius:14px;border:2px solid #7de7ff44;background:#0d1838cc;font-size:clamp(22px,3.4vw,32px);cursor:pointer;padding:0;line-height:1}
@@ -193,8 +194,17 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
    <div class="acStat"><b id="acStWins">0</b><span>🏆 Wins</span></div>
    <div class="acStat"><b id="acStLosses">0</b><span>💥 Losses</span></div>
    <div class="acStat"><b id="acStMaps">1/6</b><span>🗺️ Arenas</span></div>
+   <div class="acStat"><b id="acStGames">0</b><span>🎮 Matches</span></div>
+   <div class="acStat"><b id="acStRate">–</b><span>📈 Win %</span></div>
+   <div class="acStat"><b id="acStStreak">0</b><span>🔥 Streak</span></div>
+   <div class="acStat"><b id="acStBest">0</b><span>⭐ Best streak</span></div>
   </div>
   <div class="acSection"><h3>AVATAR</h3><div class="acAvatars" id="acAvatars" role="radiogroup" aria-label="Avatar"></div></div>
+  <div class="acSection" id="acFriends"><h3>FRIENDS <span id="acFrCount"></span></h3>
+   <div class="acRow"><label class="acField"><span hidden>Friend's player name</span><input id="acFrName" maxlength="24" placeholder="Friend's player name" autocomplete="off" aria-label="Friend's player name"></label><button class="acBtn small" id="acFrAdd" type="button">＋ ADD</button></div>
+   <p class="acMsg" id="acFrMsg" role="status"></p>
+   <div class="acFrList" id="acFrList"></div>
+  </div>
   <div class="acSection"><h3>PASSWORD</h3><button class="acBtn ghost small" type="button" id="acPwdToggle">🔒 CHANGE PASSWORD</button><form id="acPwdForm" class="acPwd" hidden style="margin-top:10px"><label class="acField">New password<input id="acPwd1" type="password" autocomplete="new-password"></label><label class="acField">Repeat new password<input id="acPwd2" type="password" autocomplete="new-password"></label><button class="acBtn small" type="submit">SAVE PASSWORD</button></form></div>
   <div class="acSection"><h3>PLAYER NAME</h3><div class="acRow"><label class="acField"><span hidden>Player name</span><input id="acRename" maxlength="24" autocomplete="nickname" aria-label="Player name"></label><button class="acBtn small" id="acRenameSave" type="button">SAVE</button></div></div>
   <p class="acMsg" id="accountMessage" role="status"></p>
@@ -212,14 +222,14 @@ let mode=null;
 function view(){const v=mode||(!lastSession?'auth':profile?'profile':'setup');q('acForgot').hidden=v!=='forgot';q('acRecovery').hidden=v!=='recovery';q('acAuth').hidden=v!=='auth';q('profileSetup').hidden=v!=='setup';q('acProfile').hidden=v!=='profile';q('acTitle').textContent=v==='forgot'?'RESET PASSWORD':v==='recovery'?'NEW PASSWORD':v==='auth'?(tab==='register'?'CREATE ACCOUNT':'WELCOME BACK'):v==='setup'?'CHOOSE A NAME':'PLAYER PROFILE';q('accountLoginMenu').hidden=q('demoRegister').hidden=!!lastSession;return v;}
 function msg(t,where){q(where||({auth:'acMsgAuth',setup:'acMsgSetup',profile:'accountMessage',forgot:'acMsgForgot',recovery:'acMsgRecovery'})[view()]).textContent=t||'';}
 function setTab(t){tab=t;q('acTabLogin').classList.toggle('on',t==='login');q('acTabRegister').classList.toggle('on',t==='register');q('acTabLogin').setAttribute('aria-selected',String(t==='login'));q('acTabRegister').setAttribute('aria-selected',String(t==='register'));q('acNameField').hidden=t!=='register';q('accountSubmit').textContent=t==='register'?'CREATE ACCOUNT':'LOG IN';q('accountPass').autocomplete=t==='register'?'new-password':'current-password';q('acAuthHint').textContent=t==='register'?'Create an account — your crystals, wins and arenas are saved and follow you to any device.':'Log in to save your crystals, wins and unlocked arenas.';q('acMsgAuth').textContent='';view();}
-function open(t){if(t)setTab(t);const v=view();if(!dlg.open)dlg.showModal();const f=v==='auth'?(tab==='register'?q('accountName'):q('accountEmail')):v==='setup'?q('setupName'):null;if(f)setTimeout(()=>f.focus(),30);}
+function open(t){if(t)setTab(t);const v=view();if(!dlg.open)dlg.showModal();if(v==='profile'){frMsg('');loadFriends();}const f=v==='auth'?(tab==='register'?q('accountName'):q('accountEmail')):v==='setup'?q('setupName'):null;if(f)setTimeout(()=>f.focus(),30);}
 function paint(){const s=q('accountSummary');if(!lastSession){s.textContent='Guest';view();return;}if(!profile){s.textContent='Choose a name';view();return;}
- const av=AV[profile.avatar]||AV.astronaut;s.textContent=av+' '+profile.username;q('acAvatar').textContent=av;q('acName').textContent=profile.username;q('acEmail').textContent=lastSession.user.email||'';
- q('acStCrystals').textContent=profile.crystals;q('acStWins').textContent=profile.wins;q('acStLosses').textContent=profile.losses;q('acStMaps').textContent=profile.unlocked_maps.length+'/'+ARENAS;
+ const av=AV[profile.avatar]||AV.astronaut,inc=friends.filter(f=>f.status==='pending'&&f.incoming).length;s.textContent=av+' '+profile.username+(inc?' 🔔'+inc:'');q('acAvatar').textContent=av;q('acName').textContent=profile.username;q('acEmail').textContent=lastSession.user.email||'';
+ q('acStCrystals').textContent=profile.crystals;q('acStWins').textContent=profile.wins;q('acStLosses').textContent=profile.losses;q('acStMaps').textContent=profile.unlocked_maps.length+'/'+ARENAS;const games=profile.wins+profile.losses;q('acStGames').textContent=games;q('acStRate').textContent=games?Math.round(profile.wins*100/games)+'%':'–';q('acStStreak').textContent=profile.current_streak||0;q('acStBest').textContent=profile.best_streak||0;
  if(document.activeElement!==q('acRename'))q('acRename').value=profile.username;
  for(const b of q('acAvatars').children){const on=b.dataset.av===profile.avatar;b.classList.toggle('chosen',on);b.setAttribute('aria-checked',String(on));}view();}
-function publish(p){profile=p;window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();}
-const COLS='username,crystals,wins,losses,unlocked_characters,unlocked_maps,avatar';
+function publish(p){profile=p;window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();loadFriends();}
+const COLS='username,crystals,wins,losses,unlocked_characters,unlocked_maps,avatar,current_streak,best_streak';
 async function load(uid){return client.from('sd_player_profiles').select(COLS).eq('id',uid).maybeSingle();}
 async function refreshProfile(session){
  lastSession=session;
@@ -231,6 +241,21 @@ async function refreshProfile(session){
  publish(data||null);
  if(!data){if(!q('setupName').value)q('setupName').value=name||'';open();}
 }
+const frNice=e=>{const m=String(e&&e.message||e);return({'Player not found':'No player with that name.','That is you':"That's your own name 🙂",'Already friends':'You are already friends.','Request already sent':'Request already sent — waiting for them to accept.','Too many pending requests':'Too many requests waiting — wait until some are accepted.','Friend list full':'Your friend list is full.'})[m]||m;};
+let friends=[];
+function frMsg(t){q('acFrMsg').textContent=t||'';}
+function frBtn(label,cls,fn){const b=document.createElement('button');b.type='button';b.className='acBtn small '+cls;b.textContent=label;b.onclick=async()=>{b.disabled=true;try{await fn();}catch(e){frMsg(frNice(e));}b.disabled=false;};return b;}
+function paintFriends(){const list=q('acFrList');list.replaceChildren();const acc=friends.filter(f=>f.status==='accepted'),inc=friends.filter(f=>f.status==='pending'&&f.incoming),out=friends.filter(f=>f.status==='pending'&&!f.incoming);
+ q('acFrCount').textContent=acc.length?'('+acc.length+')':'';
+ const row=(f,sub,cls,...btns)=>{const d=document.createElement('div');d.className='acFrItem '+cls;const a=document.createElement('span');a.className='acFrAv';a.textContent=AV[f.avatar]||AV.astronaut;const i=document.createElement('div');i.className='acFrInfo';const n=document.createElement('b');n.textContent=f.username;const s=document.createElement('small');s.textContent=sub;i.append(n,s);d.append(a,i,...btns);list.appendChild(d);};
+ for(const f of inc)row(f,'wants to be your friend','req',frBtn('✓','',async()=>{const r=await client.rpc('sd_friend_respond',{p_id:f.id,p_accept:true});if(r.error)throw r.error;frMsg('You are now friends with '+f.username+'!');await loadFriends();}),frBtn('✕','danger',async()=>{const r=await client.rpc('sd_friend_respond',{p_id:f.id,p_accept:false});if(r.error)throw r.error;await loadFriends();}));
+ for(const f of acc){const g=(f.wins||0)+(f.losses||0);row(f,'🏆 '+(f.wins||0)+' · 💥 '+(f.losses||0)+' · '+(g?Math.round(f.wins*100/g)+'%':'–')+' · ⭐ '+(f.best_streak||0),'',frBtn('REMOVE','danger',async()=>{if(!confirm('Remove '+f.username+' from friends?'))return;const r=await client.rpc('sd_friend_remove',{p_id:f.id});if(r.error)throw r.error;await loadFriends();}));}
+ for(const f of out)row(f,'request sent — waiting','',frBtn('CANCEL','ghost',async()=>{const r=await client.rpc('sd_friend_remove',{p_id:f.id});if(r.error)throw r.error;await loadFriends();}));
+ if(!friends.length){const p=document.createElement('p');p.className='acFrEmpty';p.textContent='No friends yet — add one by their player name.';list.appendChild(p);}
+ if(profile)paint();}
+async function loadFriends(){if(!client||!lastSession||!profile){friends=[];paintFriends();return;}const r=await client.rpc('sd_friends_list');if(r.error){frMsg('Could not load friends: '+r.error.message);return;}friends=r.data||[];paintFriends();}
+q('acFrAdd').onclick=async()=>{const n=q('acFrName').value.trim();if(!profile||n.length<3){frMsg('Type your friend’s player name.');return;}q('acFrAdd').disabled=true;const r=await client.rpc('sd_friend_request',{p_username:n});q('acFrAdd').disabled=false;if(r.error){frMsg(frNice(r.error));return;}q('acFrName').value='';frMsg(r.data==='accepted'?'You are now friends with '+n+'!':'Friend request sent to '+n+'!');await loadFriends();};
+q('acFrName').addEventListener('keydown',e=>{if(e.key==='Enter')q('acFrAdd').click();});
 for(const [k,e] of Object.entries(AV)){const b=document.createElement('button');b.type='button';b.dataset.av=k;b.textContent=e;b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' '));b.onclick=async()=>{if(!profile||profile.avatar===k)return;const prev=profile.avatar;profile.avatar=k;paint();const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error){profile.avatar=prev;paint();msg(nice(r.error));}else msg('Avatar saved!');};q('acAvatars').appendChild(b);}
 q('acRenameSave').onclick=async()=>{const n=q('acRename').value.trim();if(!profile||n===profile.username)return;const r=await client.rpc('sd_set_username',{p_username:n});if(r.error){msg(nice(r.error));return;}profile.username=r.data;q('acRename').blur();paint();msg('Player name saved!');};
 q('setupSave').onclick=async()=>{const n=q('setupName').value.trim();if(n.length<3){msg('Player name must be at least 3 characters.','acMsgSetup');return;}const r=await client.rpc('sd_init_player_profile',{p_username:n});if(r.error){msg(nice(r.error),'acMsgSetup');return;}await refreshProfile(lastSession);msg('Profile created! Win matches vs computer to earn crystals.','accountMessage');};
@@ -370,7 +395,11 @@ function say(who,text,delay=0){talkTimers.push(setTimeout(()=>{Scene3D.say&&Scen
 function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSynthesis.cancel()}
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0,autoPicked=false;
-function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent')}
+const chant=document.createElement('div');chant.id='pickChant';stage.appendChild(chant);
+const CHANT={3:['rock','ROCK'],2:['scissors','SCISSORS'],1:['paper','PAPER']};
+function showChant(n){const c=CHANT[n];if(!c){hideChant();return}const art=window.duelCardArt&&window.duelCardArt[c[0]];chant.replaceChildren();if(art){const im=document.createElement('img');im.src=art;im.alt='';chant.appendChild(im)}const t=document.createElement('span');t.textContent=c[1];chant.appendChild(t);chant.classList.remove('show');void chant.offsetWidth;chant.classList.add('show')}
+function hideChant(){chant.classList.remove('show');chant.replaceChildren()}
+function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent');hideChant()}
 let started=false,awaitingMatchReady=false;
 const matchReady=document.createElement('button');matchReady.textContent='✓ READY TO FIGHT';matchReady.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;padding:clamp(12px,2vw,24px) clamp(24px,5vw,64px);border:1px solid rgba(120,255,200,.65);border-radius:12px;background:rgba(20,42,58,.48);backdrop-filter:blur(5px);color:white;font-size:clamp(18px,3vw,34px);font-weight:900;cursor:pointer;text-shadow:0 2px 6px black;white-space:nowrap';matchReady.hidden=true;stage.appendChild(matchReady);
 const readyPanel=document.createElement('div');readyPanel.id='fightReadyStatus';readyPanel.style.cssText='position:absolute;top:11%;left:50%;transform:translateX(-50%);width:min(65%,520px);display:flex;justify-content:space-between;gap:12px;z-index:30;pointer-events:none';readyPanel.hidden=true;stage.appendChild(readyPanel);
@@ -380,7 +409,7 @@ matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){NET.loca
 function startPick(){stopPick();pickLeft=10;count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
   pickTimer=setInterval(()=>{pickLeft--;
     if(pickLeft<=0){stopPick();autoPicked=true;play(MOVES[Math.floor(Math.random()*3)]);return}
-    count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick()}},1000)}
+    count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick();showChant(pickLeft)}},1000)}
 function idle(waitForReady=false){
  stage.classList.remove('move-resolving');
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppHashes[NET.round])setTimeout(oppReady,50)}
