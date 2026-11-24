@@ -642,7 +642,7 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  if(st.select)R.play(A.select||A.idle);
  else if(mine==='win')R.play(A.champ||A.win);
  else if(mine==='lose')R.play(A.dead,{loop:false});
- else if(st.shaking)R.play(R.showNow||A.show[0],{fade:.25});
+ else if(st.shaking){const quiet=/misspike|mispike|spacehead/i.test((R.cfg.name+' '+R.cfg.key).replace(/[^a-z0-9]/gi,''));const clip=R.showNow||A.show[0];R.play(quiet||/break.?dance/i.test(String(clip))?A.idle:clip,{fade:.25});}
  else if(res==='win')R.play(A.win,{fade:.25});
  else if(res==='lose'&&A.hit)R.play(A.hit,{loop:false,fade:.2});
  else R.play(A.idle,{fade:.3});
