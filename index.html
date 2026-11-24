@@ -85,7 +85,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 <button class="corner" id="mute" aria-label="Toggle sound">🔊 SOUND</button>
 <button class="corner" id="restart">NEW MATCH</button>
 <div class="flash" id="flash"></div>
-<div id="accountBar" style="position:absolute;top:12px;right:12px;z-index:8;display:flex;gap:6px;align-items:center"><span id="accountSummary">Guest</span><button id="accountOpen" type="button">PROFILE / LOG IN</button></div>
+<div id="accountBar" style="position:absolute;top:12px;right:12px;z-index:8;display:flex;gap:6px;align-items:center"><span id="accountSummary">Guest</span><span id="demoGemBalance" title="Local test crystals" style="color:#d9b4ff;font-weight:900;text-shadow:0 0 12px #a56cff">💎 0</span><button id="accountOpen" type="button">👤 PROFILE / LOG IN</button><button id="demoRegister" type="button">REGISTER</button></div>
 <dialog id="accountDialog" style="z-index:100;background:#14152c;color:white;border:1px solid #8274d8;border-radius:14px;padding:20px;max-width:90vw;width:340px"><h2>PLAYER PROFILE</h2><div id="accountForm"><label>Username (registration)<input id="accountName" maxlength="24" autocomplete="nickname" style="display:block;width:95%"></label><label>Email<input id="accountEmail" type="email" autocomplete="email" style="display:block;width:95%"></label><label>Password<input id="accountPass" type="password" autocomplete="current-password" style="display:block;width:95%"></label><p><button id="accountLogin">LOG IN</button> <button id="accountRegister">REGISTER</button></p></div><p id="accountStats"></p><p id="accountMessage" role="status"></p><button id="accountLogout" hidden>LOG OUT</button> <button id="accountClose">CLOSE / PLAY</button></dialog>
 <script type="module">
 const q=id=>document.getElementById(id);
@@ -102,7 +102,7 @@ async function refreshProfile(session){
  q('accountStats').textContent='Wins: '+data.wins+' | Losses: '+data.losses+' | Crystals: '+data.crystals+' | Characters: '+data.unlocked_characters.length+' | Maps: '+data.unlocked_maps.length;
  msg('Profile loaded. Match rewards are not enabled yet.');
 }
-q('accountOpen').onclick=()=>q('accountDialog').showModal();q('accountClose').onclick=()=>q('accountDialog').close();
+q('accountOpen').onclick=()=>q('accountDialog').showModal();q('demoRegister').onclick=()=>{q('accountDialog').showModal();q('accountName').focus();};q('accountClose').onclick=()=>q('accountDialog').close();
 async function auth(register){try{if(!client)throw Error('Account service unavailable');const email=q('accountEmail').value.trim(),password=q('accountPass').value,username=q('accountName').value.trim();if(register&&(username.length<3||password.length<8))throw Error('Choose a username of at least 3 characters and a password of at least 8 characters.');const result=register?await client.auth.signUp({email,password,options:{data:{username}}}):await client.auth.signInWithPassword({email,password});if(result.error)throw result.error;q('accountPass').value='';if(result.data.session)await refreshProfile(result.data.session);else msg('Check your email to confirm your account.');}catch(e){msg(e.message);}}
 q('accountLogin').onclick=()=>auth(false);q('accountRegister').onclick=()=>auth(true);q('accountLogout').onclick=async()=>{const {error}=await client.auth.signOut();if(error)msg(error.message);else{await refreshProfile(null);msg('Logged out.');}};
 try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshProfile(session).catch(e=>msg(e.message)),0);});}catch(e){msg('Account service unavailable: '+e.message);}
@@ -241,12 +241,12 @@ async function runRound(choice,other){
   hush();if(p&&c)chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);else chat(c===0?'matchWin':'matchLose',c===0?'g':'a',1300);
 
   if(!p||!c){
-    const youWon=c===0;logStat('sd_matches',{winner:youWon?'player':'opp'});
+    const youWon=c===0;window.demoProgress?.reward(youWon, p===3);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
     save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 COMPUTER WINS';
-    $('overText').textContent=youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`;
+    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(p===3?8:5):1} (local test)`;
     awaitingMatchReady=false;matchReady.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
     return;
   }
@@ -1157,4 +1157,11 @@ let last=performance.now();
 window.__dbg={st,CARD,SHARDS};renderer.setAnimationLoop(now=>{const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;update(dt);resize();composer.render()});
 const previewCache={};API.previewArena=function(k){if(previewCache[k])return previewCache[k];const saved=fightArena.visible;const visibility=fightArena.children.map(o=>[o,o.visible]);try{fightArena.visible=true;temple.visible=k==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=k==='temple';}for(const name in alternate)alternate[name].visible=name===k;const pc=new THREE.PerspectiveCamera(48,2,.1,400);pc.position.set(0,arenaY+5.2,13);pc.lookAt(0,arenaY+1,-3);renderer.render(scene,pc);const thumb=document.createElement('canvas');thumb.width=360;thumb.height=180;thumb.getContext('2d').drawImage(renderer.domElement,renderer.domElement.width*.18,renderer.domElement.height*.05,renderer.domElement.width*.64,renderer.domElement.height*.64,0,0,360,180);return previewCache[k]=thumb.toDataURL('image/jpeg',.86);}finally{fightArena.visible=saved;for(const [o,v] of visibility)o.visible=v;}};
 API.ready=true;document.getElementById('nogl').style.display='none';
+</script><script>
+(()=>{const prices={temple:0,city:20,jungle:35,ice:50,lava:75,factory:100};let state={balance:0,owned:['temple'],wins:0,losses:0};try{const x=JSON.parse(localStorage.getItem('sd_demo_progress_v1'));if(x&&Number.isFinite(x.balance)&&Array.isArray(x.owned))state=x;}catch(e){}
+function paint(){document.getElementById('demoGemBalance').textContent='💎 '+state.balance;for(const b of document.querySelectorAll('#mapPick [data-map]')){const k=b.dataset.map;if(!(k in prices))continue;if(!b.dataset.originalLabel)b.dataset.originalLabel=b.textContent;b.textContent=b.dataset.originalLabel+(state.owned.includes(k)?'':' · 🔒 '+prices[k]+' 💎');} }
+function save(){try{localStorage.setItem('sd_demo_progress_v1',JSON.stringify(state));}catch(e){}paint();}
+window.demoProgress={reward(win,perfect){state.balance+=win?(perfect?8:5):1;state[win?'wins':'losses']++;save();}};
+document.addEventListener('click',e=>{const b=e.target.closest('#mapPick [data-map]');if(!b)return;const k=b.dataset.map;if(k==='random'){e.stopImmediatePropagation();const owned=state.owned.filter(x=>x in prices);document.querySelector('#mapPick [data-map="'+owned[Math.floor(Math.random()*owned.length)]+'"]').click();return;}if(!(k in prices)||state.owned.includes(k))return;e.stopImmediatePropagation();if(state.balance<prices[k]){alert('You need '+(prices[k]-state.balance)+' more Cosmic Crystals. Local test only.');return;}if(confirm('Unlock '+b.dataset.originalLabel+' for '+prices[k]+' crystals?')){state.balance-=prices[k];state.owned.push(k);save();b.click();}},true);
+paint();})();
 </script></html>
