@@ -231,7 +231,7 @@ $('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'re
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
-  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
+  pl.forEach(c=>{const b=document.createElement('button');b.textContent=c.name;b.dataset.characterKey=c.key;b.onclick=()=>choosePlayer(c.key);selBtns.appendChild(b)});
   selHint.textContent=pl.length?'Pick your fighter — the computer plays one of the others':'Loading characters…'}
 Scene3D.onRoster=list=>{if(selecting)renderRoster(list)};
 function openSelect(){leaveOnline();selecting=true;stopPick();hush();token++;busy=false;over.classList.remove('show');buttons.forEach(x=>x.disabled=true);
@@ -616,7 +616,7 @@ function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
- list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,4.2/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
+ list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,7.6/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
  let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||me;
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
@@ -939,6 +939,15 @@ function update(dt){
  const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,.0,0);
  camera.fov=st.fov;
+ if(st.select){camera.updateProjectionMatrix();camera.updateMatrixWorld();
+  const rect=cv.getBoundingClientRect();
+  if(rect.width>0)for(const b of document.querySelectorAll('#selBtns button[data-character-key]')){
+   const R=LOADED[b.dataset.characterKey];if(!R||!R.holder.visible)continue;
+   const br=b.getBoundingClientRect(),nx=2*(br.left+br.width/2-rect.left)/rect.width-1;
+   const p=new THREE.Vector3(nx,0,.5).unproject(camera),dir=p.sub(camera.position);
+   if(Math.abs(dir.z)>1e-6){const x=camera.position.x+dir.x*(R.holder.position.z-camera.position.z)/dir.z;R.holder.position.x=x;R.holder.rotation.y=-x*.15;}
+  }
+ }
  updateBackground(dt);updateCards(dt,pulse);
  TALK.g=Math.max(0,TALK.g-dt);TALK.a=Math.max(0,TALK.a-dt);
  const live=st.select?Object.values(LOADED).filter(R=>R.holder.visible):['g','a'].map(k=>SL[k]&&SL[k].R?[SL[k].R,k]:null).filter(Boolean);
