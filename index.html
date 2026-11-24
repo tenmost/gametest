@@ -841,6 +841,9 @@ for(const [kind,g] of Object.entries(alternate)){
  function detail(w,h,d,x,y,z,m){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);g.add(b);return b}
  const glow=c=>new THREE.MeshBasicMaterial({color:c});
  if(kind==='city'){
+ // Continuous city foundation beneath both rows of buildings.
+ detail(27,.65,12,0,arenaY-.325,-8,material(0x252c39));
+ detail(27,.08,12,0,arenaY-.04,-8,material(0x3b4350));
  for(let i=0;i<10;i++){const x=-11+i*2.4,z=-8-rand()*3,w=1.25+rand()*.95,d=1.2+rand()*.8,h=(3.4+rand()*3.8)*(Math.abs(x)<4?.65:1);const facade=material([0x343c52,0x253747,0x493b50,0x34494c,0x464852][i%5]);detail(w,h,d,x,arenaY+h/2,z,facade);const cols=2+i%3,wm=glow([0x8edfff,0xffc48c,0xb2a3ff,0x8ce4d2,0xffa6df][i%5]);for(let y=.35;y<h-.2;y+=.42+i%3*.11)for(let k=0;k<cols;k++)if(rand()>.3)detail(w/cols*.56,.15+i%2*.12,.035,x+w*((k+.5)/cols-.5),arenaY+y,z+d/2+.025,wm);if(i%3===0)detail(w*.65,.35,d*.65,x,arenaY+h+.175,z,facade);else if(i%3===1)detail(.1,.55,.1,x,arenaY+h+.275,z,metal);else detail(w*.8,.12,d*.8,x,arenaY+h+.06,z,metal);}
  for(const x of [-5.5,5.5]){detail(1.8,.7,.12,x,arenaY+2.2,-3.9,glow(0x2c7dff));detail(.12,2,.12,x,arenaY+1,-4,metal);detail(1.1,.65,.8,x,arenaY+.325,-3.2,dark);}
  }else if(kind==='ice'){
