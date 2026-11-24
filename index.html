@@ -798,9 +798,9 @@ for(const kind of ['jungle','factory']){
  function mesh(geo,m,x,y,z){const b=new THREE.Mesh(geo,m);b.position.set(x,y,z);g.add(b);return b}
  function box(w,h,d,x,y,z,m){return mesh(new THREE.BoxGeometry(w,h,d),m,x,y,z)}
  box(16,.5,9,0,arenaY-.25,-1,floor);
- for(let x=-7.5;x<8;x+=1.5)for(let z=-4.5;z<3;z+=1.5)box(1.46,.035,1.46,x,arenaY-.018,z,jungle?stone:floor);
+ for(let x=-7.5;x<8;x+=1.5)for(let z=-4.5;z<3;z+=1.5)box(1.46,.035,1.46,x,jungle?arenaY+.025:arenaY-.018,z,jungle?stone:floor);
  if(jungle){
- box(25,.8,13,0,arenaY-.4,-7,mat(0x303b24));
+ box(25,.8,13,0,arenaY-.55,-7,mat(0x303b24));
  for(let i=0;i<14;i++){const x=-10+i*1.5,z=-5.5-rand()*4,h=4+rand()*4;mesh(new THREE.CylinderGeometry(.18,.45,h,8),wood,x,arenaY+h/2-.08,z);for(let r=0;r<4;r++){const ang=r*Math.PI/2+i;const root=mesh(new THREE.CylinderGeometry(.08,.23,1.1,7),wood,x+Math.cos(ang)*.43,arenaY+.22,z+Math.sin(ang)*.43);root.rotation.z=-Math.cos(ang)*1.1;root.rotation.x=Math.sin(ang)*1.1;}for(let j=0;j<4;j++)mesh(new THREE.IcosahedronGeometry(1.2+rand(),1),leaf,x+(rand()-.5)*2,arenaY+h-.8+rand()*.5,z+(rand()-.5)*1.4);}
  for(const x of [-5,5]){for(let j=0;j<6;j++)box(1.25,.52,.95,x,arenaY+.26+j*.53,-3.5,stone);box(1.65,.35,1.2,x,arenaY+3.3,-3.5,stone);}
  for(let j=0;j<9;j++)box(1.1,.45,1,-4.4+j*1.1,arenaY+.23,-4.1,stone);
