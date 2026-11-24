@@ -804,15 +804,15 @@ for(const kind of ['jungle','factory']){
  }else{
  const earth=mat(0x34382e),grave=mat(0x777b80),edge=mat(0x41464b),iron=mat(0x24282c),bark=mat(0x392d28);
  box(26,.7,15,0,arenaY-.36,-5,earth);
- for(let i=0;i<20;i++){const x=-10+(i%10)*2.2,z=-5.4-Math.floor(i/10)*3,h=.65+rand()*.65;const t=new THREE.Group();g.add(t);t.position.set(x,arenaY,z);t.rotation.z=(rand()-.5)*.24;
- const part=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);t.add(o);return o};
+ for(let i=0;i<20;i++){const x=-10+(i%10)*2.2+(rand()-.5)*.65,z=-5.4-Math.floor(i/10)*3+(rand()-.5)*.9,h=.65+rand()*.65;const t=new THREE.Group();g.add(t);t.position.set(x,arenaY,z);t.rotation.z=(rand()-.5)*.32;t.rotation.y=(rand()-.5)*.45;
+ const part=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m===grave?localStone:m);o.position.set(x,y,z);t.add(o);return o};
  part(new THREE.BoxGeometry(.9,.15,.65),edge,0,.075,0);
- const style=i%5;
+ const style=[0,2,3,1,4,2,0,3,4,1,3,1,4,0,2,4,2,1,3,0][i];const localStone=grave.clone();localStone.color.setHex([0x777b80,0x8b8980,0x62696b,0x77766b,0x91938d][i%5]);
  if(style===0){part(new THREE.BoxGeometry(.24,h+.25,.23),grave,0,.15+(h+.25)/2,0);part(new THREE.BoxGeometry(.8,.23,.23),grave,0,.15+h*.8,0);}
  else if(style===1){part(new THREE.BoxGeometry(.65,h*.48,.25),grave,0,.15+h*.24,0);const chip=part(new THREE.BoxGeometry(.34,.28,.24),grave,-.14,.15+h*.48+.08,0);chip.rotation.z=.32;}
  else if(style===2){part(new THREE.BoxGeometry(.72,h,.26),grave,0,.15+h/2,0);part(new THREE.ConeGeometry(.52,.35,4),edge,0,.15+h+.15,0).rotation.y=Math.PI/4;}
  else{part(new THREE.BoxGeometry(.58,h,.22),grave,0,.15+h/2,0);part(new THREE.CylinderGeometry(.29,.29,.22,12),grave,0,.15+h,0).rotation.x=Math.PI/2;}
- if(style>=2){for(let j=0;j<3;j++)part(new THREE.BoxGeometry(.32-j*.04,.035,.025),edge,0,.35+j*.12,.14);if(i%2===0){for(let j=0;j<3;j++){const crack=part(new THREE.BoxGeometry(.025,.18,.018),iron,.12-j*.04,.15+h*.7-j*.13,.145);crack.rotation.z=j%2?.65:-.5;}}}
+ if(style>=2){for(let j=0;j<3;j++)part(new THREE.BoxGeometry(.32-j*.04,.035,.025),edge,0,.35+j*.12,.14);if(i%2===0){let cx=(rand()-.5)*.24,cy=.15+h*(.55+rand()*.35);for(let j=0;j<2+i%3;j++){const dx=(rand()-.5)*.16,dy=-.06-rand()*.1;const crack=part(new THREE.BoxGeometry(.014,Math.hypot(dx,dy),.018),iron,cx+dx/2,cy+dy/2,.145);crack.rotation.z=Math.atan2(-dx,dy);cx+=dx;cy+=dy;}}}
 
  box(.9,.06,1.6,x,arenaY+.03,z+.9,earth);}
  for(let x=-12;x<=12;x+=.65){box(.065,1.45,.065,x,arenaY+.725,-10,iron);mesh(new THREE.ConeGeometry(.10,.22,4),iron,x,arenaY+1.55,-10);}
@@ -823,7 +823,7 @@ for(const kind of ['jungle','factory']){
  // Weathered cemetery perimeter and broken masonry.
  for(let i=0;i<22;i++){const x=-12+i*1.1;const h=.45+rand()*.35;box(1.04,h,.48,x,arenaY+h/2,-10.4,edge);if(i%3===0)box(1.08,.12,.58,x,arenaY+h+.06,-10.4,grave);}
  for(let i=0;i<28;i++){const x=-10+rand()*20,z=-4.8-rand()*4;const o=mesh(new THREE.DodecahedronGeometry(.12+rand()*.22,0),edge,x,arenaY+.12,z);o.scale.set(1.4,.65,1);o.rotation.y=rand()*6;}
- for(const x of [-7.2,7.2]){box(.85,.18,.75,x,arenaY+.09,-4.2,edge);box(.36,1.15,.25,x,arenaY+.75,-4.2,grave);box(.92,.24,.25,x,arenaY+1.02,-4.2,grave);}
+ for(const [x,z,h] of [[-7.2,-4.2,1.15],[7.7,-5.1,.78]]){box(.85,.18,.75,x,arenaY+.09,z,edge);box(.28,h,.25,x,arenaY+.18+h/2,z,grave).rotation.z=x>0?.18:-.06;box(.72,.19,.25,x,arenaY+.18+h*.76,z,grave).rotation.z=x>0?.18:-.06;}
  for(let i=0;i<18;i++){const x=-8+rand()*16,z=-4.2-rand()*1.8;for(let j=0;j<3;j++){const blade=mesh(new THREE.ConeGeometry(.035,.18+rand()*.24,3),earth,x+j*.07,arenaY+.13,z);blade.rotation.z=(j-1)*.35;}}
  const mistCanvas=document.createElement('canvas');mistCanvas.width=128;mistCanvas.height=64;const mc=mistCanvas.getContext('2d');const mg=mc.createRadialGradient(64,32,0,64,32,32);mg.addColorStop(0,'rgba(165,180,190,.58)');mg.addColorStop(1,'rgba(165,180,190,0)');mc.fillStyle=mg;mc.fillRect(0,0,128,64);const mt=new THREE.CanvasTexture(mistCanvas);
  for(let i=0;i<9;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:mt,transparent:true,depthWrite:false,opacity:.55}));sp.position.set(-10+i*2.5,arenaY+.35,-5.2-(i%3)*1.2);sp.scale.set(5,1.2,1);sp.userData.graveMist={x:sp.position.x,y:sp.position.y,phase:i*1.7};g.add(sp);}
@@ -858,10 +858,25 @@ for(const [kind,g] of Object.entries(alternate)){
 
  }
 }
+// Small environmental wildlife and architectural accents.
+const ambientActors=[];
+function animalPart(g,geo,color,x,y,z){const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.85}));m.position.set(x,y,z);g.add(m);return m;}
+function oval(g,color,x,y,z,a,b,d){const m=animalPart(g,new THREE.SphereGeometry(1,10,8),color,x,y,z);m.scale.set(a,b,d);return m;}
+const iceG=alternate.ice;
+function iceBlock(w,h,d,x,y,z,col){return animalPart(iceG,new THREE.BoxGeometry(w,h,d),col,x,arenaY+y,z);}
+for(const x of [-6.8,6.8]){iceBlock(3.1,.35,2.2,x,.175,-5.5,0xbedce9);for(let j=0;j<5;j++)iceBlock(1.1,.48,1.1,x,.6+j*.48,-6,0x7e9eaf);iceBlock(1.5,.22,1.5,x,3,-6,0xe3f5ff);}
+iceBlock(5.5,.55,1.1,0,3.1,-6,0x9ebdce);for(const x of [-2.2,2.2]){for(let j=0;j<5;j++)iceBlock(.85,.55,.9,x,.275+j*.55,-6,0x8baabb);iceBlock(1.1,.2,1.1,x,2.85,-6,0xe5f5ff);}
+for(let i=0;i<3;i++){const p=new THREE.Group();iceG.add(p);p.position.set(-7+i*.8,arenaY+.35,-5.2);oval(p,0x202b35,0,.28,0,.16,.28,.14);oval(p,0xf1f4ee,0,.25,.095,.115,.19,.065);oval(p,0x202b35,0,.55,0,.13,.13,.13);oval(p,0xe7a33d,0,.52,.14,.065,.035,.09);for(const s of [-1,1]){oval(p,0xe7a33d,s*.08,.035,.06,.07,.035,.1);oval(p,0x202b35,s*.16,.28,0,.055,.17,.065).rotation.z=s*.3;}ambientActors.push({g:p,kind:'ice',x:p.position.x,phase:i});}
+const lavaG=alternate.lava;const hot=new THREE.MeshBasicMaterial({color:0xff631b}),rim=new THREE.MeshBasicMaterial({color:0x361a12});
+function fissure(a,b,w){const dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);for(const [mat,width,y] of [[rim,w*2,arenaY+.009],[hot,w,arenaY+.014]]){const m=new THREE.Mesh(new THREE.PlaneGeometry(width,len+.025),mat);m.rotation.x=-Math.PI/2;m.rotation.z=Math.atan2(dx,dz);m.position.set((a[0]+b[0])/2,y,(a[1]+b[1])/2);lavaG.add(m);}}
+for(const path of [[[-7,-3],[-5.9,-2.2],[-5.4,-1.1],[-4.5,-.7]],[[-5.9,-2.2],[-4.8,-2.7],[-3.9,-2.5]],[[7,-3],[6,-2.1],[6.3,-1],[5.2,-.3]],[[6,-2.1],[4.9,-2.4],[4.3,-1.8]]])for(let i=1;i<path.length;i++)fissure(path[i-1],path[i],.045+rand()*.045);
+const bird=new THREE.Group();alternate.jungle.add(bird);bird.position.set(5,arenaY+3.475,-3.5);oval(bird,0x227c65,0,.17,0,.13,.18,.13);oval(bird,0x328fbd,0,.35,0,.11,.11,.11);oval(bird,0xe9b448,0,.33,.12,.055,.035,.085);for(const s of [-1,1])oval(bird,0x195344,s*.11,.16,0,.055,.13,.12);oval(bird,0x215b83,0,.09,-.17,.06,.055,.19);ambientActors.push({g:bird,kind:'jungle',phase:0});
+for(let i=0;i<2;i++){const bat=new THREE.Group();alternate.factory.add(bat);oval(bat,0x25242c,0,0,0,.075,.095,.075);const wings=[];for(const s of [-1,1]){const wing=new THREE.Group();bat.add(wing);const shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(s*.38,.13);shape.lineTo(s*.29,-.12);shape.lineTo(s*.18,-.04);shape.lineTo(s*.09,-.15);shape.closePath();wing.add(new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0x302b36,side:THREE.DoubleSide})));wings.push(wing);}ambientActors.push({g:bat,kind:'factory',phase:i*2.8,wings});}
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
 
+ for(const a of ambientActors){if(a.kind!==map||st.select)continue;if(a.kind==='ice'){a.g.position.x=a.x+Math.sin(TIME*.6+a.phase)*.22;a.g.rotation.z=Math.sin(TIME*3+a.phase)*.09;}else if(a.kind==='jungle'){a.g.rotation.y=Math.sin(TIME*.7)*.7;}else{a.g.position.set(Math.sin(TIME*.38+a.phase)*7,arenaY+3.4+Math.sin(TIME*.9+a.phase)*.45,-7.2+Math.cos(TIME*.38+a.phase));a.wings.forEach((w,i)=>w.rotation.y=Math.sin(TIME*9+a.phase)*(i?1:-1)*.9);}}
  // UFOs
  for(const u of UFOS){if(!u.active){u.wait-=dt;if(u.wait<=0)launchUFO(u);u.g.visible=false;continue}
   u.g.visible=true;u.p.addScaledVector(u.v,dt);const bob=Math.sin(TIME*1.3+u.ph)*.35;
