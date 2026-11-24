@@ -622,7 +622,7 @@ let CHARS=[
  {key:'tv',name:'TV HEAD',url:'assets/tv-head.glb?v=1',voice:'m',optional:true,height:2.8,anim:{idle:'Confused_Scratch',show:['Boom_Dance','Draw_and_Shoot_from_Back'],win:'Skill_01',hit:'Electrocution_Reaction',champ:'Boom_Dance',dead:'Angry_To_Tantrum_Sit',select:'Boom_Dance'}},
  {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
-const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.38},a:{p:[2.35,FLOOR+.82,.35],r:-.38}};
+const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.68},a:{p:[2.35,FLOOR+.82,.35],r:-.68}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
 const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,playable:!c.opponentOnly}));
 function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
@@ -635,7 +635,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.waitFrozen=false;waitingPose(R)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
@@ -649,15 +649,17 @@ async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co
    anim:{...x.anim,show:(Array.isArray(x.anim.show)&&x.anim.show.length?x.anim.show:[x.anim.idle])}}));
   return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
 fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loadChar(c)});
+function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
+ if(st.select||mine||st.shaking||res)R.waitFrozen=false;
  if(st.select)R.play(A.select||A.idle);
  else if(mine==='win')R.play(A.champ||A.win);
  else if(mine==='lose')R.play(A.dead,{loop:false});
  else if(st.shaking){const target=/misspike|mispike|spacehead/i.test((R.cfg.name+' '+R.cfg.key).replace(/[^a-z0-9]/gi,''));const clip=R.showNow||A.show[0];const combat=Object.keys(R.act).filter(n=>/box|punch|guard|jab|fight|kick|combat|dodge/i.test(n)&&!/dance|break|hit.reaction|dead|defeat/i.test(n));const safe=combat.find(n=>/box|guard|jab|punch/i.test(n))||combat[0];R.play(target||/break.?dance/i.test(String(clip))?safe||A.idle:clip,{fade:.25});}
  else if(res==='win')R.play(A.win,{fade:.25});
  else if(res==='lose'&&A.hit)R.play(A.hit,{loop:false,fade:.2});
- else R.play(A.idle,{fade:.3});
+ else waitingPose(R);
  R.headDown=lerp(R.headDown,res==='lose'&&!A.hit?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt)}
 function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
 
