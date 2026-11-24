@@ -565,7 +565,7 @@ async function loadSkinned(url,o){
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
  for(const b of[...fingerBones.flat(),...thumb].filter(Boolean))rest.set(b,b.quaternion.clone());
  const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
- R.play=(spec,{loop=true,fade=.35}={})=>{const [name,sp]=String(spec).split('*'),a=act[name]||act[String(o.idle).split('*')[0]];if(!a)return;a.timeScale=sp?+sp:1;if(R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
+ R.play=(spec,{loop=true,fade=.35}={})=>{if(/break[ _-]*danc/i.test(String(spec))){spec=Object.keys(act).find(n=>/box|guard|punch|combat/i.test(n)&&!/dance|break/i.test(n))||Object.keys(act).find(n=>/idle|stand/i.test(n)&&!/dance|break/i.test(n))||Object.keys(act).find(n=>!/dance|break/i.test(n));if(!spec)return;}const [name,sp]=String(spec).split('*'),a=act[name]||act[String(o.idle).split('*')[0]];if(!a)return;a.timeScale=sp?+sp:1;if(R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
   if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
  R.play(o.idle);return R}
 function poseSkinned(R,h,dt){
@@ -623,7 +623,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.94);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
@@ -766,6 +766,17 @@ const arenaTex=new THREE.CanvasTexture(arenaCanvas);arenaTex.colorSpace=THREE.SR
 const deck=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.24,64),new THREE.MeshStandardMaterial({color:0xffffff,map:arenaTex,metalness:.35,roughness:.62}));deck.scale.set(4.8,1,2.1);deck.position.set(0,arenaY-.12,.35);fightArena.add(deck);
 for(const [rad,col] of [[1,0x45caff],[.92,0x9b65ff]]){const rim=new THREE.Mesh(new THREE.RingGeometry(rad-.012,rad,96),new THREE.MeshBasicMaterial({color:col,side:THREE.DoubleSide}));rim.rotation.x=-Math.PI/2;rim.scale.set(4.8,2.1,1);rim.position.set(0,arenaY+.006,.35);fightArena.add(rim);}
 const gridPts=[];for(let x=-4;x<=4;x+=.5){const z=1.85*Math.sqrt(1-x*x/22);gridPts.push(x,arenaY+.012,.35-z,x,arenaY+.012,.35+z)}for(let z=-1.5;z<=1.5;z+=.5){const x=4.5*Math.sqrt(1-z*z/4);gridPts.push(-x,arenaY+.012,.35+z,x,arenaY+.012,.35+z)}const gridGeo=new THREE.BufferGeometry();gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gridPts,3));fightArena.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0x5b91ba,transparent:true,opacity:.07})));
+// Original ruined orbital temple, layered fighting-stage scenery.
+const temple=new THREE.Group();fightArena.add(temple);
+const stone=new THREE.MeshStandardMaterial({color:0x45434b,roughness:.94,map:arenaTex});
+const trim=new THREE.MeshStandardMaterial({color:0x80664b,roughness:.8,metalness:.25});
+const ember=new THREE.MeshBasicMaterial({color:0xff9a43});
+function templeBlock(w,h,d,x,y,z,mat=stone){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);temple.add(m);return m;}
+templeBlock(15,.4,7,0,arenaY-.24,-1.4);
+deck.visible=false;
+for(const x of [-6,-3.9,3.9,6]){templeBlock(1.15,.3,1.1,x,arenaY+.15,-3.6,trim);templeBlock(.72,4.5,.72,x,arenaY+2.4,-3.6);for(let j=0;j<7;j++)templeBlock(.82,.07,.82,x,arenaY+.55+j*.56,-3.6,trim);templeBlock(1.15,.32,1.1,x,arenaY+4.65,-3.6,trim);}
+for(const x of [-5,5]){templeBlock(2.7,.55,.9,x,arenaY+4.9,-3.6);templeBlock(.65,.45,.65,x,arenaY+.35,-2.8,trim);const flame=new THREE.Mesh(new THREE.ConeGeometry(.17,.55,12),ember);flame.position.set(x,arenaY+.85,-2.8);temple.add(flame);const light=new THREE.PointLight(0xff873c,12,5);light.position.copy(flame.position);temple.add(light);}
+for(let i=0;i<12;i++){const x=-7+i*1.25;templeBlock(1.18,.18,.5,x,arenaY+.08,-4.5);}
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;
  // UFOs
