@@ -141,3 +141,35 @@ end;
 $$;
 revoke all on function public.sd_unlock_map(text) from public, anon;
 grant execute on function public.sd_unlock_map(text) to authenticated;
+
+-- ---------- avatar + player name change (migration "sd_player_avatar_and_rename") ----------
+alter table public.sd_player_profiles add column if not exists avatar text not null default 'astronaut'
+ check (avatar in ('astronaut','astronaut_f','astronaut_m','robot','alien','invader','ufo','rocket','planet','comet','star','dragon','fox','wolf','lion','skull'));
+
+create or replace function public.sd_set_avatar(p_avatar text)
+returns text language plpgsql security definer set search_path = '' as $$
+begin
+ if auth.uid() is null then raise exception 'Sign in required'; end if;
+ if p_avatar not in ('astronaut','astronaut_f','astronaut_m','robot','alien','invader','ufo','rocket','planet','comet','star','dragon','fox','wolf','lion','skull') then raise exception 'Unknown avatar'; end if;
+ update public.sd_player_profiles set avatar = p_avatar where id = auth.uid();
+ if not found then raise exception 'Profile missing'; end if;
+ return p_avatar;
+end;
+$$;
+revoke all on function public.sd_set_avatar(text) from public, anon;
+grant execute on function public.sd_set_avatar(text) to authenticated;
+
+create or replace function public.sd_set_username(p_username text)
+returns text language plpgsql security definer set search_path = '' as $$
+declare v_name text := trim(p_username);
+begin
+ if auth.uid() is null then raise exception 'Sign in required'; end if;
+ if v_name is null or char_length(v_name) not between 3 and 24 or v_name !~ '^[A-Za-z0-9_ .-]+$' then raise exception 'Invalid username'; end if;
+ if exists (select 1 from public.sd_player_profiles where lower(username) = lower(v_name) and id <> auth.uid()) then raise exception 'Username already taken'; end if;
+ update public.sd_player_profiles set username = v_name where id = auth.uid();
+ if not found then raise exception 'Profile missing'; end if;
+ return v_name;
+end;
+$$;
+revoke all on function public.sd_set_username(text) from public, anon;
+grant execute on function public.sd_set_username(text) to authenticated;
