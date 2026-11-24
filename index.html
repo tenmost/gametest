@@ -573,11 +573,11 @@ async function loadSkinned(url,o){
  const holder=grp();holder.add(root);if(o.height){const bb=new THREE.Box3().setFromObject(root);root.scale.setScalar(o.height/Math.max(.01,bb.max.y-bb.min.y))}else root.scale.setScalar(o.scale);holder.position.set(...o.pos);holder.rotation.y=o.rotY;scene.add(holder);
  // keep every animation in place (no walking off): lock the hips' horizontal movement
  for(const c of g.animations)for(const tr of c.tracks)if(/Hips\.position$/.test(tr.name)){const v=tr.values;for(let i=0;i<v.length;i+=3){v[i]=v[0];v[i+2]=v[2]}}
- const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
+ const bindRot={};for(const [k,b] of Object.entries(B))bindRot[k]=b.quaternion.clone();const mixer=new THREE.AnimationMixer(root),act={};for(const c of g.animations)act[c.name]=mixer.clipAction(c);
  const side=o.side,F=['Index','Middle','Ring','Pinky'],rest=new Map();
  const fingerBones=F.map(n=>[1,2,3].map(k=>B[side+'Hand'+n+k])),thumb=[1,2,3].map(k=>B[side+'HandThumb'+k]);
  for(const b of[...fingerBones.flat(),...thumb].filter(Boolean))rest.set(b,b.quaternion.clone());
- const R={holder,root,B,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
+ const R={holder,root,B,bindRot,mixer,act,side,fingerBones,thumb,rest,mats,cur:null,ikW:1,pose:JSON.parse(JSON.stringify(RIG.poses.rock)),th:{...RIG.thumb.rock},target:'rock',headDown:0};
  R.play=(spec,{loop=true,fade=.35}={})=>{if(/break[ _-]*danc/i.test(String(spec))){spec=Object.keys(act).find(n=>/box|guard|punch|combat/i.test(n)&&!/dance|break/i.test(n))||Object.keys(act).find(n=>/idle|stand/i.test(n)&&!/dance|break/i.test(n))||Object.keys(act).find(n=>!/dance|break/i.test(n));if(!spec)return;}const [name,sp]=String(spec).split('*'),a=act[name]||act[String(o.idle).split('*')[0]];if(!a)return;a.timeScale=sp?+sp:1;if(R.cur===a)return;a.reset();a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);a.clampWhenFinished=!loop;a.enabled=true;a.setEffectiveWeight(1);
   if(R.cur)a.crossFadeFrom(R.cur,fade,false);a.play();R.cur=a};
  R.play(o.idle);return R}
@@ -651,6 +651,17 @@ async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co
   return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
 fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loadChar(c)});
 function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
+function mushroomDance(R){
+ if(R.act.MushTVMenuDance)return true;
+ const donor=Object.values(LOADED).find(x=>x!==R&&/tv.?head|^tv$/i.test(x.cfg.name+' '+x.cfg.key));
+ if(!donor)return false;
+ const action=donor.act.Boom_Dance||donor.act[Object.keys(donor.act).find(n=>/dance/i.test(n)&&!/break/i.test(n))];if(!action)return false;
+ const clip=action.getClip(),tracks=[];
+ for(const tr of clip.tracks){if(!tr.name.endsWith('.quaternion'))continue;const raw=tr.name.slice(0,-11),k=Object.keys(donor.B).find(k=>donor.B[k].name===raw||k===raw);if(!k||!R.B[k]||!R.bindRot[k]||!donor.bindRot[k])continue;
+ const t=tr.clone();t.name=R.B[k].name+'.quaternion';const q=new THREE.Quaternion(),inv=donor.bindRot[k].clone().invert();for(let i=0;i<t.values.length;i+=4){q.fromArray(t.values,i);q.premultiply(inv).premultiply(R.bindRot[k]).normalize().toArray(t.values,i);}tracks.push(t);}
+ if(tracks.length<8)return false;
+ R.act.MushTVMenuDance=R.mixer.clipAction(new THREE.AnimationClip('MushTVMenuDance',clip.duration,tracks));return true;
+}
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
  const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='win'?'win':res==='lose'?'lose':'wait';
@@ -658,7 +669,8 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
  if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
- if(phase==='wait')waitingPose(R);
+ if(phase==='menu'&&/mush/i.test(R.cfg.key+' '+R.cfg.name)&&mushroomDance(R))R.play('MushTVMenuDance',{fade:.25});
+ else if(phase==='wait')waitingPose(R);
  else {const cosmic=/cosmic/i.test(R.cfg.key+' '+R.cfg.name);const pool=names.filter(n=>(!cosmic||!/shuffle|arm.circle/i.test(n))&&patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
  const p=String(preferred[phase]||'').split('*')[0];if((!cosmic||!/shuffle|arm.circle/i.test(p))&&names.includes(p)&&patterns[phase].test(p)&&!reject.test(p)&&!pool.includes(p))pool.push(p);
  const rotate=phase==='menu'||phase==='fight'||phase==='champ';
