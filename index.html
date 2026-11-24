@@ -342,6 +342,7 @@ idle();render();openSelect();
 </script>
 <script type="module">
 import * as THREE from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -868,7 +869,7 @@ for(const [kind,g] of Object.entries(alternate)){
 // Small environmental wildlife and architectural accents.
 const ambientActors=[];
 function animalPart(g,geo,color,x,y,z){const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.85}));m.position.set(x,y,z);g.add(m);return m;}
-function oval(g,color,x,y,z,a,b,d){const m=animalPart(g,new THREE.SphereGeometry(1,10,8),color,x,y,z);m.scale.set(a,b,d);return m;}
+function oval(g,color,x,y,z,a,b,d){const m=animalPart(g,new THREE.SphereGeometry(1,24,16),color,x,y,z);m.scale.set(a,b,d);return m;}
 const iceG=alternate.ice;
 function iceBlock(w,h,d,x,y,z,col){return animalPart(iceG,new THREE.BoxGeometry(w,h,d),col,x,arenaY+y,z);}
 for(const x of [-6.8,6.8]){iceBlock(3.1,.35,2.2,x,.175,-5.5,0xbedce9);for(let j=0;j<5;j++)iceBlock(1.1,.48,1.1,x,.6+j*.48,-6,0x7e9eaf);iceBlock(1.5,.22,1.5,x,3,-6,0xe3f5ff);}
@@ -897,6 +898,11 @@ const graveFingers=[];for(let i=0;i<4;i++){const len=[.17,.23,.25,.19][i];const 
 roundedDigit(wrist,-.105,.23,.025,.17,.037,.7);
 
 const owls=[];for(const [x,y,z,scale] of [[-5.8,2.6746,-9,1],[4.2,3.2052,-9,.85]]){const owl=new THREE.Group();graveG.add(owl);owl.position.set(x,arenaY+y,z);owl.scale.setScalar(scale);oval(owl,0x594b40,0,.24,0,.19,.24,.16);oval(owl,0xb5a18a,0,.23,.12,.13,.17,.07);for(const s of [-1,1]){oval(owl,0x413831,s*.16,.24,0,.085,.19,.13);oval(owl,0x9b7846,s*.07,.035,.045,.055,.035,.09);}const head=new THREE.Group();owl.add(head);head.position.y=.45;oval(head,0x665344,0,0,0,.21,.17,.16);for(const s of [-1,1]){oval(head,0xc4b39a,s*.09,0,.13,.10,.11,.045);oval(head,0x241d19,s*.09,.005,.17,.057,.065,.027);const eye=new THREE.Mesh(new THREE.SphereGeometry(.036,12,8),new THREE.MeshBasicMaterial({color:0xffc247}));eye.position.set(s*.09,.005,.193);head.add(eye);oval(head,0x171313,s*.09,.005,.224,.013,.024,.009);const tuft=animalPart(head,new THREE.ConeGeometry(.065,.15,5),0x594b40,s*.14,.15,0);tuft.rotation.z=-s*.25;}oval(head,0x9c7138,0,-.065,.18,.045,.045,.065);owls.push(head);}
+// Arena-only surface refinement; preserve original Orbital Temple and menu.
+const arenaLightProfiles={city:[0xc9e5ff,0xff49bd,0x29dfff],ice:[0xeaf7ff,0x9bbfff,0x7ce8ff],lava:[0xffd0a0,0xff5320,0xffa43b],jungle:[0xffe5b0,0x6c9c4b,0x9fcf8a],factory:[0xc9cbdc,0x8888bd,0x8aa7b2]};
+const surfaceCanvas=document.createElement('canvas');surfaceCanvas.width=surfaceCanvas.height=128;const surfaceCtx=surfaceCanvas.getContext('2d');const surfacePixels=surfaceCtx.createImageData(128,128);for(let i=0;i<128*128;i++){const x=i%128,y=i>>7,v=Math.round(128+14*Math.sin(x*.21+y*.13)+9*Math.cos(y*.31-x*.17)+((i*73%31)-15));surfacePixels.data.set([v,v,v,255],i*4);}surfaceCtx.putImageData(surfacePixels,0,0);const surfaceBump=new THREE.CanvasTexture(surfaceCanvas);surfaceBump.wrapS=surfaceBump.wrapT=THREE.RepeatWrapping;
+for(const [kind,g] of Object.entries(alternate)){const palette=arenaLightProfiles[kind];if(!palette)continue;const [warm,left,right]=palette;const a=new THREE.PointLight(left,kind==='lava'?14:7,12,2);a.position.set(-5,arenaY+2.6,-2.8);g.add(a);const b=new THREE.PointLight(right,kind==='city'?9:6,12,2);b.position.set(5,arenaY+3,-3);g.add(b);const top=new THREE.DirectionalLight(warm,.48);top.position.set(0,8,4);g.add(top);
+const processed=new Set();g.traverse(o=>{if(!o.isMesh)return;const p=o.geometry.parameters||{};if(o.geometry.type==='BoxGeometry'&&Math.min(p.width,p.height,p.depth)>.18&&Math.max(p.width,p.height,p.depth)<12){o.geometry=new RoundedBoxGeometry(p.width,p.height,p.depth,2,Math.min(.065,Math.min(p.width,p.height,p.depth)*.12));}if(o.geometry.type==='ConeGeometry'&&p.radius>.15&&p.radialSegments<12){o.geometry=new THREE.ConeGeometry(p.radius,p.height,16,2);}const m=o.material;if(!m||!m.isMeshStandardMaterial)return;o.receiveShadow=true;if(o.position.y>arenaY+.3&&o.geometry.type!=='PlaneGeometry')o.castShadow=true;if(processed.has(m))return;processed.add(m);m.roughness=kind==='ice'?.34:kind==='city'?.56:kind==='lava'?.83:.78;m.metalness=kind==='city'?.12:kind==='ice'?.05:0;if(!m.bumpMap&&!m.map){m.bumpMap=surfaceBump;m.bumpScale=kind==='ice'?.018:.028;}m.needsUpdate=true;});}
 fightArena.visible=false;scene.add(fightArena);
 function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
