@@ -616,7 +616,7 @@ function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 function layoutSelect(){const list=available().filter(c=>!c.opponentOnly&&LOADED[c.key]),n=list.length;setAstroVisible(false);
  for(const c of CHARS)if(LOADED[c.key])LOADED[c.key].holder.visible=false;
- list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,7.6/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.55,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
+ list.forEach((c,i)=>{const R=LOADED[c.key],x=(i-(n-1)/2)*Math.min(1.5,7.6/n);R.holder.visible=true;R.holder.scale.setScalar(.62);R.holder.position.set(x,FLOOR+.85,.2);R.holder.rotation.y=-x*.15;R.cur=null;R.play(c.anim.select||c.anim.idle)})}
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
  let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||me;
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
