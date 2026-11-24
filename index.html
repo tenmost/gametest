@@ -623,7 +623,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(1.18);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.94);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.play(R.cfg.anim.idle)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
