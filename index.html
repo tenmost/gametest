@@ -38,7 +38,7 @@ main{width:min(100vw,1100px);padding:8px}
 #select{background:linear-gradient(#050818dd,#05081822 32%,#05081800 60%,#050818cc);backdrop-filter:none}
 #select .selWrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:3% 2% 4%}
 #stage.selecting .controls,#stage.selecting .count,#stage.selecting .hearts,#stage.selecting .score,#stage.selecting .label,#stage.selecting #status,#stage.selecting #changeP,#stage.selecting #restart{visibility:hidden}
-#select h2{font-size:clamp(22px,4.5vw,56px)}#selHint{margin:0;font-size:clamp(11px,1.5vw,18px);color:#c7e9ff}
+#select h2{font-size:clamp(18px,3.2vw,40px)}#selHint{margin:0;font-size:clamp(11px,1.5vw,18px);color:#c7e9ff}
 #mapPick{position:static;width:100%;text-align:center;color:white;font-size:clamp(9px,1.1vw,14px);font-weight:900;margin-top:8px}#mapPick .mapButtons{justify-content:center}#selectionBottom{position:absolute;left:2%;right:2%;bottom:1.5%;width:auto;display:flex;flex-direction:column;align-items:center}.mapButtons{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.mapButtons button{padding:.4em .65em;border:1px solid #7de7ff;border-radius:7px;background:#233659;color:white;font-size:inherit;font-weight:800;cursor:pointer}.mapButtons button[data-map="random"]:not(.chosen){background:linear-gradient(135deg,#40266e,#704c22);border-color:#f0c76a;color:#ffe5a3}.mapButtons button.chosen{background:#175e48;outline:2px solid #7affbb}.mapButtons button:disabled{opacity:.5;cursor:default}
 #readyPlayer{position:absolute;right:2%;top:13%;padding:.55em 1.3em;border:2px solid #7de7ff;border-radius:10px;background:#174e42;color:white;font-weight:900;cursor:pointer}#readyPlayer:disabled{opacity:.4;cursor:default}#selBtns button.chosen{outline:3px solid #7affbb;background:#175e48}
 #selBtns{display:flex;gap:2%;justify-content:center;width:100%}
@@ -69,7 +69,7 @@ main{width:min(100vw,1100px);padding:8px}
 #invite button.ghost{background:transparent}
 footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 #over{z-index:40}.endActions{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}#backToMenu{background:linear-gradient(135deg,#31244e,#5d397d)}button[hidden]{display:none!important}
-</style>
+#accountBar{font-size:clamp(10px,1.1vw,14px);font-weight:bold}#accountBar button{background:#112c65dd;border:1px solid #83dfff;border-radius:8px;color:white;padding:clamp(4px,.7vw,8px);font-weight:bold;cursor:pointer;font-size:clamp(9px,1.05vw,13px);white-space:nowrap}#accountBar button:hover,#accountBar button:focus-visible{background:#204789;box-shadow:0 0 10px #83dfff88;outline:1px solid #83dfff}#accountSummary{color:#c7e9ff}#accountBar #demoGemBalance,#accountBar #pinkGemBalance{cursor:help} </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
 <div class="count" id="count">3</div>
