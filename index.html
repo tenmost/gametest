@@ -76,6 +76,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .hearts span{flex:1;min-width:0;border-radius:2px;background:#352035;transition:background .25s,box-shadow .25s}
 .hearts span.full{background:linear-gradient(180deg,#b9ff9b,#39d76b 55%,#168c48);box-shadow:0 0 7px #39d76b88}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fightMarks{display:flex;gap:7px;margin-top:4px}.score.c .fightMarks{justify-content:flex-end}.fightMarks i{width:clamp(8px,1.1vw,15px);aspect-ratio:1;border:1px solid #9fb9d8;border-radius:50%;background:#14203a}.fightMarks i.won{background:#ffd45b;border-color:#fff2ad;box-shadow:0 0 9px #ffbd35}.score{top:11%}
 </style>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
@@ -123,7 +124,7 @@ try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/su
 <button id="onCancel" class="ghost">BACK</button></div></div>
 <div class="overlay" id="invite"><div class="onBox"><h2>⚔ DUEL INVITE</h2><p id="invText"></p><p id="invTimer" class="small"></p><button id="invYes">ACCEPT</button><button id="invNo" class="ghost">DECLINE</button></div></div>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><div class="endActions"><button id="again">PLAY AGAIN</button><button id="backToMenu">BACK TO MENU</button></div></div></div>
-</div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 15 seconds to pick, or a random card is played. Three health segments each — first to lose all health loses the match. Move the mouse to look around.</footer></main>
+</div><footer>Pick your card: rock, paper or scissors (click or keys 1-3 / R-P-S). You have 15 seconds to pick, or a random card is played. Three health segments per fight — first to win two fights wins the match. Move the mouse to look around.</footer></main>
 
 <script>
 /* 3D scene placeholder until the Three.js module loads; the game works even if it never does */
@@ -134,7 +135,7 @@ const $=id=>document.getElementById(id);
 const stage=$('stage'),count=$('count'),statusEl=$('status'),hp=$('hp'),hc=$('hc'),flash=$('flash'),over=$('over');
 const buttons=[...document.querySelectorAll('[data-m]')];
 const MOVES=['rock','paper','scissors'],beats={rock:'scissors',paper:'rock',scissors:'paper'};
-let p=3,c=3,busy=false,token=0,muted=false;
+let p=3,c=3,busy=false,token=0,muted=false;let playerFights=0,opponentFights=0,perfectMatch=true;
 let stats={wins:0,losses:0,streak:0,best:0};
 try{stats=Object.assign(stats,JSON.parse(localStorage.getItem('spaceRpsStats')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('spaceRpsStats',JSON.stringify(stats))}catch(e){}};
@@ -163,6 +164,7 @@ function render(){
   for(const [bar,lives] of [[hp,p],[hc,c]]){if(bar.children.length!==3){bar.replaceChildren(...Array.from({length:3},()=>document.createElement('span')));bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','3');}bar.setAttribute('aria-valuenow',String(lives));bar.setAttribute('aria-label',bar===hp?'Player health':'Opponent health');Array.from(bar.children).forEach((segment,i)=>segment.classList.toggle('full',i<lives));}
   $('sp').textContent=`Matches won: ${stats.wins} · Streak: ${stats.streak} · Best: ${stats.best}`;
   $('sc').textContent=`Matches won: ${stats.losses}`;
+  for(const [id,wins] of [['sp',playerFights],['sc',opponentFights]]){const marks=document.createElement('div');marks.className='fightMarks';marks.setAttribute('aria-label',wins+' of 2 fights won');for(let i=0;i<2;i++){const dot=document.createElement('i');if(i<wins)dot.className='won';marks.appendChild(dot)}$(id).prepend(marks);}
 }
 
 /* talking: speech bubbles + browser text-to-speech (free, no files) */
@@ -203,7 +205,7 @@ function idle(waitForReady=false){
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
   if(waitForReady){awaitingMatchReady=true;stage.classList.add('match-active');stopPick();count.textContent='15';buttons.forEach(b=>b.disabled=true);matchReady.hidden=false;matchReady.disabled=false;if(NET&&NET.live)NET.localMatchReady=false;statusEl.textContent='PRESS READY TO FIGHT';}else{startPick();statusEl.textContent='CHOOSE YOUR MOVE';}statusEl.className='';
 }
-function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
+function reset(){if(selecting)return;stopPick();hush();started=true;token++;p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 function play(choice){
@@ -236,7 +238,7 @@ async function runRound(choice,other){
   count.textContent='';statusEl.textContent='';
   await wait(560);if(run!==token)return; // cards flip, wind up and smash together
   if(win>0){c--;shake(hc)}
-  if(win<0){p--;shake(hp)}
+  if(win<0){p--;perfectMatch=false;shake(hp)}
   render();
   count.textContent=win>0?'✓':win<0?'✕':'=';
   const nm={rock:'ROCK',paper:'PAPER',scissors:'SCISSORS'};
@@ -248,12 +250,19 @@ async function runRound(choice,other){
   hush();if(p&&c)chat(win>0?'gWin':win<0?'aWin':'tie',win<0?'a':'g',1000);else chat(c===0?'matchWin':'matchLose',c===0?'g':'a',1300);
 
   if(!p||!c){
-    const youWon=c===0;window.demoProgress?.reward(youWon, p===3);logStat('sd_matches',{winner:youWon?'player':'opp'});
+    const youWon=c===0;if(youWon)playerFights++;else opponentFights++;render();
+    if(playerFights<2&&opponentFights<2){
+      statusEl.textContent=(youWon?'YOU WIN THE FIGHT!':SEL.a.name+' WINS THE FIGHT!')+' · '+playerFights+'–'+opponentFights;
+      count.textContent='★';await wait(3500);if(run!==token)return;
+      p=3;c=3;Scene3D.reset&&Scene3D.reset();render();idle(true);
+      statusEl.textContent=(playerFights===1&&opponentFights===1?'FINAL FIGHT':'FIGHT 2')+' — PRESS READY';return;
+    }
+    window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
     save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
-    $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 COMPUTER WINS';
-    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(p===3?8:5):1} (local test)`;
+    $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+SEL.a.name+' WINS THE MATCH!';
+    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+` · 💎 +${youWon?(perfectMatch?8:5):1} (local test)`;
     awaitingMatchReady=false;matchReady.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');(youWon?sfx.match:sfx.gameover)();$('again').focus();
     return;
   }
