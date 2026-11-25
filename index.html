@@ -2759,6 +2759,16 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #select #selectionBottom #mapPick .mapButtons{justify-content:flex-start!important;align-items:stretch!important;align-content:flex-start!important;scroll-snap-type:none!important;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:hidden!important;gap:6px!important;flex:1;min-height:0;height:auto;grid-template-columns:none!important;padding-right:2px;max-height:none!important}
  #select #selectionBottom #mapPick .mapButtons>button{flex:0 0 auto!important;width:100%!important;height:auto!important;aspect-ratio:1.15;min-height:0!important;margin:0!important}
  #select #selectionBottom .xpHint,#select #heroCollection .xpHint{display:none!important}
+ /* columns without a panel background: the cards float over space, each card gets a soft colour */
+ #select #heroCollection,#select #heroCollection:not(.xp),#select #selectionBottom,#select #selectionBottom:not(.xp){background:none!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+ #stage[data-step="hero"] #select #heroCollection,#stage[data-step="arena"] #select #selectionBottom{border-color:#ffd54a!important}
+ #select #heroCollection .heroCollectionTitle,#select #selectionBottom #mapPick>span{text-shadow:0 1px 4px #000,0 0 10px #000;letter-spacing:.03em!important;font-size:clamp(7px,.72vw,10px)!important}
+ #select #heroCollection #selBtns button{background:linear-gradient(160deg,rgba(80,150,255,.30),rgba(190,80,255,.22))!important;border:1px solid rgba(125,231,255,.5)!important;border-radius:12px!important;box-shadow:0 4px 14px rgba(0,0,0,.35)!important}
+ #select #heroCollection #selBtns button:nth-child(3n+2){background:linear-gradient(160deg,rgba(255,120,200,.28),rgba(120,90,255,.22))!important}
+ #select #heroCollection #selBtns button:nth-child(3n){background:linear-gradient(160deg,rgba(60,220,170,.26),rgba(60,140,255,.22))!important}
+ #select #heroCollection #selBtns button.chosen{border:2px solid #7affbb!important;box-shadow:0 0 14px #7affbb88!important}
+ #select #mapPick .mapButtons>button.mpCard{background:linear-gradient(160deg,rgba(80,150,255,.28),rgba(190,80,255,.22))!important;border:1px solid rgba(125,231,255,.45)!important;border-radius:12px!important;box-shadow:0 4px 14px rgba(0,0,0,.35)!important}
+ #select #mapPick .mapButtons>button.mpCard.chosen{border:2px solid #7affbb!important;box-shadow:0 0 14px #7affbb88!important;background:linear-gradient(160deg,rgba(40,200,140,.35),rgba(40,120,200,.28))!important}
  #stage:has(.xp)::after{display:none!important}
  #select #heroCollection #selBtns button,#select #heroCollection #selBtns button:hover,#select #mapPick .mapButtons>button,#select #mapPick .mapButtons>button:hover{transform:none!important}
  /* READY at the bottom right, as tall as both rows */
