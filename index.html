@@ -2,6 +2,7 @@
 <title>RPS Rivals — 3D Rock Paper Scissors Duels</title>
 <meta name="description" content="RPS Rivals: a 3D rock-paper-scissors battle game. Duel the computer or your friends online, unlock arenas and avatars.">
 <meta property="og:title" content="RPS Rivals"><meta property="og:description" content="3D rock-paper-scissors duels — play the computer or challenge your friends online."><meta name="theme-color" content="#101b3d">
+<script>(function(){try{var q=new URLSearchParams(location.search).get("xmas"),d=new Date(),m=d.getMonth(),day=d.getDate();window.SD_XMAS=q?q==="1":(m===10&&day>=20)||m===11||(m===0&&day<=6);if(window.SD_XMAS)document.documentElement.classList.add("xmas");}catch(e){}})();</script>
 <script>(function(){try{var h=new URLSearchParams(location.hash.slice(1)),u=new URLSearchParams(location.search);if(h.get("type")==="recovery"||u.get("type")==="recovery")window.__sdRecovery=1;var er=h.get("error_description")||u.get("error_description");if(er)window.__sdAuthErr=er.replace(/\+/g," ");}catch(e){}})();</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <style>
@@ -244,6 +245,11 @@ img.avE{display:block;width:100%;height:100%;object-fit:cover;border-radius:inhe
 #select #selHint{background:rgba(255,255,255,.12)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3)!important}
 #stage.selecting #playerCard .pcStat,#select #heroCollection #selBtns button,#mapPick .mapButtons button.mpCard{background:rgba(8,16,45,.38)!important;border-color:rgba(255,255,255,.22)!important}
 #select #heroCollection .heroCollectionTitle,#select #mapPick>span{color:#fff;letter-spacing:.12em}
+#brandLogo .l1{position:relative;display:inline-block}
+html.xmas #select h2#brandLogo{color:#fff;text-shadow:0 .07em 0 #c8102e,0 .14em .3em rgba(0,0,0,.5)}
+html.xmas #select h2#brandLogo b{color:#3ddc6a;text-shadow:0 .07em 0 #0f5a28,0 .14em .3em rgba(0,0,0,.5)}
+html.xmas #select h2#brandLogo small{color:#ffd6d6}
+html.xmas #brandLogo .l1::before{content:'';position:absolute;left:-.2em;top:-.5em;width:.95em;height:.76em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 80'%3E%3Cpath d='M12 62 C20 30 45 6 78 10 C70 22 74 40 88 50 L90 62 Z' fill='%23e3262f' stroke='%23400' stroke-width='3'/%3E%3Cpath d='M78 10 C62 16 66 36 86 44' fill='none' stroke='%23a3121b' stroke-width='4'/%3E%3Crect x='4' y='56' width='92' height='20' rx='10' fill='%23fff' stroke='%23400' stroke-width='3'/%3E%3Ccircle cx='86' cy='50' r='11' fill='%23fff' stroke='%23400' stroke-width='3'/%3E%3C/svg%3E") no-repeat center/contain;transform:rotate(-16deg);pointer-events:none}
 </style>
 <dialog id="accountDialog" aria-labelledby="acTitle">
  <div class="acHead"><h2 id="acTitle">PLAYER PROFILE</h2><button class="acX" id="accountClose" type="button" aria-label="Close">✕</button></div>
@@ -415,7 +421,7 @@ setTab('login');paint();
 try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');client=window.__sb||(window.__sb=createClient('https://mrrqfrmgblbgrvkbrwvt.supabase.co','sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw'));client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>{refreshProfile(session).catch(e=>msg(e.message)).finally(()=>{if(event==='PASSWORD_RECOVERY'||(window.__sdRecovery&&session)){window.__sdRecovery=0;mode='recovery';q('acMsgRecovery').textContent='';open();q('acNewPass1').focus();}});},0);});if(window.__sdAuthErr){const t=/expired|invalid/i.test(window.__sdAuthErr)?'This reset link has expired or was already used. Ask for a new one below.':window.__sdAuthErr;window.__sdAuthErr=0;setTimeout(()=>{mode='forgot';open();msg(t,'acMsgForgot');},300);}}catch(e){msg('Account service unavailable: '+e.message,'acMsgAuth');}
 window.__acTest={setClient:c=>{client=c},refreshProfile};
 </script>
-<div class="overlay" id="select"><div class="selWrap"><div><h2 id="brandLogo">RPS <b>RIVALS</b><small>ROCK · PAPER · SCISSORS DUELS</small></h2><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on"><b>🤖 VS COMPUTER</b><small>earn crystals</small></button><button data-mode="online"><b>🌐 ONLINE</b><small class="onCount">play a friend</small></button></div></div><div id="heroCollection"><div class="heroCollectionTitle">HERO COLLECTION</div><div id="selBtns"></div></div><div id="selectionBottom"><div id="mapPick"><span>CHOOSE ARENA</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="nebula" class="pinkMap">Crystal Nebula</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="arenaChoice" value="temple"></div></div><button id="readyPlayer" aria-disabled="true" title="Choose a hero first">✓ READY</button><div id="readyNotice" role="status" aria-live="polite"></div></div></div>
+<div class="overlay" id="select"><div class="selWrap"><div><h2 id="brandLogo"><span class="l1">R</span>PS <b>RIVALS</b><small>ROCK · PAPER · SCISSORS DUELS</small></h2><script>if(window.SD_XMAS)document.querySelector("#brandLogo small").textContent="MERRY CHRISTMAS · ROCK PAPER SCISSORS";</script><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on"><b>🤖 VS COMPUTER</b><small>earn crystals</small></button><button data-mode="online"><b>🌐 ONLINE</b><small class="onCount">play a friend</small></button></div></div><div id="heroCollection"><div class="heroCollectionTitle">HERO COLLECTION</div><div id="selBtns"></div></div><div id="selectionBottom"><div id="mapPick"><span>CHOOSE ARENA</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="nebula" class="pinkMap">Crystal Nebula</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="arenaChoice" value="temple"></div></div><button id="readyPlayer" aria-disabled="true" title="Choose a hero first">✓ READY</button><div id="readyNotice" role="status" aria-live="polite"></div></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
 <h2>🌐 ONLINE DUEL</h2>
@@ -1158,14 +1164,28 @@ scene.add(nebula);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.1,map:SPR,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})))}
 
+const NIGHT=!!window.SD_XMAS,cityC=NIGHT?document.createElement('canvas'):null,cityD=NIGHT?new Uint8ClampedArray(1024*512*4):null;let cityI=0;
+const cityAt=(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];if(sstep(.5,.53,fbm(...q))<.5||Math.abs(y)>.8)return 0;const c=fbm(x*16,y*16,z*16,3);return sstep(.6,.68,c)};
 const earthTex=equirect(1024,512,(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];const c=fbm(...q),land=sstep(.5,.53,c),polar=sstep(.82,.9,Math.abs(y));
  const o=fbm(q[0]*3,q[1]*3,q[2]*3,3),l=sstep(.3,.7,fbm(q[0]*4,q[1]*4,q[2]*4,3));
  let r=lerp(lerp(5,15,o),lerp(36,128,l),land),g=lerp(lerp(26,82,o),lerp(92,102,l),land),b=lerp(lerp(82,158,o),lerp(30,56,l),land);
+ if(NIGHT){const i=cityI++*4;let L=0;if(land>.5&&Math.abs(y)<.8){const cc=fbm(x*16,y*16,z*16,3);L=sstep(.56,.66,cc);if(L>0&&Math.random()<.35)L*=.4;const glow=sstep(.5,.6,cc)*.35;L=Math.max(L,glow)}
+  cityD[i]=255*L;cityD[i+1]=200*L;cityD[i+2]=110*L;cityD[i+3]=255;
+  const sn=land*sstep(.25,.6,Math.abs(y)+o*.25);r=lerp(r,200,sn);g=lerp(g,210,sn);b=lerp(b,230,sn);
+  return[lerp(r,215,polar)*.22,lerp(g,225,polar)*.25,lerp(b,250,polar)*.38]}
  return[lerp(r,235,polar),lerp(g,240,polar),lerp(b,250,polar)]});
+let cityTex=null;if(NIGHT){cityC.width=1024;cityC.height=512;cityC.getContext('2d').putImageData(new ImageData(cityD,1024,512),0,0);cityTex=new THREE.CanvasTexture(cityC);cityTex.colorSpace=THREE.SRGBColorSpace}
 const cloudTex=equirect(1024,512,(x,y,z)=>{const c=sstep(.5,.75,fbm(x*4,y*4,z*4,5));return[255,255,255,c*235]});
 const earth=new THREE.Group();earth.position.set(0,-29.6,-9);scene.add(earth);
-const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial({map:earthTex,roughness:.75,metalness:0}));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
-const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
+const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial(Object.assign({map:earthTex,roughness:.75,metalness:0},NIGHT?{emissive:0xffffff,emissiveMap:cityTex,emissiveIntensity:1.6}:{})));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
+if(NIGHT){// tiny snowy houses with lit windows, scattered over the city areas, turning with the planet
+ const hs=[];for(let k=0;k<6000&&hs.length<700;k++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),d=V3(-Math.cos(a)*r,u,Math.sin(a)*r);if(cityAt(d.x,d.y,d.z)>.3)hs.push(d)}
+ const body=new THREE.InstancedMesh(new THREE.BoxGeometry(.16,.13,.14),new THREE.MeshStandardMaterial({color:0x8a5a3c,emissive:0xffb347,emissiveIntensity:.55,roughness:.8}),hs.length);
+ const roof=new THREE.InstancedMesh(new THREE.ConeGeometry(.13,.11,4).rotateY(Math.PI/4),new THREE.MeshStandardMaterial({color:0xf4f8ff,roughness:.9}),hs.length);
+ const up=V3(0,1,0),qq=new THREE.Quaternion(),mm=new THREE.Matrix4(),sc=V3(1,1,1);
+ hs.forEach((d,i)=>{qq.setFromUnitVectors(up,d);const k=.8+Math.random()*.6;sc.set(k,k,k);mm.compose(d.clone().multiplyScalar(27.05),qq,sc);body.setMatrixAt(i,mm);mm.compose(d.clone().multiplyScalar(27.05+.12*k),qq,sc);roof.setMatrixAt(i,mm)});
+ earthM.add(body,roof)}
+const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:NIGHT?.28:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
 const atmoMat=(col,pow,k)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{c:{value:new THREE.Color(col)}},
  vertexShader:`varying vec3 vN,vV;void main(){vec4 w=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-w.xyz);gl_Position=projectionMatrix*w;}`,
  fragmentShader:`varying vec3 vN,vV;uniform vec3 c;void main(){float f=pow(clamp(1.-abs(dot(vN,vV)),0.,1.),${pow.toFixed(1)});float a=smoothstep(0.,.35,abs(dot(vN,vV)));gl_FragColor=vec4(c*f*${k.toFixed(2)}*a,1.);}`});
@@ -1221,6 +1241,72 @@ function makeUFO(){
  beam.position.y=-1.75;g.add(beam);
  scene.add(g);return{g,lights,beam,alien,active:false,wait:randR(1,6),beamT:0}}
 const UFOS=[makeUFO(),makeUFO()];
+/* ---------- CHRISTMAS (window.SD_XMAS, 20 Nov – 6 Jan or ?xmas=1): Santa's sleigh + reindeer dropping presents, night Earth with city lights + tiny houses, no meteor strikes ---------- */
+const XMAS=!!window.SD_XMAS;
+function makeSanta(){
+ const g=new THREE.Group(),red=std(0xc8102e,{r:.45}),gold=std(0xffc845,{r:.3,m:.8}),white=std(0xffffff,{r:.8}),skin=std(0xffc7a0,{r:.7}),black=std(0x151515,{r:.4}),brown=std(0x7a4a26,{r:.8}),dkb=std(0x4a2c16,{r:.8}),antl=std(0xd9c09a,{r:.8});
+ const M=(geo,mat,x,y,z,sx,sy,sz)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sx)m.scale.set(sx,sy,sz);return m};
+ const SPH=new THREE.SphereGeometry(1,16,12),BOX=new THREE.BoxGeometry(1,1,1),CYL=new THREE.CylinderGeometry(1,1,1,8);
+ // sleigh
+ const sl=new THREE.Group();g.add(sl);
+ sl.add(M(BOX,red,0,.25,0,1.1,.38,.62));sl.add(M(BOX,red,-.45,.5,0,.24,.5,.62));
+ const front=new THREE.Mesh(new THREE.TorusGeometry(.22,.09,8,16,Math.PI),red);front.position.set(.55,.3,0);front.rotation.z=-Math.PI/2;front.scale.set(1,1,3.3);sl.add(front);
+ sl.add(M(BOX,gold,0,.45,.32,1.12,.05,.03));sl.add(M(BOX,gold,0,.45,-.32,1.12,.05,.03));
+ for(const z of[-.28,.28]){const r=new THREE.Mesh(new THREE.TorusGeometry(.62,.03,6,24,Math.PI*.55),gold);r.position.set(.05,.38,z);r.rotation.z=Math.PI*1.2;sl.add(r);
+  sl.add(M(BOX,gold,-.05,-.08,z,1.15,.04,.04));for(const x of[-.35,.25])sl.add(M(BOX,gold,x,.03,z,.04,.2,.04))}
+ // Santa
+ const sa=new THREE.Group();sa.position.set(-.15,.45,0);sl.add(sa);
+ sa.add(M(SPH,red,0,.2,0,.3,.32,.3));sa.add(M(BOX,black,0,.12,0,.5,.07,.58));sa.add(M(BOX,gold,.25,.12,0,.04,.09,.1));
+ sa.add(M(SPH,skin,0,.6,0,.16,.16,.16));sa.add(M(SPH,white,.05,.5,0,.14,.15,.15));
+ sa.add(M(SPH,white,.14,.62,0,.04,.04,.04));
+ const hat=new THREE.Mesh(new THREE.ConeGeometry(.15,.32,12),red);hat.position.set(-.04,.82,0);hat.rotation.z=.5;sa.add(hat);
+ sa.add(M(new THREE.TorusGeometry(.14,.04,6,16).rotateX(Math.PI/2),white,0,.72,0));sa.add(M(SPH,white,-.17,.92,0,.06,.06,.06));
+ const arm=M(SPH,red,.2,.32,.18,.2,.08,.08);arm.rotation.z=-.4;sa.add(arm);
+ // sack with presents
+ sl.add(M(SPH,brown,-.35,.62,0,.28,.3,.26));
+ const pc=[0x2fbf4f,0x2f7dff,0xffc845];pc.forEach((c,i)=>sl.add(M(BOX,std(c,{r:.5}),-.42+i*.12,.86+i*.03,(i-1)*.1,.13,.13,.13)));
+ // reindeer: two pairs + Rudolph in front
+ const deer=[],legs=[];
+ const mkDeer=(x,z,rudolph)=>{const d=new THREE.Group();d.position.set(x,.35,z);g.add(d);
+  d.add(M(SPH,brown,0,.32,0,.36,.17,.15));d.add(M(SPH,std(0xe8d6b8,{r:.9}),.02,.24,0,.3,.11,.12));
+  const neck=M(CYL,brown,.3,.46,0,.06,.25,.06);neck.rotation.z=-.7;d.add(neck);
+  d.add(M(SPH,brown,.44,.58,0,.12,.1,.09));d.add(M(SPH,dkb,.56,.55,0,.07,.06,.06));
+  d.add(M(SPH,rudolph?std(0xff2020,{e:0xff1010,ei:3}):black,.63,.55,0,.035,.035,.035));
+  for(const s of[-1,1]){const a=M(CYL,antl,.42,.72,s*.06,.012,.17,.012);a.rotation.x=s*.4;d.add(a);const b=M(CYL,antl,.47,.77,s*.1,.01,.1,.01);b.rotation.z=-.7;d.add(b);
+   d.add(M(SPH,dkb,.4,.66,s*.08,.03,.05,.02))}
+  for(let i=0;i<4;i++){const leg=new THREE.Group();leg.position.set(i<2?.22:-.22,.24,i%2?.08:-.08);const l=M(CYL,dkb,0,-.16,0,.025,.32,.025);leg.add(l);leg.add(M(SPH,black,0,-.33,0,.03,.025,.03));d.add(leg);legs.push({leg,ph:(i<2?0:Math.PI)+x})}
+  d.add(M(SPH,white,-.36,.38,0,.05,.05,.05));
+  // harness strap
+  d.add(M(BOX,red,0,.34,0,.06,.36,.34));d.add(M(SPH,gold,0,.5,.17,.025,.025,.025));
+  deer.push(d);return d};
+ mkDeer(1.35,-.22);mkDeer(1.35,.22);mkDeer(2.2,-.22);mkDeer(2.2,.22);mkDeer(3.05,0,true);
+ // reins
+ const pts=[];for(const d of deer){pts.push(.6,.62,0,d.position.x,d.position.y+.34,d.position.z)}
+ const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));g.add(new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xffd27a})));
+ const glow=new THREE.Sprite(glowMat(0xffe7a0,.55));glow.scale.set(3,1.4,1);glow.position.set(.3,.4,0);g.add(glow);
+ g.visible=false;scene.add(g);return{g,deer,legs,active:false,wait:randR(2,5),drop:0}}
+const SANTA=XMAS?makeSanta():null;
+const GIFTS=XMAS?[0,1,2,3,4,5,6,7].map(i=>{const g=new THREE.Group(),c=[0xe3262f,0x2fbf4f,0x2f7dff,0xffc845,0xb05cff][i%5];
+ g.add(new THREE.Mesh(new THREE.BoxGeometry(.24,.2,.24),std(c,{r:.45})));const rib=std(i%5===3?0xe3262f:0xfff1b0,{r:.3,m:.4});
+ g.add(new THREE.Mesh(new THREE.BoxGeometry(.26,.21,.05),rib));g.add(new THREE.Mesh(new THREE.BoxGeometry(.05,.21,.26),rib));
+ const bow=new THREE.Mesh(new THREE.TorusGeometry(.05,.02,6,12),rib);bow.position.y=.12;g.add(bow);
+ g.visible=false;scene.add(g);return{g,v:V3(0,0,0),age:0}}):[];
+function launchSanta(S){const dir=Math.random()<.5?1:-1,z=randR(-20,-13);
+ S.p=V3(-dir*(Math.abs(z)*1.3+8),randR(3,6),z);S.v=V3(dir*randR(1.6,2.2),randR(-.05,.05),0);S.g.rotation.set(0,dir>0?0:Math.PI,0);S.g.scale.setScalar(randR(.8,1));S.active=true;S.ph=Math.random()*9;S.drop=.6}
+function updateXmas(dt){if(!SANTA)return;const S=SANTA;
+ if(!S.active){S.wait-=dt;S.g.visible=false;if(S.wait<=0)launchSanta(S)}else{
+  S.g.visible=true;S.p.addScaledVector(S.v,dt);const bob=Math.sin(TIME*1.6+S.ph)*.3;S.g.position.set(S.p.x,S.p.y+bob,S.p.z);
+  S.g.rotation.z=Math.cos(TIME*1.6+S.ph)*.06*(S.v.x>0?1:-1);
+  S.deer.forEach((d,i)=>{d.position.y=.35+Math.sin(TIME*10+i*1.3)*.05});
+  S.legs.forEach(l=>{l.leg.rotation.z=Math.sin(TIME*10+l.ph)*.7});
+  // glitter trail behind the sleigh
+  if(Math.random()<dt*40){const back=S.g.position.clone().add(V3(-Math.sign(S.v.x)*.6,.3,0));plist.push({p:back,v:V3(randR(-.2,.2),randR(-.1,.3),randR(-.2,.2)),c:Math.random()<.5?[1.6,1.3,.5]:[1.4,1.4,1.6],life:1.2+Math.random(),age:0});if(plist.length>NP)plist.shift()}
+  S.drop-=dt;if(S.drop<=0){S.drop=randR(.7,1.4);const gft=GIFTS.find(x=>!x.g.visible);if(gft){gft.g.position.copy(S.g.position).add(V3(-Math.sign(S.v.x)*.4,.3,0));gft.v.set(S.v.x*.5,.4,randR(-.3,.3));gft.age=0;gft.spin=V3(randR(-3,3),randR(-3,3),randR(-3,3));gft.g.visible=true}}
+  if(Math.abs(S.p.x)>Math.abs(S.p.z)*1.3+9){S.active=false;S.wait=randR(5,12)}}
+ for(const gf of GIFTS){if(!gf.g.visible)continue;gf.age+=dt;gf.v.y-=dt*1.6;gf.g.position.addScaledVector(gf.v,dt);gf.g.rotation.x+=gf.spin.x*dt;gf.g.rotation.y+=gf.spin.y*dt;
+  const p=gf.g.position,dz=p.z-earth.position.z,surf=earth.position.y+Math.sqrt(Math.max(0,27.3*27.3-dz*dz-p.x*p.x));
+  if(p.y<surf||gf.age>6){gf.g.visible=false;if(p.y<surf+.5)burst(p.clone(),[1.5,1.2,.5],14,1.2)}}}
+
 function launchUFO(u){const dir=Math.random()<.5?1:-1,z=randR(-26,-15);
  u.p=V3(-dir*(Math.abs(z)*1.3+6),randR(2.5,7.5),z);u.v=V3(dir*randR(.7,1.3),randR(-.08,.08),randR(-.1,.1));u.s=randR(.9,1.4);u.g.scale.setScalar(u.s);u.active=true;u.ph=Math.random()*9;u.beamT=0}
 // shooting stars
@@ -1558,13 +1644,14 @@ function updateBackground(dt){fightArena.visible=!st.select;const map=window.are
   u.lights.forEach((m,i)=>m.material.emissive.setHSL(((TIME*.3+i/10)%1),1,.55));
   u.beamT-=dt;if(u.beamT<-randR(6,12))u.beamT=randR(1.5,2.5);u.beam.material.opacity=u.beamT>0?.1+.04*Math.sin(TIME*20):Math.max(0,u.beam.material.opacity-dt);
   if(Math.abs(u.p.x)>Math.abs(u.p.z)*1.3+8){u.active=false;u.wait=randR(4,12)}}
+ updateXmas(dt);
  // shooting stars
  for(const s of STARS){if(!s.m.visible){s.wait-=dt;if(s.wait<=0)launchStar(s);continue}
   s.life+=dt;s.p.addScaledVector(s.v,dt);const f=s.life/s.dur,ang=Math.atan2(s.v.y,s.v.x);
   s.m.position.copy(s.p).addScaledVector(s.v.clone().normalize(),-s.len/2);s.m.rotation.set(0,0,ang);s.m.scale.set(s.len*Math.min(1,f*3),.18,1);
   s.m.material.opacity=Math.sin(Math.min(f,1)*Math.PI);if(f>=1){s.m.visible=false;s.wait=randR(1.5,5)}}
  // meteor
- if(MET.state==='wait'){MET.wait-=dt;if(MET.wait<=0)launchMeteor()}
+ if(MET.state==='wait'){MET.wait-=dt;if(MET.wait<=0&&!XMAS)launchMeteor()}
  else if(MET.state==='fly'){MET.t+=dt;const f=Math.min(MET.t/MET.dur,1),e=f*f,p=MET.from.clone().lerp(MET.hit,e),dir=MET.hit.clone().sub(MET.from).normalize();
   MET.rock.position.copy(p);MET.rock.scale.setScalar(.45);MET.rock.rotation.x+=dt*4;MET.head.position.copy(p);MET.head.scale.setScalar(2.4+Math.sin(TIME*30)*.2);MET.core.position.copy(p);MET.core.scale.setScalar(1.1);
   const tl=4+e*6;MET.tail.position.copy(p).addScaledVector(dir,-tl/2);MET.tail.lookAt(camera.position);
