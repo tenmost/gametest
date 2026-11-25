@@ -1441,8 +1441,8 @@ const nwGlow=(color,op,add=true)=>{const m=new THREE.SpriteMaterial({map:nwSoft,
 const nwAdd=(color,op,map)=>{const m=new THREE.MeshBasicMaterial({color,map:map||null,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});m.userData.dynamic=true;return m};
 // sky dome with a vertical gradient (top → middle → horizon); hides the space backdrop for arenas that have their own sky/sea
 function nwSky(g,stops){const c=document.createElement('canvas');c.width=4;c.height=256;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,256);stops.forEach((s,i)=>gr.addColorStop(i/(stops.length-1),s));x.fillStyle=gr;x.fillRect(0,0,4,256);
- const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,depthWrite:false,fog:false});m.userData.dynamic=true;
- const d=new THREE.Mesh(new THREE.SphereGeometry(48,32,24,0,Math.PI*2,0,Math.PI*.62),m);d.position.set(0,arenaY-6,-4);d.renderOrder=-5;g.add(d);return d}
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false});m.userData.dynamic=true;
+ const d=new THREE.Mesh(new THREE.SphereGeometry(48,32,24,0,Math.PI*2,0,Math.PI*.62),m);d.position.set(0,arenaY-6,-4);g.add(d);return d}
 function nwStars(g,n,col=0xffffff){const pos=new Float32Array(n*3);for(let i=0;i<n;i++){const a=rand()*Math.PI-Math.PI,e=.15+rand()*1.2,r=44;pos.set([Math.cos(a)*Math.cos(e)*r*.9,arenaY-6+Math.sin(e)*r,-4+Math.sin(a)*Math.cos(e)*r],i*3)}
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));const pm=new THREE.PointsMaterial({color:col,size:.35,map:nwSoft,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});pm.userData.dynamic=true;const p=new THREE.Points(geo,pm);g.add(p);return p}
 const nwCanvasTex=(w,h,draw,rep)=>{const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1])}return t};
@@ -1452,7 +1452,7 @@ function nwPalm(par,x,z,h,lean,trunkM,leafM){const g=new THREE.Group();g.positio
 // ---------- SUNKEN ATLANTIS (blue 150): marble ruins on the sea floor, coral, kelp, fish, jellyfish, light rays, bubbles ----------
 {const g=new THREE.Group();alternate.atlantis=g;fightArena.add(g);g.visible=false;const A=NEWA.atlantis={};
  nwSky(g,['#3fb7d6','#0c5f86','#053457','#021628']);
- const sand=nwM(0xc9b48c,{r:.95}),marble=nwM(0xdcd6c8,{r:.6}),marbleD=nwM(0xb9b2a2,{r:.7}),gold=nwM(0xffc94a,{r:.3,m:.6,e:0x5a3a00,ei:.5}),rock=nwM(0x5d6b70,{r:.95,flat:true});
+ const sand=nwM(0x7d8a7a,{r:.95}),marble=nwM(0xc9d4d2,{r:.6}),marbleD=nwM(0xb9b2a2,{r:.7}),gold=nwM(0xffc94a,{r:.3,m:.6,e:0x5a3a00,ei:.5}),rock=nwM(0x5d6b70,{r:.95,flat:true});
  nwMesh(new THREE.BoxGeometry(30,.6,18),sand,0,arenaY-.31,-4,g);
  for(let i=0;i<26;i++){const r=nwMesh(new THREE.DodecahedronGeometry(.18+rand()*.45),rock,-12+rand()*24,arenaY+.05,-3-rand()*8,g);r.scale.y=.6}
  const col=(x,z,h,broken)=>{nwMesh(new THREE.BoxGeometry(1.15,.3,1.15),marbleD,x,arenaY+.15,z,g);nwMesh(new THREE.CylinderGeometry(.42,.46,h,16),marble,x,arenaY+.3+h/2,z,g);if(!broken)nwMesh(new THREE.BoxGeometry(1.1,.28,1.1),marbleD,x,arenaY+.44+h,z,g)};
@@ -1823,7 +1823,7 @@ function updateArenaFX(dt,map){
  if(map==='jungle'){if(on&&t<2.2){const k=t/2.2;bird.position.set(birdHome.x+Math.sin(k*Math.PI)*-2.5,birdHome.y+Math.sin(k*Math.PI)*2.2,birdHome.z+Math.sin(k*Math.PI*2)*.8)}else bird.position.copy(birdHome)}
  if(map==='factory'&&on){graveFingers.forEach(f=>f.rotation.x+=1.05*env);wrist.rotation.z+=.25*env*Math.sin(t*12);owls.forEach(h=>h.rotation.y=h.rotation.y*(1-env)+sx*.9*env)}
 }
-function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
+function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';{const own=!st.select&&['atlantis','desert','pirate','dragon','celestial'].includes(map);giant.visible=earth.visible=!own;rocks.forEach(r=>r.m.visible=!own);}temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
 
  for(const a of ambientActors){if(a.kind!==map||st.select)continue;if(a.kind==='ice'){a.g.position.x=a.x+Math.sin(TIME*.6+a.phase)*.22;a.g.rotation.z=Math.sin(TIME*3+a.phase)*.09;}else if(a.kind==='jungle'){a.g.rotation.y=Math.sin(TIME*.7)*.7;}else{a.g.position.set(Math.sin(TIME*.38+a.phase)*7,arenaY+3.4+Math.sin(TIME*.9+a.phase)*.45,-7.2+Math.cos(TIME*.38+a.phase));a.wings.forEach((w,i)=>w.rotation.y=Math.sin(TIME*9+a.phase)*(i?1:-1)*.9);}}
