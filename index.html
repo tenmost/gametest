@@ -2055,4 +2055,64 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
   document.getElementById('acInvShare').onclick=async()=>{const r=await window.sdShareGame();if(r)document.getElementById('acInvMsg').textContent=r==='copied'?'Invite link copied — paste it to your friends!':'Thanks for sharing!'};
   window.addEventListener('sd-profile',()=>setTimeout(load,0));if(window.sdAccount)load();})();
  const fixTitle=()=>{const b=document.getElementById('demoGemBalance'),p=document.getElementById('pinkGemBalance');if(b){b.removeAttribute('title');b.dataset.tip=window.sdAccount?'💎 Blue crystals — saved to your profile. Click to see how to earn them and what they unlock.':'💎 Blue crystals — log in to earn them. Click to see how.';b.setAttribute('aria-label','Blue crystals: '+b.textContent.replace(/[^0-9]/g,'')+'. Click for info')}if(p){p.removeAttribute('title');p.dataset.tip=window.sdAccount?'Pink crystals — earned by inviting friends and social daily missions. Click for info.':'Pink crystals — log in, invite friends to earn them. Click for info.'}};fixTitle();window.addEventListener('sd-profile',()=>setTimeout(fixTitle,0));})();
-</script></html>
+</script><script>/* LEADERBOARD: top-3 podium on the start screen (gold in the middle, like an F1 podium) + click → top 10 with your own rank.
+   Data from sd_leaderboard() (supabase/leaderboard.sql): wins vs computer, server-verified. Anyone (also guests) can see it. */
+(()=>{const sel=document.getElementById('select');if(!sel)return;let data=null,ok=true;
+ const css=document.createElement('style');css.textContent=`
+#podium{position:absolute;left:27.6%;bottom:9.5%;width:14.8%;z-index:4;padding:6px 6px 0;box-sizing:border-box;border:1px solid rgba(255,255,255,.3);border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.25);color:#fff;font:inherit;cursor:pointer;overflow:hidden;text-align:center}
+#podium:hover{border-color:#ffd54a;box-shadow:0 0 16px #ffd54a66}
+#podium .pdT{font:900 clamp(8px,.95vw,12px)/1.2 Arial,sans-serif;letter-spacing:.12em;color:#ffe9a8;margin-bottom:4px}
+#podium .pdRow{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:3px}
+#podium .pdSpot{display:flex;flex-direction:column;align-items:center;min-width:0}
+#podium .pdAv{width:clamp(20px,2.6vw,34px);height:clamp(20px,2.6vw,34px);border-radius:50%;border:2px solid var(--c);background:radial-gradient(circle,#2a3f88,#120f35);display:grid;place-items:center;font-size:clamp(11px,1.5vw,19px);line-height:1;overflow:hidden;box-shadow:0 0 8px var(--c)}
+#podium .pdAv img{width:100%;height:100%}
+#podium .pdN{max-width:100%;font:800 clamp(7px,.8vw,10px)/1.3 Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#podium .pdB{width:100%;margin-top:2px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 45%,#000));font:900 clamp(10px,1.3vw,17px)/1 'Lilita One',Arial,sans-serif;color:#1b1030;padding-top:3px;box-sizing:border-box}
+#podium .p1{--c:#ffd54a}#podium .p1 .pdB{height:clamp(26px,3.6vw,46px)}#podium .p1 .pdAv{width:clamp(24px,3.2vw,40px);height:clamp(24px,3.2vw,40px)}
+#podium .p2{--c:#cfd8e6}#podium .p2 .pdB{height:clamp(18px,2.5vw,32px)}
+#podium .p3{--c:#e0915a}#podium .p3 .pdB{height:clamp(12px,1.7vw,22px)}
+#podium .pdCrown{font-size:clamp(9px,1.1vw,14px);line-height:1;margin-bottom:1px}
+#podium .pdMe{font:800 clamp(7px,.8vw,10px)/1.6 Arial,sans-serif;color:#bff6ff;background:rgba(8,16,45,.5);margin:0 -6px;padding:1px 0}
+#stage:not(.selecting) #podium{display:none}
+@media (max-width:700px){#podium{display:none}}
+#rankDialog{width:min(420px,92vw);background:linear-gradient(145deg,#101b3d,#25184b);color:#fff;border:1px solid #ffd54a;border-radius:16px;padding:18px 20px;box-shadow:0 0 30px #ffd54a55}
+#rankDialog::backdrop{background:#070c20bb}#rankDialog h3{margin:0 0 4px;text-align:center;color:#ffe9a8;font:400 26px 'Lilita One',Arial,sans-serif;letter-spacing:.03em}
+#rankDialog .rkSub{text-align:center;font-size:12px;color:#a9c4e8;margin:0 0 12px}
+#rankDialog .rkRow{display:grid;grid-template-columns:34px 34px 1fr auto;align-items:center;gap:8px;padding:6px 8px;margin-bottom:5px;border:1px solid #2f4a8a;border-radius:10px;background:#0c1634aa}
+#rankDialog .rkRow.me{border-color:#7de7ff;background:#123058;box-shadow:0 0 10px #52d4ff55}
+#rankDialog .rkRow .rkN{font:400 18px 'Lilita One',Arial,sans-serif;text-align:center}
+#rankDialog .rkRow .rkAv{width:32px;height:32px;border-radius:50%;border:2px solid #7de7ff;display:grid;place-items:center;font-size:18px;overflow:hidden;background:radial-gradient(circle,#2a3f88,#120f35)}
+#rankDialog .rkRow .rkAv img{width:100%;height:100%}
+#rankDialog .rkRow b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rankDialog .rkRow small{display:block;font-size:11px;color:#a9c4e8;font-weight:700}
+#rankDialog .rkW{text-align:right;font-weight:900;font-size:15px}#rankDialog .rkW small{text-align:right}
+#rankDialog .rkGap{text-align:center;color:#6d7fa8;margin:2px 0 5px;letter-spacing:.3em}
+#rankDialog .rkClose{display:block;margin:12px auto 0;border:1px solid #83dfff;border-radius:8px;background:#112c65;color:#fff;padding:8px 22px;font-weight:bold;cursor:pointer}`;document.head.appendChild(css);
+ const pod=document.createElement('button');pod.type='button';pod.id='podium';pod.title='';pod.setAttribute('aria-label','Top players — open the leaderboard');sel.appendChild(pod);
+ const dlg=document.createElement('dialog');dlg.id='rankDialog';dlg.innerHTML='<h3>🏆 TOP PLAYERS</h3><p class="rkSub">Ranked by wins vs computer</p><div class="rkList"></div><button type="button" class="rkClose">CLOSE</button>';(document.querySelector('.stage')||document.body).appendChild(dlg);
+ dlg.querySelector('.rkClose').onclick=()=>dlg.close();
+ const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
+ const av=(box,key)=>{if(window.sdAvatarFill)window.sdAvatarFill(box,key||'astronaut');else box.textContent='🧑‍🚀'};
+ const pct=p=>Math.round(100*p.wins/Math.max(1,p.wins+p.losses))+'%';
+ function paint(){if(!ok){pod.hidden=true;return}pod.hidden=false;pod.replaceChildren();pod.appendChild(el('div','pdT','🏆 TOP PLAYERS'));
+  const row=el('div','pdRow'),top=data?data.top:[];
+  for(const r of [2,1,3]){const p=top.find(x=>x.rank===r),s=el('div','pdSpot p'+r);if(r===1)s.appendChild(el('div','pdCrown','👑'));
+   const a=el('div','pdAv');if(p)av(a,p.avatar);else a.textContent='?';s.appendChild(a);s.appendChild(el('div','pdN',p?p.name:'—'));
+   const b=el('div','pdB',String(r));s.appendChild(b);s.title=p?`#${r} ${p.name} — ${p.wins} wins`:'';row.appendChild(s)}
+  pod.appendChild(row);const me=data&&data.me;
+  pod.appendChild(el('div','pdMe',!data?'Loading…':me?(me.rank<=3?'You are #'+me.rank+'! 🔥':'You: #'+me.rank+' · '+me.wins+' wins'):window.sdAccount?'Win a match to get ranked':top.length?'Tap to see the top 10':'Be the first on the podium!'))}
+ function paintList(){const list=dlg.querySelector('.rkList');list.replaceChildren();const top=data?data.top:[];
+  if(!top.length){list.appendChild(el('p','rkSub','Nobody is ranked yet — win a match vs computer to be first!'));}
+  const row=(p)=>{const r=el('div','rkRow'+(p.me||(data.me&&data.me.rank===p.rank)?' me':''));r.appendChild(el('div','rkN',p.rank<=3?['🥇','🥈','🥉'][p.rank-1]:'#'+p.rank));
+   const a=el('div','rkAv');av(a,p.avatar);r.appendChild(a);const n=el('div');n.appendChild(el('b',null,p.name));n.appendChild(el('small',null,pct(p)+' win rate'+(p.best?' · best streak '+p.best:'')));r.appendChild(n);
+   const w=el('div','rkW',p.wins+' W');w.appendChild(el('small',null,p.losses+' L'));r.appendChild(w);return r};
+  for(const p of top)list.appendChild(row(p));
+  const me=data&&data.me;if(me&&me.rank>top.length){list.appendChild(el('div','rkGap','• • •'));list.appendChild(row({...me,me:true,best:0}))}
+  if(!window.sdAccount)list.appendChild(el('p','rkSub','Log in and win matches vs computer to get your name on the board!'))}
+ async function load(){try{const c=await sbClient();const r=await c.rpc('sd_leaderboard',{p_limit:10});if(r.error){if(/Could not find|does not exist|PGRST202/i.test(r.error.message+' '+(r.error.code||''))){ok=false}paint();return}ok=true;data=r.data;paint();if(dlg.open)paintList()}catch(e){}}
+ pod.onclick=()=>{paintList();if(!dlg.open)dlg.showModal();load()};
+ paint();setTimeout(load,1500);window.addEventListener('sd-profile',()=>setTimeout(load,800));
+ setInterval(()=>{if(document.getElementById('stage')?.classList.contains('selecting')&&!document.hidden)load()},60000);
+ window.sdLeaderboardRefresh=load;})();
+</script>
+</html>
