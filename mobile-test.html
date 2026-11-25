@@ -1102,7 +1102,7 @@ const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,pl
 function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 /* PORTRAIT PHONE: camera tuning (k = how much of the 16:9 width stays visible, ly = look lower so the scene sits higher above the cards) */
-const PTC=window.SD_PT={k:.72,ly:-.9,ks:.5,lys:-.75};const PT=()=>camera.aspect<.95;
+const PTC=window.SD_PT={k:.82,ly:-.55,ks:.5,lys:-.95};const PT=()=>camera.aspect<.95;
 let previewHeroKey=null;const heroPortraits={};
 function layoutSelect(){setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const R=LOADED[previewHeroKey];if(R){R.holder.visible=true;R.holder.scale.setScalar(.82);R.holder.position.set(PT()?0:.15,FLOOR+1.05,.2);R.holder.rotation.y=-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}}
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
@@ -2529,7 +2529,8 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 </html>
 
 <style id="ptcss">
-/* ===== PORTRAIT PHONE (stāvus telefons): whole screen is the stage, big thumb-sized cards at the bottom ===== */
+/* ===== PORTRAIT PHONE (held upright): the whole screen is the stage, heroes + arenas in swipe rows, big thumb-sized cards at the bottom.
+   Camera side: PT() / PTC (window.SD_PT) in the 3D script keep both fighters in view. ===== */
 @media (orientation:portrait) and (max-width:820px){
  html,body{margin:0!important;padding:0!important;overflow:hidden;height:100%;overscroll-behavior:none}
  body{display:block!important;min-height:0!important}
@@ -2590,5 +2591,15 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #select.show~#fsBtn,#select.show~#rulesBtn,.stage:has(#select.show) #fsBtn,.stage:has(#select.show) #rulesBtn{display:block!important}
  .stage:not(:has(#select.show)) #mute{top:calc(env(safe-area-inset-top) + 60px)!important;right:6px!important;font-size:10px!important;padding:3px 7px!important}
  #restart{bottom:auto!important;top:calc(env(safe-area-inset-top) + 60px)!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;font-size:10px!important;padding:3px 8px!important}
+
+ /* dark floor under the cards so the bottom of the screen looks like a card table, not a cut-off arena */
+ .controls::before{content:'';position:absolute;left:0;right:0;bottom:0;height:calc(30.5vw / .68 + env(safe-area-inset-bottom) + 34px);max-height:36dvh;background:linear-gradient(to bottom,#070c2000,#070c20d0 38%,#070c20f2);pointer-events:none;z-index:1}
+ .stage:has(#select.show) .controls::before{display:none}
+ .controls button{z-index:2}
+ /* overlays (online duel, game over, invites) cover the whole phone screen and sit on top */
+ #stage #online.show,#stage #over.show{z-index:40!important;background:#070c20d9!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:calc(env(safe-area-inset-top) + 12px) 10px calc(env(safe-area-inset-bottom) + 12px)!important;box-sizing:border-box!important}
+ #stage #online .onBox,#stage #over.show>div{position:relative!important;inset:auto!important;width:100%!important;max-width:440px!important;max-height:100%!important;overflow:auto!important;box-sizing:border-box!important}
+ #stage #over .endActions{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #stage #over .endActions button{width:100%!important;min-height:52px!important;font-size:18px!important}
 }
 </style>
