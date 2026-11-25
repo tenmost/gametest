@@ -442,7 +442,7 @@ const stage=$('stage'),count=$('count'),statusEl=$('status'),hp=$('hp'),hc=$('hc
 const buttons=[...document.querySelectorAll('[data-m]')];
 const MOVES=['rock','paper','scissors'],beats={rock:'scissors',paper:'rock',scissors:'paper'};
 let p=3,c=3,busy=false,token=0,muted=false;let playerFights=0,opponentFights=0,perfectMatch=true;
-/* arena rules: see ARENA RULES below */const MAP_RULES=window.MAP_RULES={temple:{t:10,fw:2},city:{t:6,fw:2},ice:{t:8,fw:2},lava:{t:7,fw:2},jungle:{t:8,fw:2},factory:{t:10,fw:1},nebula:{t:9,fw:2}};let matchFW=2;const FW=()=>matchFW;
+/* arena rules: see ARENA RULES below */const MAP_RULES=window.MAP_RULES={temple:{t:10,fw:2},city:{t:6,fw:2},ice:{t:8,fw:2},lava:{t:7,fw:2},jungle:{t:8,fw:2},factory:{t:10,fw:1},nebula:{t:9,fw:3}};let matchFW=2;const FW=()=>matchFW;
 let stats={wins:0,losses:0,streak:0,best:0};
 try{stats=Object.assign(stats,JSON.parse(localStorage.getItem('spaceRpsStats')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('spaceRpsStats',JSON.stringify(stats))}catch(e){}};
@@ -555,7 +555,7 @@ function startReadyCountdown(){stopReadyCountdown();let n=10;
  show();readyTimer=setInterval(()=>{if(!awaitingMatchReady){stopReadyCountdown();return}n--;
   if(n<=0){stopReadyCountdown();const ex=document.getElementById('exitDialog');if(ex&&ex.open)ex.close();if(!(NET&&NET.live&&NET.localMatchReady))matchReady.onclick();return}
   if(n<=3)sfx.tick();show()},1000)}
-function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;stopReadyCountdown();stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent=pickTime()<10?'CHOOSE YOUR MOVE — '+pickTime()+' SECONDS!':'CHOOSE YOUR MOVE';hush();announce(FW()===1?'Sudden death. Fight!':['Round one. Fight!','Round two. Fight!','Final round. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
+function releaseMatchReady(){if(!awaitingMatchReady)return;updateFightReady();if(NET&&NET.live&&(!NET.localMatchReady||!NET.remoteMatchReady[NET.round]))return;awaitingMatchReady=false;stopReadyCountdown();stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;buttons.forEach(b=>b.disabled=false);statusEl.textContent=pickTime()<10?'CHOOSE YOUR MOVE — '+pickTime()+' SECONDS!':'CHOOSE YOUR MOVE';hush();announce(FW()===1?'Sudden death. Fight!':(playerFights+opponentFights+1>=2*FW()-1)?'Final round. Fight!':['Round one. Fight!','Round two. Fight!','Round three. Fight!','Round four. Fight!'][playerFights+opponentFights]||'Fight!');startPick();}
 matchReady.onclick=()=>{if(!awaitingMatchReady)return;if(NET&&NET.live){stopReadyCountdown();NET.localMatchReady=true;matchReady.disabled=true;updateFightReady();statusEl.textContent='';NET.ch.send({type:'broadcast',event:'match-ready',payload:{round:NET.round}});}releaseMatchReady();};
 /* EXIT MATCH (on the START ROUND screen): leaving counts as a lost match, no rewards. Signed in vs computer: sd_match_forfeit on the server (loss, 0 crystals, losses +1, streak reset). */
 const matchExit=document.createElement('button');matchExit.id='matchExit';matchExit.type='button';matchExit.textContent='✕ EXIT MATCH';stage.appendChild(matchExit);
@@ -568,7 +568,7 @@ matchExit.onclick=()=>{if(!awaitingMatchReady)return;let d=document.getElementBy
  const signed=!!(window.sdAccount&&window.sdAccount.profile)&&!(NET&&NET.live);
  d.querySelector('[data-msg]').textContent=signed?'If you exit now, this match counts as a LOSS. You get no rewards (0 crystals), your losses go up and your win streak resets.':NET&&NET.live?'If you exit now, you lose this match and '+oppName()+' wins. You get no rewards.':'If you exit now, this match counts as a loss and you get no rewards.';
  if(!d.open)d.showModal();};
-/* ARENA RULES (shown on the arena cards): pick timer per arena; Forgotten Graveyard = SUDDEN DEATH, one fight decides the match.
+/* ARENA RULES (shown on the arena cards): pick timer per arena; Forgotten Graveyard = SUDDEN DEATH, one fight decides the match; Crystal Nebula = BEST OF 5 (fw 3).
    fw=1 needs the server too for signed-in players vs computer (sd_match_start2, supabase/map_rules.sql) — without it Graveyard stays best of 3. */
 const pickTime=()=>(MAP_RULES[window.arenaMap]||{t:10}).t;/* Neon City rule: only 6 seconds to pick */
 function startPick(){stopPick();pickLeft=pickTime();count.textContent=pickLeft;if(!started)return;stage.classList.add('match-active');
@@ -1847,8 +1847,8 @@ const pinkBal=()=>window.sdPink||0;
 const UNLOCK_ALL_MAPS=true;const has=k=>UNLOCK_ALL_MAPS||state.owned.includes(k);/* guests earn nothing: balance 0, only the free arena. Crystals and unlocks need an account (server profile). */
 let state={guest:true,balance:0,owned:['temple'],wins:0,losses:0};
 /* ARENA COLLECTION: the start-screen arena buttons become cards (picture, name, rule, lock/price) */
-const RULE=k=>{const r=(window.MAP_RULES||{})[k];if(!r)return['',''];const t=r.t!==10?'⏱ '+r.t+'s':'⏱ 10s';return r.fw===1?['☠ SUDDEN DEATH','sd']:[t,'']};
-const RULE_TIP={temple:'Classic arena: 10 seconds to pick, best of 3 fights.',city:'Neon City: only 6 seconds to pick your card!',ice:'Frozen Temple: 8 seconds to pick.',lava:'Volcanic Cavern: 7 seconds to pick.',jungle:'Lost Jungle: 8 seconds to pick.',factory:'Forgotten Graveyard — SUDDEN DEATH: one fight with 3 lives decides the whole match.',nebula:'Crystal Nebula: 9 seconds to pick. Unlocked with pink crystals.',random:'A random arena you own.'};
+const RULE=k=>{const r=(window.MAP_RULES||{})[k];if(!r)return['',''];const t=r.t!==10?'⏱ '+r.t+'s':'⏱ 10s';return r.fw===1?['☠ SUDDEN DEATH','sd']:r.fw===3?['★ BEST OF 5 · '+r.t+'s','']:[t,'']};
+const RULE_TIP={temple:'Classic arena: 10 seconds to pick, best of 3 fights.',city:'Neon City: only 6 seconds to pick your card!',ice:'Frozen Temple: 8 seconds to pick.',lava:'Volcanic Cavern: 7 seconds to pick.',jungle:'Lost Jungle: 8 seconds to pick.',factory:'Forgotten Graveyard — SUDDEN DEATH: one fight with 3 lives decides the whole match.',nebula:'Crystal Nebula — BEST OF 5: win 3 fights to win the match. 9 seconds to pick. Unlocked with pink crystals.',random:'A random arena you own.'};
 window.SD_RULE_TIP=RULE_TIP;
 for(const b of document.querySelectorAll('#mapPick [data-map]')){const k=b.dataset.map,name=b.textContent.replace(/^🎲\s*/,'');b.dataset.originalLabel=name;b.classList.add('mpCard');b.removeAttribute('title');b.dataset.tip=RULE_TIP[k]||'';b.replaceChildren();
  const im=document.createElement(k==='random'?'span':'img');im.className='mpImg';if(k==='random')im.textContent='🎲';else{im.alt='';im.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}const n=document.createElement('b');n.className='mpName';n.textContent=name;

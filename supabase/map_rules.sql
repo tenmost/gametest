@@ -1,15 +1,19 @@
--- Space Duel: arena rules on the server — Forgotten Graveyard = SUDDEN DEATH (one fight decides the match).
+-- RPS Rivals: arena rules on the server — Forgotten Graveyard = SUDDEN DEATH (one fight decides the match), Crystal Nebula = BEST OF 5 (3 fights to win).
+-- Safe to run again (also if an older version of this file was already run).
 -- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_map_rules"
 -- (Supabase → SQL Editor → paste → Run). Until then the game plays Graveyard as a normal best-of-three for signed-in players.
 -- Keep in sync with MAP_RULES in index.html. Only sd_* objects. (Pick timers are client-side only and need nothing here.)
 
 alter table public.sd_cpu_matches add column if not exists map text;
-alter table public.sd_cpu_matches add column if not exists fights_to_win smallint not null default 2 check (fights_to_win between 1 and 2);
+alter table public.sd_cpu_matches add column if not exists fights_to_win smallint not null default 2 check (fights_to_win between 1 and 3);
+-- allow best of 5 (Crystal Nebula) — re-runnable
+alter table public.sd_cpu_matches drop constraint if exists sd_cpu_matches_fights_to_win_check;
+alter table public.sd_cpu_matches add constraint sd_cpu_matches_fights_to_win_check check (fights_to_win between 1 and 3);
 
 -- new start function that knows the arena; returns {id, fw}. The old sd_match_start() stays for older clients.
 create or replace function public.sd_match_start2(p_map text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
-declare v_id uuid; v_fw smallint := case when p_map = 'factory' then 1 else 2 end;
+declare v_id uuid; v_fw smallint := case when p_map = 'factory' then 1 when p_map = 'nebula' then 3 else 2 end;
 begin
  v_id := public.sd_match_start();   -- same checks + closes any active match (counts as a loss if rounds were played)
  update public.sd_cpu_matches set map = left(p_map, 20), fights_to_win = v_fw where id = v_id;
