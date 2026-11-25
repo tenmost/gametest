@@ -1433,6 +1433,9 @@ function bakeStatic(g){
   for(const o of bk.objs){o.parent.remove(o);o.geometry.dispose()}bk.geos.forEach(x=>x.dispose());}
  return {before,after};
 }
+/* DEBUG (?debugfloat): list static objects whose bottom hovers above the ground with nothing under them */
+if(/debugfloat/.test(location.search)){const rep={};const B=new THREE.Box3();for(const [k,grp] of Object.entries({temple,...alternate})){grp.updateMatrixWorld(true);const boxes=[];grp.traverse(o=>{if(o.isMesh&&o.geometry&&!o.isPoints){B.setFromObject(o);if(isFinite(B.min.y))boxes.push({o,b:B.clone()})}});
+ const out=[];for(const x of boxes){const gap=x.b.min.y-arenaY;if(gap<.04||gap>2.5)continue;const sup=boxes.some(y=>y!==x&&y.b.max.y>=x.b.min.y-.06&&y.b.min.y<x.b.min.y&&y.b.max.x>x.b.min.x&&y.b.min.x<x.b.max.x&&y.b.max.z>x.b.min.z&&y.b.min.z<x.b.max.z);if(!sup)out.push({type:x.o.geometry.type,gap:+gap.toFixed(2),x:+((x.b.min.x+x.b.max.x)/2).toFixed(1),z:+((x.b.min.z+x.b.max.z)/2).toFixed(1),h:+(x.b.max.y-x.b.min.y).toFixed(2),parent:x.o.parent===grp?'arena':(x.o.parent.type)})}rep[k]=out}window.__floatReport=rep}
 const bakeReport={};for(const [k,grp] of Object.entries({temple,...alternate}))bakeReport[k]=bakeStatic(grp);
 fightArena.visible=false;scene.add(fightArena);
 /* ---------- arena reactions to match events (arenaHit / setFinal) ----------
