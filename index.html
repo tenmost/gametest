@@ -1901,7 +1901,7 @@ function fit(){const head=document.querySelector('#select .selWrap>div:first-chi
  const w=wrap.getBoundingClientRect(),a=maps.getBoundingClientRect();if(!w.height||!a.height)return;let c=card&&card.offsetParent?card.getBoundingClientRect():null;if(c&&!c.height)c=null;
  if(head&&c){const h=head.getBoundingClientRect(),need=c.right+14-h.left;if(need>0&&h.top<c.bottom)head.style.transform='translateX('+Math.min(need,Math.max(0,w.right-h.right-8))+'px)'}
  const m=mode.getBoundingClientRect();if(!m.height)return;const top=Math.max(m.bottom,c?c.bottom:0)-w.top+8;
- panel.style.top=Math.max(0,top)+'px';panel.style.bottom=matchMedia('(min-width:700px)').matches?'':Math.max(0,w.bottom-a.top+8)+'px';}
+ if(panel.classList.contains('xp'))return;panel.style.top=Math.max(0,top)+'px';panel.style.bottom=matchMedia('(min-width:700px)').matches?'':Math.max(0,w.bottom-a.top+8)+'px';window.sdPlacePodium?.();}
 const ro=new ResizeObserver(fit);[wrap,mode,maps].forEach(x=>ro.observe(x));window.addEventListener('resize',fit);window.addEventListener('sd-profile',()=>setTimeout(fit,50));
 let watched=false;const watch=()=>{const c=document.getElementById('playerCard');if(c&&!watched){watched=true;ro.observe(c)}fit()};setTimeout(watch,0);setTimeout(watch,800);fit();})();</script><script>
 /* ---------- DAILY MISSIONS: 3 missions per day (reset 00:00 UTC), progress + rewards checked on the server
@@ -2114,12 +2114,46 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  pod.onclick=()=>{paintList();if(!dlg.open)dlg.showModal();load()};
  /* stack it under the player card and push HERO COLLECTION below it (positions measured, so it fits at every screen size) */
  function place(){const st=document.getElementById('stage'),card=document.getElementById('playerCard'),hc=document.getElementById('heroCollection');if(!st||!card||!hc)return;
-  if(innerWidth<=700||pod.hidden){hc.style.removeProperty('top');return}const sr=st.getBoundingClientRect(),cr=card.getBoundingClientRect();if(!sr.height||!cr.height)return;const gap=sr.height*.016;
+  if(hc.classList.contains('xp'))return;if(innerWidth<=700||pod.hidden){hc.style.removeProperty('top');return}const sr=st.getBoundingClientRect(),cr=card.getBoundingClientRect();if(!sr.height||!cr.height)return;const gap=sr.height*.016;
   pod.style.top=(cr.bottom-sr.top+gap)+'px';const pr=pod.getBoundingClientRect();hc.style.setProperty('top',(pr.bottom-sr.top+gap)+'px','important')}
- const _paint=paint;paint=function(){_paint();requestAnimationFrame(place)};addEventListener('resize',()=>requestAnimationFrame(place));
+ window.sdPlacePodium=place;const _paint=paint;paint=function(){_paint();requestAnimationFrame(place)};addEventListener('resize',()=>requestAnimationFrame(place));
  try{new ResizeObserver(()=>requestAnimationFrame(place)).observe(document.getElementById('playerCard')||document.body)}catch(e){}
  paint();setTimeout(load,1500);window.addEventListener('sd-profile',()=>setTimeout(load,800));
  setInterval(()=>{if(document.getElementById('stage')?.classList.contains('selecting')&&!document.hidden)load()},60000);
  window.sdLeaderboardRefresh=load;})();
+</script>
+<script>/* EXPANDING PANELS on the start screen: HERO COLLECTION and CHOOSE ARENA grow to about half the screen so the pictures are big.
+   Mouse: hover the panel → it grows; pick one (click) or move the mouse away → back to small.
+   Touch screens: first tap on a small panel only opens it; tap the hero/arena you want → it is picked and the panel closes. */
+(()=>{const hc=document.getElementById('heroCollection'),ar=document.getElementById('selectionBottom'),stage=document.getElementById('stage');if(!hc||!ar||!stage)return;
+ const css=document.createElement('style');css.textContent=`
+@media (min-width:701px){
+#select #heroCollection,#select #selectionBottom{transition:width .28s ease,top .28s ease,box-shadow .28s,background .28s}
+#select #heroCollection.xp{width:56%!important;bottom:2%!important;z-index:40!important;background:rgba(10,18,48,.86)!important;box-shadow:0 0 0 1px #7de7ff,0 18px 50px rgba(0,0,0,.6)!important}
+#select #heroCollection.xp #selBtns{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+#select #heroCollection.xp #selBtns button{font-size:clamp(10px,1.2vw,15px)!important}
+#select #selectionBottom.xp{width:56%!important;top:2%!important;z-index:40!important;background:rgba(10,18,48,.86)!important;box-shadow:0 0 0 1px #7de7ff,0 18px 50px rgba(0,0,0,.6)!important}
+#select #selectionBottom.xp #mapPick .mapButtons{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+#select #selectionBottom.xp .mpCard{font-size:clamp(10px,1.15vw,15px)!important}
+#select #heroCollection:not(.xp),#select #selectionBottom:not(.xp){cursor:zoom-in}
+#select .xpHint{display:none}
+#select #heroCollection:not(.xp) .xpHint,#select #selectionBottom:not(.xp) .xpHint{display:block;position:absolute;right:8px;top:6px;font-size:13px;opacity:.75;pointer-events:none}
+#stage:has(.xp)::after{content:'';position:absolute;inset:0;background:rgba(4,8,24,.35);z-index:35;pointer-events:none}
+}`;document.head.appendChild(css);
+ const touch=matchMedia('(hover: none)').matches;
+ for(const p of [hc,ar]){const h=document.createElement('span');h.className='xpHint';h.textContent='⤢';p.appendChild(h)}
+ const big=()=>innerWidth>700;
+ function open(p){if(!big()||p.classList.contains('xp'))return;close(p===hc?ar:hc);p.classList.add('xp');if(p===hc)hc.style.setProperty('top','2%','important')}
+ function close(p){if(!p.classList.contains('xp'))return;p.classList.remove('xp');p.scrollTop=0;if(p===hc){hc.style.removeProperty('top');window.dispatchEvent(new Event('resize'));setTimeout(()=>window.sdPlacePodium?.(),60);setTimeout(()=>window.sdPlacePodium?.(),320)}}
+ window.sdCloseXP=()=>{close(hc);close(ar)};
+ for(const p of [hc,ar]){let t=null,armed=true;
+  if(!touch){p.addEventListener('mouseenter',()=>{if(!armed)return;t=setTimeout(()=>open(p),140)});p.addEventListener('mouseleave',()=>{clearTimeout(t);armed=true;close(p)})}
+  // first tap on a small panel only opens it (capture phase stops the hero/arena from being picked by that tap)
+  p.addEventListener('click',e=>{if(!big())return;if(!p.classList.contains('xp')){if(touch||e.pointerType==='touch'){e.preventDefault();e.stopPropagation();open(p)}return}
+   if(e.target.closest('button')){armed=false;setTimeout(()=>close(p),180)}},true)}
+ // tap outside an open panel closes it; leaving the start screen closes it
+ document.addEventListener('pointerdown',e=>{for(const p of [hc,ar])if(p.classList.contains('xp')&&!p.contains(e.target))close(p)});
+ new MutationObserver(()=>{if(!stage.classList.contains('selecting'))window.sdCloseXP()}).observe(stage,{attributes:true,attributeFilter:['class']});
+ addEventListener('keydown',e=>{if(e.key==='Escape')window.sdCloseXP()});})();
 </script>
 </html>
