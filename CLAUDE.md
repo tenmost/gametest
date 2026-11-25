@@ -28,6 +28,8 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - Match = best of three fights, each fight has three health segments; 10-second pick timer (Neon City: 6 seconds, `pickTime()`), random card if time runs out.
 - Crystals: blue (💎, spendable) and pink (future rewards). Signed-in players: blue crystals, wins/losses and unlocked arenas live in `sd_player_profiles` (server). Guests: no crystals at all (the old local test balance `sd_demo_progress_v1` is no longer used). Reward codes are redeemed only inside the profile window (signed in) via `sd_redeem_code(code)`: the server compares SHA-256(upper(code)) with `sd_reward_codes` (only hashes stored, `active` flag) and allows each account one redemption per code (`sd_code_redemptions`).
 - EXIT MATCH button (`#matchExit`) shows only on the START ROUND screen (`#stage.waiting-fight-ready`). It warns first; leaving = lost match, no rewards. Signed in vs computer it calls `sd_match_forfeit` (loss, 0 crystals, losses +1, streak reset) — see `supabase/match_forfeit.sql`.
+- Player name: free when the profile is created; changing it later costs 150 blue crystals (`NAME_PRICE` in index.html + `sd_set_username` in `supabase/username_price.sql`, keep in sync). Register/setup forms warn about it; rename needs a second CONFIRM click.
+- Clicking the 💎 / pink crystal counters opens `#gemInfo` (how to earn blue crystals; pink = coming soon, bought with real money / rare events).
 - Account menu (☰): guests see LOG IN + REGISTER + PLAY AS GUEST; signed-in players see PROFILE + LOG OUT.
 - Guests get no rewards: no crystals, only the free arena (Orbital Temple), no name entry (they appear as "Guest123"). Crystals, unlocks, player name, avatar and friends need an account.
 
