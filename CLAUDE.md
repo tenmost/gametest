@@ -1,10 +1,10 @@
-# Space Duel — project guide for Claude
+# RPS Rivals — project guide for Claude
 
 Two brothers build this game together: Dainis (owner) and his brother (GitHub: kalninskaspars11-spec). Both use Claude.
 Answer them in Latvian unless they write in another language.
 
 ## What the game is
-Space Duel is a 3D space-themed rock-paper-scissors browser game.
+RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Name chosen Nov 2026; planned domain rpsrivals.com (not bought/connected yet). Internal ids keep the old prefix on purpose: `sd_*` tables/functions, `sd-models` bucket, Realtime channels `spaceduel-*` (renaming them would break saved data and online play between versions).
 - Live: https://tenmost.github.io/gametest/ (GitHub Pages, deploys from `main` about a minute after a push)
 - Three.js 0.170 from jsDelivr, no build step, no npm. Everything runs as plain HTML + JS.
 - Goal: earn money with it later, so every asset and library must be licensed for commercial use.
