@@ -1,6 +1,5 @@
 -- Space Duel: premium avatars bought with blue crystals.
--- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_premium_avatars"
--- (Supabase → SQL Editor → paste → Run). Until then the game hides the premium avatars.
+-- Applied to the shared project mrrqfrmgblbgrvkbrwvt (Nov 2026, SQL Editor) — migration name "sd_premium_avatars".
 -- Keep keys + prices in sync with AV / AV_PRICE in index.html. Only sd_* objects.
 --
 -- Tiers: cheap 25 💎, rare 100 💎, epic 300 💎 (glowing), legendary 750 💎 (moving). The 16 original avatars stay free.

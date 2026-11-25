@@ -1,6 +1,5 @@
 -- Space Duel: daily missions (3 per day, reset at 00:00 UTC), rewards in blue crystals.
--- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_daily_missions"
--- (Supabase → SQL Editor → paste → Run). Until then the game hides the DAILY button.
+-- Applied to the shared project mrrqfrmgblbgrvkbrwvt (Nov 2026, SQL Editor) — migration name "sd_daily_missions".
 -- Only sd_* objects. Nothing here touches tenmost.com tables.
 --
 -- Progress is computed on the server from sd_cpu_matches (server-verified matches vs computer),

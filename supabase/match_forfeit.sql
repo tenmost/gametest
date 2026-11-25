@@ -1,6 +1,5 @@
 -- Space Duel: leaving a match vs computer counts as a loss.
--- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_match_forfeit"
--- (Supabase → SQL Editor → paste → Run). Until then the EXIT button works but no loss is saved on the server.
+-- Applied to the shared project mrrqfrmgblbgrvkbrwvt (Nov 2026, SQL Editor) — migration name "sd_match_forfeit".
 -- Only sd_* objects. Nothing here touches tenmost.com tables.
 
 -- EXIT button: the player gives up the active match. Loss, 0 crystals, losses +1,

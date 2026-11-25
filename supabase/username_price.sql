@@ -1,6 +1,5 @@
 -- Space Duel: changing your player name costs blue crystals (the first name, chosen at sign-up, is free).
--- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_username_price"
--- (Supabase → SQL Editor → paste → Run). Until then name changes are still free on the server.
+-- Applied to the shared project mrrqfrmgblbgrvkbrwvt (Nov 2026, SQL Editor) — migration name "sd_username_price".
 -- Keep the price in sync with NAME_PRICE in index.html. Only sd_* objects.
 
 create or replace function public.sd_set_username(p_username text)
