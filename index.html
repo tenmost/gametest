@@ -1169,7 +1169,7 @@ const cityAt=(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];if(sstep(.5,.53,fbm(...q))<.5
 const earthTex=equirect(1024,512,(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];const c=fbm(...q),land=sstep(.5,.53,c),polar=sstep(.82,.9,Math.abs(y));
  const o=fbm(q[0]*3,q[1]*3,q[2]*3,3),l=sstep(.3,.7,fbm(q[0]*4,q[1]*4,q[2]*4,3));
  let r=lerp(lerp(5,15,o),lerp(36,128,l),land),g=lerp(lerp(26,82,o),lerp(92,102,l),land),b=lerp(lerp(82,158,o),lerp(30,56,l),land);
- if(NIGHT){const i=cityI++*4;let L=0;if(land>.5&&Math.abs(y)<.8){const cc=fbm(x*16,y*16,z*16,3);L=sstep(.56,.66,cc);if(L>0&&Math.random()<.35)L*=.4;const glow=sstep(.5,.6,cc)*.35;L=Math.max(L,glow)}
+ if(NIGHT){const i=cityI++*4;let L=0;if(land>.5&&Math.abs(y)<.8){const cc=fbm(x*16,y*16,z*16,3),dots=fbm(x*90,y*90,z*90,2);L=sstep(.55,.62,cc)*sstep(.5,.62,dots)*(Math.random()<.3?.5:1);L=Math.max(L,sstep(.52,.64,cc)*.22)}
   cityD[i]=255*L;cityD[i+1]=200*L;cityD[i+2]=110*L;cityD[i+3]=255;
   const sn=land*sstep(.25,.6,Math.abs(y)+o*.25);r=lerp(r,200,sn);g=lerp(g,210,sn);b=lerp(b,230,sn);
   return[lerp(r,215,polar)*.22,lerp(g,225,polar)*.25,lerp(b,250,polar)*.38]}
@@ -1177,7 +1177,7 @@ const earthTex=equirect(1024,512,(x,y,z)=>{const q=[x*2.6,y*2.6,z*2.6];const c=f
 let cityTex=null;if(NIGHT){cityC.width=1024;cityC.height=512;cityC.getContext('2d').putImageData(new ImageData(cityD,1024,512),0,0);cityTex=new THREE.CanvasTexture(cityC);cityTex.colorSpace=THREE.SRGBColorSpace}
 const cloudTex=equirect(1024,512,(x,y,z)=>{const c=sstep(.5,.75,fbm(x*4,y*4,z*4,5));return[255,255,255,c*235]});
 const earth=new THREE.Group();earth.position.set(0,-29.6,-9);scene.add(earth);
-const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial(Object.assign({map:earthTex,roughness:.75,metalness:0},NIGHT?{emissive:0xffffff,emissiveMap:cityTex,emissiveIntensity:1.6}:{})));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
+const earthM=new THREE.Mesh(new THREE.SphereGeometry(27,128,96),new THREE.MeshStandardMaterial(Object.assign({map:earthTex,roughness:.75,metalness:0},NIGHT?{emissive:0xffffff,emissiveMap:cityTex,emissiveIntensity:2.4}:{})));earthM.rotation.set(1.35,0,.1);earth.add(earthM);
 if(NIGHT){// tiny snowy houses with lit windows, scattered over the city areas, turning with the planet
  const hs=[];for(let k=0;k<6000&&hs.length<700;k++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),d=V3(-Math.cos(a)*r,u,Math.sin(a)*r);if(cityAt(d.x,d.y,d.z)>.3)hs.push(d)}
  const body=new THREE.InstancedMesh(new THREE.BoxGeometry(.16,.13,.14),new THREE.MeshStandardMaterial({color:0x8a5a3c,emissive:0xffb347,emissiveIntensity:.55,roughness:.8}),hs.length);
@@ -1185,7 +1185,7 @@ if(NIGHT){// tiny snowy houses with lit windows, scattered over the city areas, 
  const up=V3(0,1,0),qq=new THREE.Quaternion(),mm=new THREE.Matrix4(),sc=V3(1,1,1);
  hs.forEach((d,i)=>{qq.setFromUnitVectors(up,d);const k=.8+Math.random()*.6;sc.set(k,k,k);mm.compose(d.clone().multiplyScalar(27.05),qq,sc);body.setMatrixAt(i,mm);mm.compose(d.clone().multiplyScalar(27.05+.12*k),qq,sc);roof.setMatrixAt(i,mm)});
  earthM.add(body,roof)}
-const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:NIGHT?.28:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
+const clouds=new THREE.Mesh(new THREE.SphereGeometry(27.25,128,96),new THREE.MeshStandardMaterial({map:cloudTex,transparent:true,depthWrite:false,roughness:1,opacity:NIGHT?.14:.8}));clouds.rotation.set(1.35,0,.1);earth.add(clouds);
 const atmoMat=(col,pow,k)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{c:{value:new THREE.Color(col)}},
  vertexShader:`varying vec3 vN,vV;void main(){vec4 w=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-w.xyz);gl_Position=projectionMatrix*w;}`,
  fragmentShader:`varying vec3 vN,vV;uniform vec3 c;void main(){float f=pow(clamp(1.-abs(dot(vN,vV)),0.,1.),${pow.toFixed(1)});float a=smoothstep(0.,.35,abs(dot(vN,vV)));gl_FragColor=vec4(c*f*${k.toFixed(2)}*a,1.);}`});
@@ -1285,14 +1285,14 @@ function makeSanta(){
  const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));g.add(new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xffd27a})));
  const glow=new THREE.Sprite(glowMat(0xffe7a0,.55));glow.scale.set(3,1.4,1);glow.position.set(.3,.4,0);g.add(glow);
  g.visible=false;scene.add(g);return{g,deer,legs,active:false,wait:randR(2,5),drop:0}}
-const SANTA=XMAS?makeSanta():null;
+const SANTA=XMAS?makeSanta():null;window.__sdSanta=SANTA;
 const GIFTS=XMAS?[0,1,2,3,4,5,6,7].map(i=>{const g=new THREE.Group(),c=[0xe3262f,0x2fbf4f,0x2f7dff,0xffc845,0xb05cff][i%5];
  g.add(new THREE.Mesh(new THREE.BoxGeometry(.24,.2,.24),std(c,{r:.45})));const rib=std(i%5===3?0xe3262f:0xfff1b0,{r:.3,m:.4});
  g.add(new THREE.Mesh(new THREE.BoxGeometry(.26,.21,.05),rib));g.add(new THREE.Mesh(new THREE.BoxGeometry(.05,.21,.26),rib));
  const bow=new THREE.Mesh(new THREE.TorusGeometry(.05,.02,6,12),rib);bow.position.y=.12;g.add(bow);
  g.visible=false;scene.add(g);return{g,v:V3(0,0,0),age:0}}):[];
 function launchSanta(S){const dir=Math.random()<.5?1:-1,z=randR(-20,-13);
- S.p=V3(-dir*(Math.abs(z)*1.3+8),randR(3,6),z);S.v=V3(dir*randR(1.6,2.2),randR(-.05,.05),0);S.g.rotation.set(0,dir>0?0:Math.PI,0);S.g.scale.setScalar(randR(.8,1));S.active=true;S.ph=Math.random()*9;S.drop=.6}
+ S.p=V3(-dir*(Math.abs(z)*1.3+8),randR(.6,2.2),z);S.v=V3(dir*randR(1.3,1.7),randR(-.03,.05),0);S.g.rotation.set(0,dir>0?0:Math.PI,0);S.g.scale.setScalar(randR(1.15,1.35));S.active=true;S.ph=Math.random()*9;S.drop=.6}
 function updateXmas(dt){if(!SANTA)return;const S=SANTA;
  if(!S.active){S.wait-=dt;S.g.visible=false;if(S.wait<=0)launchSanta(S)}else{
   S.g.visible=true;S.p.addScaledVector(S.v,dt);const bob=Math.sin(TIME*1.6+S.ph)*.3;S.g.position.set(S.p.x,S.p.y+bob,S.p.z);
@@ -1302,7 +1302,7 @@ function updateXmas(dt){if(!SANTA)return;const S=SANTA;
   // glitter trail behind the sleigh
   if(Math.random()<dt*40){const back=S.g.position.clone().add(V3(-Math.sign(S.v.x)*.6,.3,0));plist.push({p:back,v:V3(randR(-.2,.2),randR(-.1,.3),randR(-.2,.2)),c:Math.random()<.5?[1.6,1.3,.5]:[1.4,1.4,1.6],life:1.2+Math.random(),age:0});if(plist.length>NP)plist.shift()}
   S.drop-=dt;if(S.drop<=0){S.drop=randR(.7,1.4);const gft=GIFTS.find(x=>!x.g.visible);if(gft){gft.g.position.copy(S.g.position).add(V3(-Math.sign(S.v.x)*.4,.3,0));gft.v.set(S.v.x*.5,.4,randR(-.3,.3));gft.age=0;gft.spin=V3(randR(-3,3),randR(-3,3),randR(-3,3));gft.g.visible=true}}
-  if(Math.abs(S.p.x)>Math.abs(S.p.z)*1.3+9){S.active=false;S.wait=randR(5,12)}}
+  if(Math.abs(S.p.x)>Math.abs(S.p.z)*1.3+9){S.active=false;S.wait=randR(4,9)}}
  for(const gf of GIFTS){if(!gf.g.visible)continue;gf.age+=dt;gf.v.y-=dt*1.6;gf.g.position.addScaledVector(gf.v,dt);gf.g.rotation.x+=gf.spin.x*dt;gf.g.rotation.y+=gf.spin.y*dt;
   const p=gf.g.position,dz=p.z-earth.position.z,surf=earth.position.y+Math.sqrt(Math.max(0,27.3*27.3-dz*dz-p.x*p.x));
   if(p.y<surf||gf.age>6){gf.g.visible=false;if(p.y<surf+.5)burst(p.clone(),[1.5,1.2,.5],14,1.2)}}}
