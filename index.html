@@ -622,11 +622,12 @@ async function runRound(choice,other){
     }
     const srvWin=srvLast&&srvLast.match_over;if(srvWin)window.demoProgress?.setServer?.({crystals:srvLast.crystals});else window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(NET&&NET.opp&&NET.opp.uid&&window.sdAccount)window.sdAccount.client.rpc('sd_online_report',{p_room:NET.code,p_opp:NET.opp.uid,p_won:youWon}).then(r=>{if(!r.error)setTimeout(()=>window.sdDailyRefresh?.(),2500)},()=>{});
-    if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}
+    const guest=!window.sdAccount?.profile;/* guests: no stats and no crystals — every match stands on its own */
+    if(!guest){if(youWon){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,stats.streak)}else{stats.losses++;stats.streak=0}}
     save();render();count.textContent='★';Scene3D.matchEnd&&Scene3D.matchEnd(youWon);
     await wait(1300);if(run!==token)return;
     $('overTitle').textContent=youWon?'🏆 YOU WIN THE MATCH!':'💥 '+oppName()+' WINS THE MATCH!';
-    $('overText').textContent=(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+(srvWin?` · 💎 +${srvLast.reward}`:window.sdAccount?.profile?' · no crystals (match not saved)':' · guest — log in to earn crystals');
+    $('overText').textContent=guest?'Guest game — not saved. Log in to earn crystals and keep your stats.':(youWon?`Win streak: ${stats.streak} · Best: ${stats.best}`:`Matches: you ${stats.wins} – ${stats.losses} computer`)+(srvWin?` · 💎 +${srvLast.reward}`:window.sdAccount?.profile?' · no crystals (match not saved)':' · guest — log in to earn crystals');
     awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;stopPick();buttons.forEach(b=>b.disabled=true);stage.classList.remove('match-active');over.classList.add('show');announce(youWon?'Victory!':'Defeat!');$('again').focus();
     return;
   }
@@ -659,8 +660,8 @@ const HUDAV={};for(const side of ['p','c']){const b=document.createElement('div'
 document.addEventListener('click',()=>{HUDAV.p.classList.remove('tipOpen');HUDAV.c.classList.remove('tipOpen')});
 /* stats shown when hovering / tapping a HUD avatar */
 function fillHudTip(side){const x=HUD[side]||{},tip=HUDAV[side].querySelector('.hudTip'),prof=window.sdAccount?.profile;let lines;
- if(side==='p'){const st=prof?{w:prof.wins,l:prof.losses,s:prof.current_streak||0,b:prof.best_streak||0}:{w:stats.wins,l:stats.losses,s:stats.streak,b:stats.best};lines=statLines(st)+(prof?'':'\n(guest — stats on this device only)')}
- else if(x.k==='cpu'){lines='Matches won against you: '+(prof?prof.losses:stats.losses)+'\nMatches you won against it: '+(prof?prof.wins:stats.wins)}
+ if(side==='p'){lines=prof?statLines({w:prof.wins,l:prof.losses,s:prof.current_streak||0,b:prof.best_streak||0}):'Guest — no stats are kept.\nLog in to save wins, streaks and crystals.'}
+ else if(x.k==='cpu'){lines=prof?'Matches won against you: '+prof.losses+'\nMatches you won against it: '+prof.wins:'Guest game — not counted.'}
  else{const pc=x.pub||{},cup=pc.cup&&window.sdCups?window.sdCups(0).list[pc.cup-1]:null;lines=(cup?'🏅 '+cup.name+' cup\n':'')+(Array.isArray(pc.card)&&pc.card.length?pc.card.map(c=>c[0]+' '+c[1]+': '+c[2]).join('\n'):'Guest — no stats');}
  tip.replaceChildren();const h=document.createElement('b');h.textContent=x.name||'';tip.append(h,document.createTextNode(lines))}
 function statLines(st){const g=(st.w||0)+(st.l||0);return '🏆 Matches won: '+(st.w||0)+'   💥 Lost: '+(st.l||0)+'\n🎮 Matches: '+g+'   📈 Win %: '+(g?Math.round((st.w||0)*100/g)+'%':'–')+'\n🔥 Streak: '+(st.s||0)+'   ⭐ Best: '+(st.b||0)}
