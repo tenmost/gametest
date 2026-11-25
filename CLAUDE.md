@@ -80,6 +80,7 @@ RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Nam
 - Supabase Realtime channel `spaceduel-<ROOM>`; presence for the lobby, broadcast for game events.
 - Moves use commit-reveal: `pick` sends only a SHA-256 hash (round:move:salt); `reveal` sends move + salt after both players have committed. Do not send the plain move in `pick` — that lets the opponent read it before choosing.
 - Both players must run the same version; after changing the protocol, both reload.
+- ONLINE FLOW (start screen, Nov 2026): the ONLINE mode button opens `#online` as a panel in the centre column (≥700px; heroes, podium, arenas and READY stay usable around it). Only one button: 🏠 HOST ROOM. In the room the host sees INVITE A PLAYER: players online with a name search (`#lobSearch`; no online match → ➕ ADD AS FRIEND via `sd_friend_request` for signed-in players) + the room link. An invite carries the host's room code; accepting joins that room. Hero = HERO COLLECTION on the left, arena = CHOOSE ARENA on the right (host only, `arenaChoice` change → `NET.map`), and the top READY button is the room's ready (no separate room READY / HOST MAP / room-code box any more). Step guide `#onSteps` (1 hero → 2 arena → 3 invite → 4 READY, `onlineSteps()`, `#stage[data-on-step]`) makes the current step glow. READY sits at the bottom right under the arena panel on the start screen.
 
 ## Working together
 - Always `git pull` before starting and push small commits with clear messages, so the two brothers' changes don't collide.

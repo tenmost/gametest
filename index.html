@@ -65,7 +65,7 @@ main{width:min(100vw,1100px,calc((100dvh - 16px) * 16 / 9));padding:8px;box-sizi
 .onOr{margin:.7em 0 .3em;opacity:.75;font-size:clamp(10px,1.3vw,15px)}
 .onCodeBig{font:900 clamp(28px,6vw,72px) Arial;letter-spacing:.15em;color:#7de7ff;text-shadow:0 0 20px #52d4ff}
 .onLinkRow{display:flex;justify-content:center;align-items:center;flex-wrap:wrap}#online .onLinkRow input{width:20em;font-size:clamp(9px,1.1vw,13px);text-transform:none}
-#onStatus,#lobStatus{color:#ffd36b;font-weight:900}
+#onStatus,#lobStatus{color:#ffd36b;font-weight:900}#online .roomTop{font-weight:900;letter-spacing:.12em;color:#c7e9ff;font-size:clamp(11px,1.3vw,16px)}#online .roomTop b{color:#7de7ff;letter-spacing:.18em;margin-left:.3em}#online #lobSearch{width:100%;box-sizing:border-box;text-transform:none;text-align:left;font-size:clamp(11px,1.3vw,15px);margin:0 0 .4em}#invBox[hidden]{display:none}#online #onCreate{font-size:clamp(14px,2vw,24px);padding:.6em 1.6em;margin:.5em 0}#online #onMenuMsg{color:#ffd36b;font-weight:900}#online .onLinkRow input{width:13em}
 .lobHead{display:flex;justify-content:space-between;align-items:center;gap:1em;font-weight:900;color:#7de7ff;font-size:clamp(11px,1.4vw,17px);margin-bottom:.4em}
 .lobHead label,#lobMe{font-size:clamp(10px,1.1vw,14px);color:#c7e9ff}#online .lobHead input{width:8em;font-size:clamp(11px,1.3vw,16px);text-transform:none;padding:.25em .4em}
 #lobbyList{max-height:38vh;overflow:auto;border:1px solid #7de7ff44;border-radius:12px;padding:.3em;background:#050a1e99;text-align:left}
@@ -433,9 +433,11 @@ window.__acTest={setClient:c=>{client=c},refreshProfile};
 <div class="overlay" id="select"><div class="selWrap"><div><h2 id="brandLogo"><span class="l1">R</span>PS <b>RIVALS</b><small>ROCK · PAPER · SCISSORS DUELS</small></h2><script>if(window.SD_XMAS)document.querySelector("#brandLogo small").textContent="MERRY CHRISTMAS · ROCK PAPER SCISSORS";</script><p id="selHint">Loading characters…</p><div id="modeBtns"><button data-mode="cpu" class="on"><b>🤖 VS COMPUTER</b><small>earn crystals</small></button><button data-mode="online"><b>🌐 ONLINE</b><small class="onCount">play a friend</small></button></div></div><div id="heroCollection"><div class="heroCollectionTitle">HERO COLLECTION</div><div id="selBtns"></div></div><div id="selectionBottom"><div id="mapPick"><span>CHOOSE ARENA</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="nebula">Crystal Nebula</button><button type="button" data-map="atlantis">Sunken Atlantis</button><button type="button" data-map="desert">Desert Mirage</button><button type="button" data-map="pirate">Pirate Cove</button><button type="button" data-map="dragon">Dragon Peak</button><button type="button" data-map="celestial" class="pinkMap">Celestial Palace</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="arenaChoice" value="temple"></div></div><button id="readyPlayer" aria-disabled="true" title="Choose a hero first">✓ READY</button><div id="readyNotice" role="status" aria-live="polite"></div></div></div>
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
-<h2>🌐 ONLINE DUEL</h2>
-<div id="onMenu"><div class="lobHead"><span>PLAYERS ONLINE</span><span id="lobMe"></span><input id="myName" maxlength="14" hidden></div><div id="lobbyList"><p class="small">Connecting…</p></div><p id="lobStatus"></p><div class="onOr">or play with a room code</div><button id="onCreate">CREATE ROOM</button><input id="onCode" maxlength="6" placeholder="ROOM CODE" autocomplete="off"><button id="onJoin">JOIN</button></div>
-<div id="onWait" hidden><p>Room code</p><div id="onRoom" class="onCodeBig"></div><p class="small">Send this link to your friend:</p><div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY</button><button id="onShare">SHARE</button></div><p id="onStatus">Waiting for your friend…</p><div id="roomSetup" hidden><div id="hostMap"><span>HOST MAP</span><div class="mapButtons"><button type="button" data-map="temple" class="chosen">Orbital Temple</button><button type="button" data-map="city" class="">Neon City</button><button type="button" data-map="ice" class="">Frozen Temple</button><button type="button" data-map="lava" class="">Volcanic Cavern</button><button type="button" data-map="jungle">Lost Jungle</button><button type="button" data-map="factory">Forgotten Graveyard</button><button type="button" data-map="nebula">Crystal Nebula</button><button type="button" data-map="atlantis">Sunken Atlantis</button><button type="button" data-map="desert">Desert Mirage</button><button type="button" data-map="pirate">Pirate Cove</button><button type="button" data-map="dragon">Dragon Peak</button><button type="button" data-map="celestial" class="pinkMap">Celestial Palace</button><button type="button" data-map="random" class="">🎲 Random Map</button></div><input type="hidden" id="roomMap" value="temple"></div><p id="roomMapName"></p><button id="roomReady">✓ READY</button></div></div>
+<h2>🌐 ONLINE DUEL</h2><p id="lobMe" class="small"></p><ol id="onSteps"><li data-s="1"><i>1</i>CHOOSE HERO</li><li data-s="2"><i>2</i>CHOOSE ARENA</li><li data-s="3"><i>3</i>INVITE A PLAYER</li><li data-s="4"><i>4</i>PRESS READY</li></ol><input id="myName" maxlength="14" hidden>
+<div id="onMenu"><p class="small">Host a room, then invite a player or send the link to a friend.</p><button id="onCreate">🏠 HOST ROOM</button><p id="onMenuMsg" class="small"></p></div>
+<div id="onWait" hidden><div class="roomTop">ROOM <b id="onRoom"></b></div><p id="onStatus">Waiting for your friend…</p><p id="roomMapName" class="small"></p>
+<div id="invBox"><div class="lobHead"><span>INVITE A PLAYER</span><span id="lobCount"></span></div><input id="lobSearch" maxlength="20" placeholder="🔍 search player name…" autocomplete="off"><div id="lobbyList"><p class="small">Connecting…</p></div><p id="lobStatus"></p>
+<div class="onLinkRow"><input id="onLink" readonly><button id="onCopy">COPY LINK</button><button id="onShare">SHARE</button></div></div></div>
 <button id="onCancel" class="ghost">BACK</button></div></div>
 <div class="overlay" id="invite"><div class="onBox"><h2>⚔ DUEL INVITE</h2><p id="invText"></p><p id="invTimer" class="small"></p><button id="invYes">ACCEPT</button><button id="invNo" class="ghost">DECLINE</button></div></div>
 <div class="overlay" id="over"><div><h2 id="overTitle"></h2><p id="overText"></p><div class="endActions"><button id="again">PLAY AGAIN</button><button id="backToMenu">BACK TO MENU</button></div></div></div>
@@ -674,7 +676,7 @@ $('again').onclick=()=>{if(NET&&NET.live)NET.ch.send({type:'broadcast',event:'re
 /* character select */
 let selecting=true;
 const selEl=$('select'),selBtns=$('selBtns'),selHint=$('selHint');
-const maps=['temple','city','ice','lava','jungle','factory','nebula','atlantis','desert','pirate','dragon','celestial'];const resolveMap=m=>maps.includes(m)?m:maps[Math.floor(Math.random()*maps.length)];window.arenaMap='temple';for(const id of ['arenaChoice','roomMap']){const input=$(id);const group=input.parentElement.querySelector('.mapButtons');group.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(input.disabled)return;input.value=b.dataset.map;group.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));input.dispatchEvent(new Event('change'));showArenaPreview(input)})}function showArenaPreview(input){let box=(input.id==='arenaChoice'?document.getElementById('select'):input.parentElement).querySelector('.arenaPreview');if(!box){box=document.createElement('div');box.className='arenaPreview';box.style.cssText=input.id==='arenaChoice'?'position:absolute;right:2%;bottom:2%;width:clamp(80px,13vw,145px);text-align:center;pointer-events:none;z-index:12':'position:absolute;left:2%;top:12%;width:clamp(110px,18vw,205px);text-align:center;pointer-events:none;z-index:12';(input.id==='arenaChoice'?document.getElementById('selectionBottom'):input.parentElement).appendChild(box);}const k=input.value;if(k==='random'){box.textContent='🎲 A surprise arena every match';return;}if(!Scene3D.previewArena){box.textContent='Loading arena preview…';return;}const src=Scene3D.previewArena(k);if(!src)return;box.replaceChildren();const img=document.createElement('img');img.src=src;img.alt=input.parentElement.querySelector('[data-map="'+k+'"]').textContent+' arena preview';img.style.cssText='width:100%;max-height:125px;object-fit:cover;border:1px solid #7de7ff;border-radius:8px;display:block';box.appendChild(img);}
+const maps=['temple','city','ice','lava','jungle','factory','nebula','atlantis','desert','pirate','dragon','celestial'];const resolveMap=m=>maps.includes(m)?m:maps[Math.floor(Math.random()*maps.length)];window.arenaMap='temple';for(const id of ['arenaChoice']){const input=$(id);const group=input.parentElement.querySelector('.mapButtons');group.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(input.disabled)return;input.value=b.dataset.map;group.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));input.dispatchEvent(new Event('change'));showArenaPreview(input)})}function showArenaPreview(input){let box=(input.id==='arenaChoice'?document.getElementById('select'):input.parentElement).querySelector('.arenaPreview');if(!box){box=document.createElement('div');box.className='arenaPreview';box.style.cssText=input.id==='arenaChoice'?'position:absolute;right:2%;bottom:2%;width:clamp(80px,13vw,145px);text-align:center;pointer-events:none;z-index:12':'position:absolute;left:2%;top:12%;width:clamp(110px,18vw,205px);text-align:center;pointer-events:none;z-index:12';(input.id==='arenaChoice'?document.getElementById('selectionBottom'):input.parentElement).appendChild(box);}const k=input.value;if(k==='random'){box.textContent='🎲 A surprise arena every match';return;}if(!Scene3D.previewArena){box.textContent='Loading arena preview…';return;}const src=Scene3D.previewArena(k);if(!src)return;box.replaceChildren();const img=document.createElement('img');img.src=src;img.alt=input.parentElement.querySelector('[data-map="'+k+'"]').textContent+' arena preview';img.style.cssText='width:100%;max-height:125px;object-fit:cover;border:1px solid #7de7ff;border-radius:8px;display:block';box.appendChild(img);}
 let selectedKey=null;const readyPlayer=$('readyPlayer');function readyState(){readyPlayer.disabled=false;readyPlayer.setAttribute('aria-disabled',String(!selectedKey));readyPlayer.title=selectedKey?'Start match':'Choose a hero first — Orbital Temple is selected by default';$('readyNotice').textContent='';}readyPlayer.onclick=()=>{if(readyPlayer.disabled)return;if(selectedKey&&window.sdOnlineHero&&sdOnlineHero(selectedKey,true))return;if(!selectedKey){$('readyNotice').textContent='Choose your hero first, then press READY.';return;}if(!$('arenaChoice').value){$('readyNotice').textContent='Choose an arena first.';return;}readyPlayer.disabled=true;window.arenaMap=resolveMap($('arenaChoice').value);choosePlayer(selectedKey)};
 function renderRoster(list){const pl=(list||[]).filter(c=>c.playable);selBtns.innerHTML='';
   pl.forEach(c=>{const b=document.createElement('button');const pic=document.createElement('img');pic.alt='';const portrait=Scene3D.heroPortrait?.(c.key);if(portrait){pic.src=portrait;b.appendChild(pic)}const name=document.createElement('span');name.textContent=c.name;b.appendChild(name);b.dataset.characterKey=c.key;b.classList.toggle('chosen',selectedKey===c.key);b.onclick=()=>{beep(660,.09,'triangle',.045);selectedKey=c.key;Scene3D.selectHeroPreview?.(c.key);selBtns.querySelectorAll('button').forEach(x=>x.classList.toggle('chosen',x===b));readyState();selHint.textContent=c.name+' selected — press READY';if(window.sdOnlineHero)sdOnlineHero(c.key)};selBtns.appendChild(b)});
@@ -722,49 +724,71 @@ function logStat(table,row){try{if(NET&&NET.live&&NET.opp&&!(myId<NET.opp.id))re
 const myId=Math.random().toString(36).slice(2,10),urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 let NET=null,MODE=urlRoom?'online':'cpu',onChar=null;
 const onEl=$('online'),charName=k=>((Scene3D.roster&&Scene3D.roster().find(c=>c.key===k))||{name:k.toUpperCase()}).name;
-document.querySelectorAll('#modeBtns button').forEach(b=>{b.classList.toggle('on',b.dataset.mode===MODE);b.onclick=()=>{MODE=b.dataset.mode;document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x===b))}});
+document.querySelectorAll('#modeBtns button').forEach(b=>{b.classList.toggle('on',b.dataset.mode===MODE);b.onclick=()=>{MODE=b.dataset.mode;document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x===b));if(MODE==='online'&&selecting)openOnline(selectedKey||onChar)}});
 async function sbClient(){if(!window.__sb){const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');window.__sb=createClient(SB_URL,SB_KEY)}return window.__sb}
 const newCode=()=>Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
-function openOnline(key){onChar=key;lobbyTrack();try{readyState()}catch(e){}onEl.classList.add('show');$('onMenu').hidden=false;$('onWait').hidden=true;$('onCode').value=urlRoom||'';if(urlRoom)joinRoom(urlRoom)}
+let urlRoomUsed=false;
+function openOnline(key){if(key)onChar=key;MODE='online';document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='online'));lobbyTrack();try{readyState()}catch(e){}onEl.classList.add('show');$('onMenuMsg').textContent='';if(!NET)arenaPicked=false;setTimeout(onlineSteps,0);
+  if(NET){$('onMenu').hidden=true;$('onWait').hidden=false;return}$('onMenu').hidden=false;$('onWait').hidden=true;if(urlRoom&&!urlRoomUsed){urlRoomUsed=true;joinRoom(urlRoom)}}
+const mapLabel=k=>{const b=document.querySelector('#mapPick [data-map="'+k+'"]');return((b&&(b.dataset.originalLabel||b.textContent))||k).replace(/🔒.*$/,'').trim()};
+/* step guide: 1 hero (left) → 2 arena (right, host only) → 3 host room + invite → 4 READY (under the arena panel); the current step glows */
+let arenaPicked=false;
+function onlineSteps(){const open=onEl.classList.contains('show')&&selecting;if(!open){delete stage.dataset.onStep;return}
+  const net=NET,o=net&&net.opp,host=!net||(o?net.isHost:net.host);
+  const done={1:!!selectedKey,2:!host||arenaPicked||!!(net&&net.ready),3:!!o,4:!!(net&&net.ready)};
+  const cur=[1,2,3,4].find(n=>!done[n])||0;stage.dataset.onStep=cur||'done';
+  document.querySelectorAll('#onSteps li').forEach(li=>{const n=+li.dataset.s;li.classList.toggle('done',done[n]);li.classList.toggle('now',n===cur);li.querySelector('i').textContent=done[n]?'✓':n;if(n===2)li.lastChild.textContent=host?'CHOOSE ARENA':'ARENA: HOST PICKS';if(n===3)li.lastChild.textContent=net&&!host?'JOIN THE ROOM':'INVITE A PLAYER'})}
+window.addEventListener('click',()=>setTimeout(onlineSteps,0));
+function roomUI(){onlineSteps();const net=NET;if(!net)return;const o=net.opp,isHost=o?net.isHost:net.host,map=isHost?net.map:(o&&o.map);
+  $('invBox').hidden=!!o||!net.host;
+  $('roomMapName').textContent='Arena: '+(maps.includes(map)?mapLabel(map):'waiting for host')+(isHost?(net.ready?'':' — pick it on the right'):' (the host picks)');
+  if(!o){$('onStatus').textContent=net.host?'Invite a player or send the link to a friend.':'Waiting for the host…';return}
+  const on=o.name||'Your friend';$('onStatus').textContent=(net.ready?'✓ You are ready':selectedKey?'Press READY':'Pick your hero, then press READY')+' · '+on+(o.ready?' is ready':' is not ready')}
 function showWait(code){$('onMenu').hidden=true;$('onWait').hidden=false;$('onRoom').textContent=code;
-  const link=location.origin+location.pathname+'?room='+code;$('onLink').value=link;$('onStatus').textContent='Waiting for your friend…';
-  $('onShare').hidden=!navigator.share}
+  const link=location.origin+location.pathname+'?room='+code;$('onLink').value=link;$('onStatus').textContent='Waiting for your friend…';$('lobStatus').textContent='';$('lobSearch').value='';
+  $('onShare').hidden=!navigator.share;renderLobby()}
 $('onCreate').onclick=()=>joinRoom(newCode(),true);
-$('onJoin').onclick=()=>{const code=$('onCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length>=4)joinRoom(code)};
-$('onCode').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')$('onJoin').click()};
+$('lobSearch').onkeydown=e=>e.stopPropagation();$('lobSearch').oninput=()=>renderLobby();
+/* the host picks the room's arena on the start screen's CHOOSE ARENA panel */
+$('arenaChoice').addEventListener('change',()=>{arenaPicked=true;setTimeout(onlineSteps,0);const net=NET;if(!net||net.live||net.ready)return;if(!(net.opp?net.isHost:net.host))return;net.map=resolveMap($('arenaChoice').value);trackRoom();roomUI()});
 $('onCopy').onclick=()=>{const i=$('onLink');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>$('onCopy').textContent='COPIED!',()=>document.execCommand('copy'))};
 $('onShare').onclick=()=>navigator.share&&navigator.share({title:'RPS Rivals',text:'Duel me in RPS Rivals! Room '+$('onRoom').textContent,url:$('onLink').value}).catch(()=>{});
-$('onCancel').onclick=()=>{leaveOnline();onEl.classList.remove('show');try{readyState()}catch(e){}};
+$('onCancel').onclick=()=>{if(pendingInvite)cancelInvite();leaveOnline();onEl.classList.remove('show');onlineSteps();MODE='cpu';document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='cpu'));try{readyState()}catch(e){}};
 /* online panel open on the start screen: picking a hero / READY changes the online hero without closing the lobby or room */
-window.sdOnlineHero=(key,fromReady)=>{if(!onEl.classList.contains('show')||!selecting||MODE!=='online'||(NET&&(NET.live||NET.ready)))return false;onChar=key;lobbyTrack();if(NET)trackRoom();if(fromReady){$('readyNotice').textContent=charName(key)+' is your online hero';setTimeout(()=>{if($('readyNotice').textContent.startsWith(charName(key)))$('readyNotice').textContent=''},2500)}return true};
+/* the top READY button is the room's READY */
+window.sdOnlineHero=(key,fromReady)=>{if(!onEl.classList.contains('show')||!selecting||MODE!=='online'||(NET&&(NET.live||NET.ready)))return false;onChar=key;lobbyTrack();
+  if(!fromReady){if(NET)trackRoom();return true}
+  if(!NET){$('onMenuMsg').textContent='Step 3: press HOST ROOM and invite a player first.';onlineSteps();return true}
+  if(!NET.opp){$('lobStatus').textContent='Invite a player first — READY starts the duel when you are both in the room.';onlineSteps();return true}
+  NET.ready=true;readyPlayer.disabled=true;trackRoom();roomUI();return true};
 async function joinRoom(code,host=false){leaveOnline();showWait(code);$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
-    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:host?window.arenaMap:null,starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;$('roomSetup').hidden=true;$('roomReady').disabled=true;
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:host?resolveMap($('arenaChoice').value):null,starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;try{readyState()}catch(e){}
     ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
-      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full — create a new one.';return}const o=others[0];net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(isHost&&!maps.includes(net.map)){net.map=maps.includes($('roomMap').value)?$('roomMap').value:'temple';setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */$('roomSetup').hidden=false;$('hostMap').hidden=!isHost;$('roomReady').disabled=net.ready||(!isHost&&!maps.includes(o.map));$('roomMapName').textContent='Arena: '+(isHost?net.map:o.map||'waiting for host');$('onStatus').textContent=(net.ready?'You are ready':'Press READY')+' · '+(o.ready?'Friend ready':'Friend not ready');if(net.ready&&o.ready&&maps.includes(isHost?net.map:o.map)){window.arenaMap=isHost?net.map:o.map;net.starting=true;startOnline(o)}}
-      else if(net.opp&&!others.some(o=>o.id===net.opp.id))oppLeft()});
+      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(isHost&&!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
+        roomUI();const map=isHost?net.map:o.map;if(net.ready&&o.ready&&maps.includes(map)){window.arenaMap=map;net.starting=true;startOnline(o)}}
+      else if(net.opp&&!others.some(o=>o.id===net.opp.id)){if(net.live||net.starting)oppLeft();else{net.opp=null;net.ready=false;showOppCard(null);try{readyState()}catch(e){}trackRoom();roomUI();$('onStatus').textContent='Your friend left the room — invite someone else.';renderLobby()}}});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net||!payload||typeof payload.hash!=='string'||net.oppHashes[payload.round])return;net.oppHashes[payload.round]=payload.hash;if(payload.round===net.round)oppReady();sendReveal(net,payload.round);const early=net.earlyReveal[payload.round];if(early){delete net.earlyReveal[payload.round];checkReveal(net,early)}});
     ch.on('broadcast',{event:'reveal'},({payload})=>{if(NET!==net||!payload)return;if(!net.oppHashes[payload.round]){net.earlyReveal[payload.round]=payload;return}checkReveal(net,payload)});
     ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
-    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:false,map:net.map});$('onStatus').textContent='Waiting for your friend…'}
+    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:false,map:net.map});if(!net.opp)roomUI()}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
 function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map})}
 window.addEventListener('sd-skins',()=>{try{trackRoom()}catch(e){}});
-$('roomMap').onchange=()=>{if(!NET||!NET.isHost||NET.ready)return;NET.map=resolveMap($('roomMap').value);trackRoom()};$('roomReady').onclick=()=>{if(!NET||NET.ready)return;NET.ready=true;$('roomReady').disabled=true;$('roomMap').disabled=true;$('hostMap').querySelectorAll('button').forEach(b=>b.disabled=true);trackRoom()};
 function showOppCard(o){window.Scene3D?.setCardSkin?.('a',(o&&typeof o.skin==='string'&&window.SD_CARD_SKINS&&window.SD_CARD_SKINS[o.skin])?o.skin:'classic');let c=document.getElementById('oppCard');if(!c){c=document.createElement('div');c.id='oppCard';const st=$('onStatus');st.parentNode.insertBefore(c,st.nextSibling)}
  c.hidden=!o;if(!o)return;c.replaceChildren();const a=document.createElement('div');a.className='ocAv';if(window.sdAvatarFill)window.sdAvatarFill(a,o.av||'astronaut');const info=document.createElement('div');info.className='ocInfo';const n=document.createElement('b');n.textContent=(o.name||'FRIEND');
  const cup=o.cup&&window.sdCups?window.sdCups(0).list[o.cup-1]:null;if(cup){const im=document.createElement('img');im.src=cup.img;im.alt='';im.title=cup.name+' cup';n.appendChild(im)}const row=document.createElement('div');row.className='ocStats';
  for(const s of (Array.isArray(o.card)?o.card:[]).slice(0,3)){const d=document.createElement('div');const v=document.createElement('b');v.textContent=String(s[2]).slice(0,8);const l=document.createElement('span');l.textContent=String(s[0]).slice(0,4)+' '+String(s[1]).slice(0,10);d.append(v,l);row.appendChild(d)}
  if(!row.children.length){const g=document.createElement('span');g.className='ocGuest';g.textContent='Guest player';row.appendChild(g)}info.append(n,row);c.append(a,info)}
-function leaveOnline(){showOppCard(null);$('roomMap').disabled=false;$('hostMap').querySelectorAll('button').forEach(b=>b.disabled=false);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}}
+function leaveOnline(){showOppCard(null);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}}
 async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
   if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
   const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),k:myAvKey(),name:dispName()},{av:avEmoji(o.av),k:o.av,name:o.name||'FRIEND',pub:{card:o.card,cup:o.cup}});
-  net.live=true;net.round=0;lobbyTrack();onEl.classList.remove('show');selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');
+  net.live=true;net.round=0;lobbyTrack();onEl.classList.remove('show');onlineSteps();selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');
   stats0();reset();say('a','Let\'s duel!',400)}
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=oppName()+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
@@ -792,27 +816,32 @@ async function joinLobby(){try{const client=await sbClient();const ch=client.cha
   ch.on('broadcast',{event:'answer'},({payload:p})=>{if(p.to===myId)gotAnswer(p)});
   ch.on('broadcast',{event:'cancel'},({payload:p})=>{if(p.to===myId&&incoming&&incoming.code===p.code)closeInvite()});
   ch.subscribe(st=>{if(st==='SUBSCRIBED'){LOBBY.joined=true;lobbyTrack()}})}catch(e){console.warn('lobby',e);$('lobbyList').innerHTML='<p class="small">Online list unavailable — use a room code.</p>'}}
-function renderLobby(){const n=lobbyUsers.length,mb=document.querySelector('#modeBtns [data-mode=online]');if(mb){const c=mb.querySelector('.onCount');if(c)c.textContent=n?'● '+n+' online now':'play a friend';else mb.textContent='🌐 ONLINE VS FRIEND'+(n?` (${n} online)`:'')}
-  const box=$('lobbyList');if(!n){box.innerHTML='<p class="small">Nobody else is online right now. Send your friend the room link below!</p>';return}
-  box.innerHTML=lobbyUsers.map(u=>{const busy=u.status==='playing';return `<div class="lobRow"><span class="dot${busy?' busy':''}"></span><b>${esc(u.name||'Player')}</b><span class="ch">${esc(u.char?charName(u.char):'choosing…')}${busy?' · in a duel':''}</span><button data-id="${esc(u.id)}" ${busy||pendingInvite?'disabled':''}>⚔ DUEL</button></div>`}).join('');
+function renderLobby(){setTimeout(onlineSteps,0);const n=lobbyUsers.length,mb=document.querySelector('#modeBtns [data-mode=online]');if(mb){const c=mb.querySelector('.onCount');if(c)c.textContent=n?'● '+n+' online now':'play a friend';else mb.textContent='🌐 ONLINE VS FRIEND'+(n?` (${n} online)`:'')}
+  $('lobCount').textContent=n?n+' online':'';const box=$('lobbyList'),q=$('lobSearch').value.trim().toLowerCase();
+  const list=lobbyUsers.filter(u=>!q||String(u.name||'').toLowerCase().includes(q)).sort((x,y)=>(x.status==='playing')-(y.status==='playing')||String(x.name).localeCompare(String(y.name)));
+  if(!list.length){box.innerHTML=q?`<p class="small">No player named “${esc($('lobSearch').value.trim())}” is online right now.</p>`+(window.sdAccount?.profile?`<button id="lobAddFriend">➕ ADD ${esc($('lobSearch').value.trim().toUpperCase())} AS FRIEND</button>`:''):'<p class="small">Nobody else is online right now — send your friend the link below!</p>';
+    const af=$('lobAddFriend');if(af)af.onclick=async()=>{const nm=$('lobSearch').value.trim();af.disabled=true;try{const r=await (await sbClient()).rpc('sd_friend_request',{p_username:nm});$('lobStatus').textContent=r.error?(/not found|no such|unknown/i.test(r.error.message)?'No player called '+nm+'.':r.error.message):(r.data==='accepted'?'You are now friends with '+nm+'!':'Friend request sent to '+nm+'.')}catch(e){$('lobStatus').textContent='Could not send the friend request.'}af.disabled=false};return}
+  box.innerHTML=list.map(u=>{const busy=u.status==='playing',inv=pendingInvite&&pendingInvite.to===u.id;return `<div class="lobRow"><span class="dot${busy?' busy':''}"></span><b>${esc(u.name||'Player')}</b><span class="ch">${busy?'in a duel':''}</span><button data-id="${esc(u.id)}" ${busy||pendingInvite||!NET||NET.opp?'disabled':''}>${inv?'⏳ INVITED':'✉ INVITE'}</button></div>`}).join('');
   box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>sendInvite(b.dataset.id))}
-function sendInvite(id){const u=lobbyUsers.find(x=>x.id===id);if(!u||!LOBBY)return;const code=newCode();
-  pendingInvite={to:id,code,name:u.name,t:setTimeout(()=>{if(pendingInvite&&pendingInvite.code===code){LOBBY.ch.send({type:'broadcast',event:'cancel',payload:{to:id,code}});pendingInvite=null;$('lobStatus').textContent=`${u.name} didn't answer.`;renderLobby()}},20000)};
+function cancelInvite(){const pi=pendingInvite;if(!pi)return;clearTimeout(pi.t);pendingInvite=null;try{LOBBY.ch.send({type:'broadcast',event:'cancel',payload:{to:pi.to,code:pi.code}})}catch(e){}}
+/* invite = "come to my room": the invite carries the code of the room I'm hosting */
+function sendInvite(id){const u=lobbyUsers.find(x=>x.id===id);if(!u||!LOBBY||!NET||NET.opp)return;const code=NET.code;
+  pendingInvite={to:id,code,name:u.name,t:setTimeout(()=>{if(pendingInvite&&pendingInvite.code===code&&pendingInvite.to===id){LOBBY.ch.send({type:'broadcast',event:'cancel',payload:{to:id,code}});pendingInvite=null;$('lobStatus').textContent=`${u.name} didn't answer.`;renderLobby()}},20000)};
   LOBBY.ch.send({type:'broadcast',event:'invite',payload:{to:id,from:myId,name:dispName(),av:myAvKey(),char:onChar,code}});$('lobStatus').textContent=`Invite sent to ${u.name}… waiting for an answer`;renderLobby()}
 function gotInvite(p){if(NET&&NET.live){LOBBY.ch.send({type:'broadcast',event:'answer',payload:{to:p.from,ok:false,busy:true,code:p.code}});return}
-  incoming=p;$('invText').innerHTML=`<b>${esc(p.name)}</b>${p.char?' ('+esc(charName(p.char))+')':''} challenges you to a duel!`;$('invite').classList.add('show');sfx.match();
+  incoming=p;$('invText').innerHTML=`<b>${esc(p.name)}</b> invites you to their room for a duel!`;$('invite').classList.add('show');sfx.match();
   let left=20;$('invTimer').textContent=left+' s';clearInterval(invTick);invTick=setInterval(()=>{left--;$('invTimer').textContent=left+' s';if(left<=0)answerInvite(false)},1000)}
 function closeInvite(){clearInterval(invTick);incoming=null;$('invite').classList.remove('show')}
 function answerInvite(ok){const p=incoming;if(!p)return;closeInvite();LOBBY.ch.send({type:'broadcast',event:'answer',payload:{to:p.from,ok,code:p.code}});
   if(ok){const pick=onChar||(Scene3D.roster&&(Scene3D.roster().find(c=>c.playable)||{}).key)||'girl';MODE='online';
     document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='online'));
-    if(!selecting){stopPick();hush();token++;busy=false;over.classList.remove('show')}
-    onChar=pick;onEl.classList.add('show');joinRoom(p.code)}}
+    if(!selecting){stopPick();hush();token++;busy=false;over.classList.remove('show');if(!NET||!NET.live)openSelect()}
+    if(pendingInvite)cancelInvite();onChar=pick;openOnline(null);joinRoom(p.code)}}
 $('invYes').onclick=()=>answerInvite(true);$('invNo').onclick=()=>answerInvite(false);
 function gotAnswer(p){if(!pendingInvite||pendingInvite.code!==p.code)return;clearTimeout(pendingInvite.t);const name=pendingInvite.name;pendingInvite=null;
-  if(p.ok){$('lobStatus').textContent=`${name} accepted! Connecting…`;joinRoom(p.code,true)}else{$('lobStatus').textContent=p.busy?`${name} is in another duel.`:`${name} declined.`;renderLobby()}}
+  if(p.ok){$('lobStatus').textContent=`${name} accepted! Joining your room…`;renderLobby()}else{$('lobStatus').textContent=p.busy?`${name} is in another duel.`:`${name} declined.`;renderLobby()}}
 joinLobby();
-idle();render();openSelect();
+idle();render();openSelect();if(urlRoom)openOnline(null);
 </script>
 <script type="module">
 import * as THREE from 'three';
@@ -2520,9 +2549,10 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  window.sdOpenShop=t=>{if(t){tab=t;dlg.querySelectorAll('.shTabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===t))}sb.click()};})();
 </script>
 <style>/* ===== ONLINE PANEL ON THE START SCREEN (≥700px): sits in the centre column, so the player card, podium, heroes, READY and arenas stay visible and usable ===== */
-@media (min-width:701px){#stage.selecting #online{z-index:6;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){#stage.selecting #online{z-index:6;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none}
 #stage.selecting #online .onBox{pointer-events:auto;position:absolute;left:28%;right:28%;top:21%;max-height:68%;min-width:0;overflow:auto;box-sizing:border-box;padding:1em 1.1em;transition:opacity .15s}
 #stage.selecting #online .lobHead{padding:0 .2em}
+#stage.selecting #online #lobMe{display:none}#stage.selecting #online .onBox{top:20%!important;max-height:72%!important}#stage.selecting #online #oppCard{margin:6px auto}
 #stage:has(.xp) #online .onBox{opacity:0;pointer-events:none}
 #stage.selecting:has(#online.show) #modeBtns{visibility:hidden}}
 </style>
@@ -2599,5 +2629,20 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage #over .endActions{display:flex!important;flex-direction:column!important;gap:10px!important}
  #stage #over .endActions button{width:100%!important;min-height:52px!important;font-size:18px!important}
 }
+<style>/* ===== READY UNDER THE ARENA PANEL (start screen ≥700px): arena collection moved up, READY at the bottom right ===== */
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){#select #selectionBottom{top:9.5%!important;bottom:14%!important}
+#select #readyPlayer{top:auto!important;bottom:2%!important;height:10%;right:1.6%!important;width:25%!important;display:flex;align-items:center;justify-content:center}
+#select #readyNotice{top:auto!important;bottom:13%!important;right:1.6%!important;max-width:25%!important;padding:.3em .6em;border-radius:8px;background:#0d1638ee;z-index:41}}
+/* ===== ONLINE STEP GUIDE ===== */
+#onSteps{display:flex;gap:6px;justify-content:center;list-style:none;margin:.2em 0 .7em;padding:0;flex-wrap:wrap}
+#onSteps li{display:flex;align-items:center;gap:5px;padding:.3em .6em;border:1px solid #7de7ff44;border-radius:999px;background:#0b1430cc;color:#8fa9cc;font:900 clamp(9px,.95vw,12px)/1 Arial,sans-serif;letter-spacing:.04em}
+#onSteps li i{font-style:normal;display:grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#1d2b52;color:#fff}
+#onSteps li.done{color:#7affbb;border-color:#3fd39a88}#onSteps li.done i{background:#175e48}
+#onSteps li.now{color:#fff;border-color:#ffd54a;box-shadow:0 0 12px #ffd54a88;animation:stepPulse 1.3s ease-in-out infinite}#onSteps li.now i{background:#ffd54a;color:#3a2600}
+@keyframes stepPulse{50%{box-shadow:0 0 22px #ffd54acc}}
+@keyframes stepGlow{0%,100%{box-shadow:0 0 0 2px #ffd54a,0 0 18px #ffd54a88}50%{box-shadow:0 0 0 3px #ffd54a,0 0 34px #ffd54acc}}
+#stage[data-on-step="1"] #select #heroCollection,#stage[data-on-step="2"] #select #selectionBottom,#stage[data-on-step="4"] #select #readyPlayer{animation:stepGlow 1.3s ease-in-out infinite;border-color:#ffd54a!important}
+#stage[data-on-step="3"] #online #onCreate,#stage[data-on-step="3"] #online #lobbyList{animation:stepGlow 1.3s ease-in-out infinite}
+#stage[data-on-step]:not([data-on-step="4"]) #select #readyPlayer{opacity:.45}
 </style>
 </html>
