@@ -768,7 +768,7 @@ window.sdOnlineHero=(key,fromReady)=>{if(!onEl.classList.contains('show')||!sele
 /* back on the start screen after a match: online mode keeps its panel */
 /* wide landscape start screen = "strip layout": heroes and arenas in two rows at the bottom, PLAYERS ONLINE + FRIENDS in the left column (always shown) */
 const STRIP_MQ=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');window.sdStrips=()=>STRIP_MQ.matches;window.SD_SEL={ly:-.9,logoY:2.2};
-function stripShowChosen(){for(const [box,sel] of [['#mapPick .mapButtons','.chosen'],['#heroCollection #selBtns','.chosen']]){const b=document.querySelector(box),c=b&&b.querySelector(sel);if(b)b.scrollLeft=c?Math.max(0,c.offsetLeft-b.offsetLeft-8):0}}
+function stripShowChosen(){for(const [box,sel] of [['#mapPick .mapButtons','.chosen'],['#heroCollection #selBtns','.chosen']]){const b=document.querySelector(box),c=b&&b.querySelector(sel);if(!b)continue;if(!c){b.scrollLeft=0;continue}const br=b.getBoundingClientRect(),cr=c.getBoundingClientRect();if(cr.left<br.left)b.scrollLeft-=br.left-cr.left+8;else if(cr.right>br.right)b.scrollLeft+=cr.right-br.right+8}}
 function stripPanel(){if(!selecting)return;if(sdStrips())requestAnimationFrame(stripShowChosen);if(sdStrips()){if(!onEl.classList.contains('show')){onEl.classList.add('show');renderLobby();roomUI();loadFriends()}}else if(MODE!=='online')onEl.classList.remove('show')}
 STRIP_MQ.addEventListener?.('change',stripPanel);
 /* mouse wheel up/down scrolls the hero and arena rows sideways */
@@ -2725,7 +2725,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 <style>/* ===== STRIP LAYOUT (wide landscape start screen, Nov 2026): left = player card, TOP PLAYERS, PLAYERS ONLINE + FRIENDS;
    bottom = one row of heroes + one row of arenas, READY at the bottom right; the 3D heroes stand in the middle above the rows ===== */
 @media (min-width:701px) and (orientation:landscape),(min-width:821px){
- #stage.selecting #online .onBox{left:1.6%!important;right:auto!important;width:25%!important;top:var(--hcTop,30%)!important;bottom:2%!important;max-height:none!important;display:flex;flex-direction:column;overflow:hidden!important}
+ #stage.selecting #online .onBox{left:auto!important;right:1.6%!important;width:25%!important;top:var(--cardBot,30%)!important;bottom:2%!important;max-height:none!important;display:flex;flex-direction:column;overflow:hidden!important}
  #stage.selecting #online #invBox:not([hidden]){flex:1;min-height:0}
  #stage.selecting #online #lobbyList{max-height:none!important;flex:0 1 auto;min-height:2.5em}
  #stage.selecting #online #friendBox:not([hidden]){display:flex;flex-direction:column;min-height:0;flex:1}#stage.selecting #online #friendList{overflow:auto;min-height:0}
@@ -2736,13 +2736,13 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage.selecting #online:has(#invBox[hidden]) .lobHead{display:flex}
  #stage:has(.xp) #online .onBox{opacity:1;pointer-events:auto}
  /* hero row */
- #select #heroCollection,#select #heroCollection:not(.xp){left:28%!important;right:17.6%!important;width:auto!important;top:auto!important;bottom:22.5%!important;height:17%!important;max-height:none!important;padding:5px 8px!important;display:flex!important;flex-direction:row!important;align-items:stretch;gap:8px;overflow:hidden!important;cursor:default!important}
+ #select #heroCollection,#select #heroCollection:not(.xp){left:1.6%!important;right:27.6%!important;width:auto!important;top:auto!important;bottom:22.5%!important;height:17%!important;max-height:none!important;padding:5px 8px!important;display:flex!important;flex-direction:row!important;align-items:stretch;gap:8px;overflow:hidden!important;cursor:default!important}
  #select #heroCollection .heroCollectionTitle{writing-mode:vertical-rl;transform:rotate(180deg);margin:0!important;font-size:clamp(8px,.85vw,11px)!important;letter-spacing:.12em;text-align:center;flex:none}
  #select #heroCollection #selBtns{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;gap:6px!important;flex:1;min-width:0;height:100%;grid-template-columns:none!important;padding-bottom:3px}
  #select #heroCollection #selBtns button{flex:0 0 auto!important;width:auto!important;height:100%!important;aspect-ratio:.82;min-width:0!important;padding:3px!important;display:flex;flex-direction:column;align-items:center;font-size:clamp(8px,.8vw,11px)!important}
  #select #heroCollection #selBtns button img{flex:1;min-height:0;width:100%;height:0;object-fit:contain}
  /* arena row */
- #select #selectionBottom,#select #selectionBottom:not(.xp){left:28%!important;right:17.6%!important;width:auto!important;top:auto!important;bottom:2%!important;height:19%!important;padding:5px 8px!important;overflow:hidden!important;cursor:default!important}
+ #select #selectionBottom,#select #selectionBottom:not(.xp){left:1.6%!important;right:27.6%!important;width:auto!important;top:auto!important;bottom:2%!important;height:19%!important;padding:5px 8px!important;overflow:hidden!important;cursor:default!important}
  #select #selectionBottom #mapPick{display:flex;flex-direction:row;align-items:stretch;gap:8px;height:100%}
  #select #selectionBottom #mapPick>span{writing-mode:vertical-rl;transform:rotate(180deg);margin:0!important;font-size:clamp(8px,.85vw,11px)!important;letter-spacing:.12em;text-align:center;flex:none}
  #select #selectionBottom #mapPick .mapButtons{scroll-snap-type:none!important;display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;gap:6px!important;flex:1;min-width:0;height:100%;grid-template-columns:none!important;padding-bottom:3px;max-height:none!important}
@@ -2751,9 +2751,9 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage:has(.xp)::after{display:none!important}
  #select #heroCollection #selBtns button,#select #heroCollection #selBtns button:hover,#select #mapPick .mapButtons>button,#select #mapPick .mapButtons>button:hover{transform:none!important}
  /* READY at the bottom right, as tall as both rows */
- #select #readyPlayer{left:auto!important;transform:none!important;margin:0!important;right:1.6%!important;bottom:2%!important;top:auto!important;width:15%!important;height:37.5%!important;font-size:clamp(16px,2.2vw,30px)!important;flex-direction:column}
- #select #readyNotice{right:1.6%!important;bottom:41%!important;max-width:15%!important}
- #select #selHint{bottom:41.5%!important}
+ #select #readyPlayer{left:calc(50% - 11%)!important;right:auto!important;transform:none!important;margin:0!important;bottom:42%!important;top:auto!important;width:22%!important;height:8.5%!important;font-size:clamp(16px,2.2vw,30px)!important;flex-direction:row;gap:.3em}
+ #select #readyNotice{left:calc(50% - 15%)!important;right:auto!important;width:30%;max-width:30%!important;text-align:center!important;bottom:51.5%!important}
+ #select #selHint{display:none!important}
 }
 </style>
 </html>
