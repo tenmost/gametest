@@ -2786,4 +2786,70 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage.selecting #fsBtn{right:calc(1.6% + var(--tbR) * 2 + 16px)!important}
 }
 </style>
+<style>
+/* MODE GATE (Nov 2026): the start screen first asks ONLINE or OFFLINE; each mode then has its own start page.
+   #stage[data-mode] = gate | online | cpu. Gate hides heroes/arenas/friends/podium/READY; cpu hides friends + PvP podium. */
+#modeGate{position:absolute;inset:0;z-index:7;display:none;align-items:center;justify-content:center;pointer-events:none;font-family:Arial,sans-serif}
+#stage.selecting[data-mode=gate] #modeGate{display:flex}
+#modeGate .mgIn{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,22px);margin-top:9%}
+#modeGate h3{margin:0;font:900 clamp(14px,2vw,26px)/1.1 'Lilita One',Arial,sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 18px #52d4ff}
+#modeGate .mgRow{display:flex;gap:clamp(12px,2.4vw,32px)}
+#modeGate button{width:clamp(170px,22vw,290px);aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35em;cursor:pointer;color:#fff;border-radius:24px;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s,border-color .15s;padding:1em}
+#modeGate button:hover,#modeGate button:focus-visible{transform:translateY(-4px) scale(1.03);outline:none}
+#modeGate button[data-go=online]:hover,#modeGate button[data-go=online]:focus-visible{border-color:#7de7ff;box-shadow:0 0 30px #52d4ffaa}
+#modeGate button[data-go=cpu]:hover,#modeGate button[data-go=cpu]:focus-visible{border-color:#ffd54a;box-shadow:0 0 30px #ffd54a99}
+#modeGate .mgI{font-size:clamp(40px,6vw,84px);line-height:1}
+#modeGate b{font:900 clamp(18px,2.4vw,32px)/1 'Lilita One',Arial,sans-serif;letter-spacing:.05em}
+#modeGate small{font-size:clamp(10px,1.05vw,14px);font-weight:700;color:#c7e9ff;line-height:1.35;text-align:center}
+#modeGate .mgCount{color:#7affbb;font-weight:900}
+html body #stage#stage[data-mode=gate] :is(#heroCollection,#selectionBottom,#readyPlayer,#readyNotice,#online,#podium,#modeBtns,#selHint,#modeBack,#cpuInfo){display:none!important}
+html body #stage#stage[data-mode=gate]{--gate:1}
+/* each mode's own page: the old ONLINE / VS COMPUTER switch is replaced by a "change mode" bar */
+html body #stage#stage:is([data-mode=online],[data-mode=cpu]) #modeBtns{display:none!important}
+html body #stage#stage[data-mode=cpu] :is(#online,#podium){display:none!important}
+#modeBack{display:none;align-items:center;gap:.6em;margin:.7em auto 0;width:max-content;max-width:100%;padding:4px 4px 4px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font:900 clamp(10px,1.2vw,15px)/1 Arial,sans-serif;white-space:nowrap}
+#stage.selecting:is([data-mode=online],[data-mode=cpu]) #modeBack{display:flex}
+#modeBack button{cursor:pointer;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16306a;font:900 clamp(9px,1vw,13px)/1 Arial,sans-serif;padding:.7em 1em}
+#modeBack button:hover{background:#fff;box-shadow:0 0 12px #fff8}
+/* OFFLINE page: a small info card where the friends panel is on the ONLINE page */
+#select #cpuInfo{display:none;position:absolute;z-index:4;right:1.6%;left:auto;top:calc(3.2% + var(--tbR,36px));width:25%;text-align:left!important;letter-spacing:0;text-transform:none;box-sizing:border-box;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font:700 clamp(9px,1vw,13px)/1.45 Arial,sans-serif!important}
+#select #cpuInfo *{font-size:inherit;text-align:left!important}#select #cpuInfo h4{margin:0 0 .5em;font:900 clamp(11px,1.25vw,16px)/1.2 Arial,sans-serif!important;color:#ffe9a8;letter-spacing:.05em}
+#select #cpuInfo ul{margin:0;padding-left:1.1em}#select #cpuInfo li{margin:.2em 0}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){
+ #stage.selecting[data-mode=cpu] #cpuInfo{display:block}
+ #select #modeBack{position:absolute;left:50%;transform:translateX(-50%);bottom:2.5%;margin:0;z-index:5}
+}
+@media (orientation:portrait) and (max-width:820px){
+ #modeGate .mgIn{margin-top:0}
+ #modeGate .mgRow{flex-direction:column}
+ #modeGate button{width:min(78vw,320px);aspect-ratio:auto;padding:1.2em 1em}
+ #modeBack{margin-top:8px}
+}
+</style>
+<script>(()=>{const stage=document.getElementById('stage'),sel=document.getElementById('select');if(!stage||!sel)return;
+ const gate=document.createElement('div');gate.id='modeGate';
+ gate.innerHTML='<div class="mgIn"><h3>HOW DO YOU WANT TO PLAY?</h3><div class="mgRow">'+
+  '<button type="button" data-go="online"><span class="mgI">🌐</span><b>ONLINE</b><small>Duel friends and other players<br><span class="mgCount">play a friend</span></small></button>'+
+  '<button type="button" data-go="cpu"><span class="mgI">🤖</span><b>OFFLINE</b><small>Play against the computer<br>and earn crystals</small></button></div></div>';
+ stage.appendChild(gate);
+ const mb=document.getElementById('modeBtns'),back=document.createElement('div');back.id='modeBack';back.innerHTML='<span id="modeBackLbl"></span><button type="button">⇄ CHANGE MODE</button>';
+ mb.insertAdjacentElement('afterend',back);
+ const info=document.createElement('div');info.id='cpuInfo';
+ info.innerHTML='<h4>🤖 OFFLINE · VS COMPUTER</h4><ul><li>1 · Pick your hero</li><li>2 · Choose an arena</li><li>3 · Press READY</li></ul><p style="margin:.7em 0 0;color:#c7e9ff">Win = 💎 5 crystals, perfect win = 💎 8. Log in to keep your crystals and stats.</p>';
+ sel.appendChild(info);
+ const setMode=m=>{stage.dataset.mode=m;document.getElementById('modeBackLbl').textContent=m==='online'?'🌐 ONLINE':m==='cpu'?'🤖 OFFLINE · VS COMPUTER':'';setTimeout(()=>{try{window.sdPlacePodium?.()}catch(e){}window.dispatchEvent(new Event('resize'))},0)};
+ /* the old switch buttons still do the work (online room, lobby…); they just also set the page */
+ mb.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+ gate.querySelectorAll('button[data-go]').forEach(b=>b.onclick=()=>{try{beep(660,.09,'triangle',.045)}catch(e){}const t=mb.querySelector('[data-mode="'+b.dataset.go+'"]');setMode(b.dataset.go);if(t)t.click()});
+ const toGate=()=>{try{if(typeof MODE!=='undefined'&&MODE==='online')closeOnline();MODE='cpu';mb.querySelectorAll('button').forEach(x=>x.classList.remove('on'))}catch(e){}try{selectedKey=null;Scene3D.selectHeroPreview?.(null);renderRoster(Scene3D.roster?Scene3D.roster():[])}catch(e){}setMode('gate')};
+ back.querySelector('button').onclick=toGate;
+ /* portrait phones: the ✕ on the full-screen friends panel goes back to the mode choice */
+ const oc=document.getElementById('onCancel');if(oc){const f=oc.onclick;oc.onclick=e=>{f&&f.call(oc,e);toGate()}}
+ /* live "N online now" on the ONLINE card, copied from the old switch */
+ const src=mb.querySelector('.onCount'),dst=gate.querySelector('.mgCount');if(src&&dst){const cp=()=>{dst.textContent=src.textContent};cp();new MutationObserver(cp).observe(src,{childList:true,characterData:true,subtree:true})}
+ /* an invite link (?room=) goes straight to ONLINE; otherwise ask first */
+ const hasRoom=!!(new URLSearchParams(location.search).get('room'));
+ if(hasRoom)setMode('online');else toGate();
+ document.addEventListener('keydown',e=>{if(stage.dataset.mode!=='gate'||!stage.classList.contains('selecting')||document.querySelector('dialog[open]'))return;const k=e.key.toLowerCase();if(k==='o'||k==='1'){gate.querySelector('[data-go=online]').click()}else if(k==='c'||k==='2'){gate.querySelector('[data-go=cpu]').click()}},true);
+})();</script>
 </html>
