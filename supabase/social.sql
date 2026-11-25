@@ -1,6 +1,5 @@
 -- Space Duel: pink crystals, friend invites (referrals), share + online-with-friends daily missions, pink avatar.
--- NOT APPLIED YET: Dainis applies this to the shared project mrrqfrmgblbgrvkbrwvt as migration "sd_social"
--- (Supabase → SQL Editor → paste → Run). Needs daily_missions.sql + premium_avatars.sql first (already applied).
+-- Applied to the shared project mrrqfrmgblbgrvkbrwvt (Nov 2026, SQL Editor) — migration name "sd_social".
 -- Only sd_* objects. Nothing here touches tenmost.com tables.
 --
 -- Trust rules:
