@@ -65,7 +65,7 @@ main{width:min(100vw,1100px,calc((100dvh - 16px) * 16 / 9));padding:8px;box-sizi
 .onOr{margin:.7em 0 .3em;opacity:.75;font-size:clamp(10px,1.3vw,15px)}
 .onCodeBig{font:900 clamp(28px,6vw,72px) Arial;letter-spacing:.15em;color:#7de7ff;text-shadow:0 0 20px #52d4ff}
 .onLinkRow{display:flex;justify-content:center;align-items:center;flex-wrap:wrap}#online .onLinkRow input{width:20em;font-size:clamp(9px,1.1vw,13px);text-transform:none}
-#onStatus,#lobStatus{color:#ffd36b;font-weight:900}#online .roomTop{font-weight:900;letter-spacing:.12em;color:#c7e9ff;font-size:clamp(11px,1.3vw,16px)}#online .roomTop b{color:#7de7ff;letter-spacing:.18em;margin-left:.3em}#online #lobSearch{width:100%;box-sizing:border-box;text-transform:none;text-align:left;font-size:clamp(11px,1.3vw,15px);margin:0 0 .4em}#invBox[hidden]{display:none}#online #onCreate{font-size:clamp(14px,2vw,24px);padding:.6em 1.6em;margin:.5em 0}#online #onMenuMsg{color:#ffd36b;font-weight:900}#online .onLinkRow input{width:13em}
+#onStatus,#lobStatus{color:#ffd36b;font-weight:900}#online .roomTop{font-weight:900;letter-spacing:.12em;color:#c7e9ff;font-size:clamp(11px,1.3vw,16px)}#online .roomTop b{color:#7de7ff;letter-spacing:.18em;margin-left:.3em}#online #lobSearch{width:100%;box-sizing:border-box;text-transform:none;text-align:left;font-size:clamp(11px,1.3vw,15px);margin:0 0 .4em}#invBox[hidden]{display:none}#online #onCreate{font-size:clamp(14px,2vw,24px);padding:.6em 1.6em;margin:.5em 0}#online #onMenuMsg{color:#ffd36b;font-weight:900}#online .onLinkRow input{width:13em}#online .lobRow.off{opacity:.55}#online .dot.offd{background:#5a6a8a;box-shadow:none}#friendBox[hidden]{display:none}#friendBox .lobHead{margin:.4em 0 .2em}
 .lobHead{display:flex;justify-content:space-between;align-items:center;gap:1em;font-weight:900;color:#7de7ff;font-size:clamp(11px,1.4vw,17px);margin-bottom:.4em}
 .lobHead label,#lobMe{font-size:clamp(10px,1.1vw,14px);color:#c7e9ff}#online .lobHead input{width:8em;font-size:clamp(11px,1.3vw,16px);text-transform:none;padding:.25em .4em}
 #lobbyList{max-height:38vh;overflow:auto;border:1px solid #7de7ff44;border-radius:12px;padding:.3em;background:#050a1e99;text-align:left}
@@ -434,7 +434,7 @@ window.__acTest={setClient:c=>{client=c},refreshProfile};
 <button class="corner" id="changeP">👤 PLAYER</button>
 <div class="overlay" id="online"><div class="onBox">
 <div class="lobHead"><span>🌐 PLAYERS ONLINE</span><span id="lobCount"></span><button id="onCancel" class="ghost" title="Back to VS COMPUTER">✕</button></div><p id="lobMe" hidden></p><input id="myName" maxlength="14" hidden>
-<div id="invBox"><input id="lobSearch" maxlength="20" placeholder="🔍 search player name…" autocomplete="off"><div id="lobbyList"><p class="small">Connecting…</p></div><button id="onLinkBtn" class="ghost">🔗 COPY INVITE LINK</button></div>
+<div id="invBox"><input id="lobSearch" maxlength="20" placeholder="🔍 search player name…" autocomplete="off"><div id="lobbyList"><p class="small">Connecting…</p></div><div id="friendBox" hidden><div class="lobHead"><span>👥 FRIENDS</span></div><div id="friendList"></div></div><button id="onLinkBtn" class="ghost">🔗 COPY INVITE LINK</button></div>
 <p id="onStatus"></p><p id="roomMapName" class="small"></p><p id="lobStatus"></p>
 </div></div>
 <div class="overlay" id="invite"><div class="onBox"><h2>⚔ DUEL INVITE</h2><p id="invText"></p><p id="invTimer" class="small"></p><button id="invYes">ACCEPT</button><button id="invNo" class="ghost">DECLINE</button></div></div>
@@ -729,29 +729,36 @@ let urlRoomUsed=false;
 /* ONLINE = a "PLAYERS ONLINE" glass panel on the start screen itself (no extra window, no HOST ROOM button):
    inviting a player or copying the link quietly creates your room. */
 function openOnline(key){if(key)onChar=key;MODE='online';document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='online'));lobbyTrack();try{readyState()}catch(e){}
-  onEl.classList.add('show');renderLobby();roomUI();if(urlRoom&&!urlRoomUsed){urlRoomUsed=true;joinRoom(urlRoom)}setTimeout(sdSteps,0)}
+  onEl.classList.add('show');renderLobby();roomUI();loadFriends();if(urlRoom&&!urlRoomUsed){urlRoomUsed=true;joinRoom(urlRoom)}setTimeout(sdSteps,0)}
 function closeOnline(){if(pendingInvite)cancelInvite();leaveOnline();onEl.classList.remove('show');$('onStatus').textContent='';$('roomMapName').textContent='';$('lobStatus').textContent='';try{readyState()}catch(e){}setTimeout(sdSteps,0)}
 const mapLabel=k=>{const b=document.querySelector('#mapPick [data-map="'+k+'"]');return((b&&(b.dataset.originalLabel||b.textContent))||k).replace(/🔒.*$/,'').trim()};
 /* STEP GLOW (start screen, both modes): 1 hero (left) → 2 arena (right; online only the host) → 3 invite a player (online) → READY. The next step glows. */
 let arenaPicked=false;
 function sdSteps(){if(!selecting){delete stage.dataset.step;return}const on=MODE==='online',net=NET,o=net&&net.opp,host=!net||(o?net.isHost:net.host);
-  const steps=[['hero',!!selectedKey],['arena',arenaPicked||(on&&!host)||!!(net&&net.ready)]];if(on)steps.push(['invite',!!o]);steps.push(['ready',!!(net&&net.ready)]);
+  const steps=[['hero',!!selectedKey],['arena',arenaPicked||!!(net&&net.ready)]];if(on)steps.push(['invite',!!o]);steps.push(['ready',!!(net&&net.ready)]);
   const cur=steps.find(x=>!x[1]);stage.dataset.step=cur?cur[0]:'done';stage.dataset.stepN=cur?steps.indexOf(cur)+1:''}
 window.sdSteps=sdSteps;window.addEventListener('click',()=>setTimeout(sdSteps,0));
 function roomUI(){sdSteps();const net=NET;$('invBox').hidden=!!(net&&(net.opp||!net.host));if(!net){$('onStatus').textContent='';$('roomMapName').textContent='';return}
-  const o=net.opp,isHost=o?net.isHost:net.host,map=isHost?net.map:(o&&o.map);
-  $('roomMapName').textContent=o||!net.host?'Arena: '+(maps.includes(map)?mapLabel(map):'waiting for host')+(isHost?'':' (the host picks)'):'';
+  const o=net.opp;
+  const mv=net.map,ov=o&&o.map;$('roomMapName').textContent=!o?'':!maps.includes(ov)?'Arena vote — you: '+mapLabel(mv):mv===ov?'Arena: '+mapLabel(mv)+' (you both picked it)':'Arena vote — you: '+mapLabel(mv)+' · '+(o.name||'friend')+': '+mapLabel(ov)+' → coin flip';
   if(!o){$('onStatus').textContent=net.host?'Your room is open — invite a player.':'Joining the room…';return}
   if(/accepted|Invite sent/.test($('lobStatus').textContent))$('lobStatus').textContent='';
   const on=o.name||'Your friend';$('onStatus').textContent=(net.ready?'✓ You are ready':selectedKey?'Press READY':'Pick your hero, then press READY')+' · '+on+(o.ready?' is ready':' is not ready')}
 function showWait(code){$('lobStatus').textContent='';roomUI()}
+/* FRIENDS (signed in): online ones can be invited, offline ones are shown greyed out */
+let myFriends=[];async function loadFriends(){if(!window.sdAccount?.profile){myFriends=[];renderFriends();return}try{const r=await (await sbClient()).rpc('sd_friends_list');myFriends=r.error?[]:(r.data||[]).filter(f=>f.status==='accepted')}catch(e){myFriends=[]}renderFriends()}
+window.addEventListener('sd-profile',()=>{if(onEl.classList.contains('show'))loadFriends()});
+function renderFriends(){const box=$('friendList'),wrap=$('friendBox');if(!box)return;wrap.hidden=!myFriends.length;if(!myFriends.length)return;const q=$('lobSearch').value.trim().toLowerCase();
+  const rows=myFriends.filter(f=>!q||String(f.username).toLowerCase().includes(q)).map(f=>{const u=lobbyUsers.find(x=>String(x.name||'').toLowerCase()===String(f.username).toLowerCase());return {f,u}}).sort((a,b)=>(!!b.u)-(!!a.u)||String(a.f.username).localeCompare(String(b.f.username)));
+  box.innerHTML=rows.map(({f,u})=>{const busy=u&&u.status==='playing',dis=!u||busy||pendingInvite||(NET&&(NET.opp||!NET.host));return `<div class="lobRow${u?'':' off'}"><span class="dot${u?(busy?' busy':''):' offd'}"></span><b>${esc(f.username)}</b><span class="ch">${u?(busy?'in a duel':'online'):'offline'}</span>${u?`<button data-id="${esc(u.id)}" ${dis?'disabled':''}>${pendingInvite&&pendingInvite.to===u.id?'⏳ INVITED':'✉ INVITE'}</button>`:''}</div>`}).join('')||'<p class="small">No friend with that name.</p>';
+  box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>sendInvite(b.dataset.id))}
 async function ensureRoom(){if(!NET)await joinRoom(newCode(),true);return NET}
 $('lobSearch').onkeydown=e=>e.stopPropagation();$('lobSearch').oninput=()=>renderLobby();
 $('onLinkBtn').onclick=async()=>{const net=await ensureRoom();if(!net)return;const link=location.origin+location.pathname+'?room='+net.code;
   if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'RPS Rivals',text:'Duel me in RPS Rivals!',url:link}).catch(()=>{});return}
   (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>{$('lobStatus').textContent='Link copied — send it to your friend.'},()=>{$('lobStatus').textContent='Send this link: '+link})};
 /* the host picks the room's arena on the start screen's CHOOSE ARENA panel */
-$('arenaChoice').addEventListener('change',()=>{arenaPicked=true;setTimeout(sdSteps,0);const net=NET;if(!net||net.live||net.ready)return;if(!(net.opp?net.isHost:net.host))return;net.map=resolveMap($('arenaChoice').value);trackRoom();roomUI()});
+$('arenaChoice').addEventListener('change',()=>{arenaPicked=true;setTimeout(sdSteps,0);const net=NET;if(!net||net.live||net.ready)return;net.map=resolveMap($('arenaChoice').value);trackRoom();roomUI()});
 $('onCancel').onclick=()=>{closeOnline();MODE='cpu';document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='cpu'))};
 /* online on the start screen: picking a hero / READY works on the room; the top READY button is the room's READY */
 window.sdOnlineHero=(key,fromReady)=>{if(!onEl.classList.contains('show')||!selecting||MODE!=='online'||(NET&&(NET.live||NET.ready)))return false;onChar=key;lobbyTrack();
@@ -762,12 +769,14 @@ window.sdOnlineHero=(key,fromReady)=>{if(!onEl.classList.contains('show')||!sele
 {const _os=openSelect;openSelect=function(){_os.apply(this,arguments);arenaPicked=false;if(MODE==='online')openOnline(null);else setTimeout(sdSteps,0)}}
 async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
-    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:host?resolveMap($('arenaChoice').value):null,starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;try{readyState()}catch(e){}roomUI();
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:resolveMap($('arenaChoice').value),starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;try{readyState()}catch(e){}roomUI();
     ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
-      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(isHost&&!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
-        roomUI();const map=isHost?net.map:o.map;if(net.ready&&o.ready&&maps.includes(map)){window.arenaMap=map;net.starting=true;startOnline(o)}}
-      else if(net.opp&&!others.some(o=>o.id===net.opp.id)){if(net.live||net.starting)oppLeft();else{net.opp=null;net.ready=false;showOppCard(null);try{readyState()}catch(e){}trackRoom();roomUI();$('lobStatus').textContent='Your friend left the room — invite someone else.';renderLobby()}}});
+      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
+        if(net.friendChar!==(o.char||null)){net.friendChar=o.char||null;Scene3D.setLobbyFriend?.(net.friendChar)}roomUI();
+        if(net.ready&&o.ready){if(isHost){net.starting=true;const a=maps.includes(net.map)?net.map:'temple',b=maps.includes(o.map)?o.map:a,fin=a===b?a:(Math.random()<.5?a:b);net.final=fin;net.flip=a!==b;window.arenaMap=fin;trackRoom();startOnline(o)}
+          else if(o.go&&maps.includes(o.final)){window.arenaMap=o.final;net.flip=o.flip;net.starting=true;startOnline(o)}}}
+      else if(net.opp&&!others.some(o=>o.id===net.opp.id)){if(net.live||net.starting)oppLeft();else{net.opp=null;net.ready=false;showOppCard(null);Scene3D.setLobbyFriend?.(null);try{readyState()}catch(e){}trackRoom();roomUI();$('lobStatus').textContent='Your friend left the room — invite someone else.';renderLobby()}}});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net||!payload||typeof payload.hash!=='string'||net.oppHashes[payload.round])return;net.oppHashes[payload.round]=payload.hash;if(payload.round===net.round)oppReady();sendReveal(net,payload.round);const early=net.earlyReveal[payload.round];if(early){delete net.earlyReveal[payload.round];checkReveal(net,early)}});
     ch.on('broadcast',{event:'reveal'},({payload})=>{if(NET!==net||!payload)return;if(!net.oppHashes[payload.round]){net.earlyReveal[payload.round]=payload;return}checkReveal(net,payload)});
     ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
@@ -775,20 +784,20 @@ async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent
     ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:false,map:net.map});if(!net.opp)roomUI()}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
-function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map})}
+function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map,go:!!NET.final,final:NET.final||null,flip:!!NET.flip})}
 window.addEventListener('sd-skins',()=>{try{trackRoom()}catch(e){}});
 function showOppCard(o){window.Scene3D?.setCardSkin?.('a',(o&&typeof o.skin==='string'&&window.SD_CARD_SKINS&&window.SD_CARD_SKINS[o.skin])?o.skin:'classic');let c=document.getElementById('oppCard');if(!c){c=document.createElement('div');c.id='oppCard';const st=$('onStatus');st.parentNode.insertBefore(c,st.nextSibling)}
  c.hidden=!o;if(!o)return;c.replaceChildren();const a=document.createElement('div');a.className='ocAv';if(window.sdAvatarFill)window.sdAvatarFill(a,o.av||'astronaut');const info=document.createElement('div');info.className='ocInfo';const n=document.createElement('b');n.textContent=(o.name||'FRIEND');
  const cup=o.cup&&window.sdCups?window.sdCups(0).list[o.cup-1]:null;if(cup){const im=document.createElement('img');im.src=cup.img;im.alt='';im.title=cup.name+' cup';n.appendChild(im)}const row=document.createElement('div');row.className='ocStats';
  for(const s of (Array.isArray(o.card)?o.card:[]).slice(0,3)){const d=document.createElement('div');const v=document.createElement('b');v.textContent=String(s[2]).slice(0,8);const l=document.createElement('span');l.textContent=String(s[0]).slice(0,4)+' '+String(s[1]).slice(0,10);d.append(v,l);row.appendChild(d)}
  if(!row.children.length){const g=document.createElement('span');g.className='ocGuest';g.textContent='Guest player';row.appendChild(g)}info.append(n,row);c.append(a,info)}
-function leaveOnline(){showOppCard(null);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}try{roomUI();renderLobby()}catch(e){}}
+function leaveOnline(){showOppCard(null);Scene3D.setLobbyFriend?.(null);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}try{roomUI();renderLobby()}catch(e){}}
 async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
   if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
   const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
   SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),k:myAvKey(),name:dispName()},{av:avEmoji(o.av),k:o.av,name:o.name||'FRIEND',pub:{card:o.card,cup:o.cup}});
   net.live=true;net.round=0;lobbyTrack();onEl.classList.remove('show');sdSteps();selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');
-  stats0();reset();say('a','Let\'s duel!',400)}
+  stats0();reset();say('a','Let\'s duel!',400);if(net.flip)say('g','Coin flip: '+mapLabel(window.arenaMap)+'!',1800)}
 function stats0(){}
 function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.textContent=oppName()+' HAS PICKED — YOUR TURN!';statusEl.className='win'}}
 /* commit-reveal: a move is sent as a SHA-256 seal first and only revealed after the opponent has sealed theirs */
@@ -815,7 +824,7 @@ async function joinLobby(){try{const client=await sbClient();const ch=client.cha
   ch.on('broadcast',{event:'answer'},({payload:p})=>{if(p.to===myId)gotAnswer(p)});
   ch.on('broadcast',{event:'cancel'},({payload:p})=>{if(p.to===myId&&incoming&&incoming.code===p.code)closeInvite()});
   ch.subscribe(st=>{if(st==='SUBSCRIBED'){LOBBY.joined=true;lobbyTrack()}})}catch(e){console.warn('lobby',e);$('lobbyList').innerHTML='<p class="small">Online list unavailable — use a room code.</p>'}}
-function renderLobby(){setTimeout(sdSteps,0);const n=lobbyUsers.length,mb=document.querySelector('#modeBtns [data-mode=online]');if(mb){const c=mb.querySelector('.onCount');if(c)c.textContent=n?'● '+n+' online now':'play a friend';else mb.textContent='🌐 ONLINE VS FRIEND'+(n?` (${n} online)`:'')}
+function renderLobby(){setTimeout(sdSteps,0);try{renderFriends()}catch(e){}const n=lobbyUsers.length,mb=document.querySelector('#modeBtns [data-mode=online]');if(mb){const c=mb.querySelector('.onCount');if(c)c.textContent=n?'● '+n+' online now':'play a friend';else mb.textContent='🌐 ONLINE VS FRIEND'+(n?` (${n} online)`:'')}
   $('lobCount').textContent=n?n+' online':'';const box=$('lobbyList'),q=$('lobSearch').value.trim().toLowerCase();
   const list=lobbyUsers.filter(u=>!q||String(u.name||'').toLowerCase().includes(q)).sort((x,y)=>(x.status==='playing')-(y.status==='playing')||String(x.name).localeCompare(String(y.name)));
   if(!list.length){box.innerHTML=q?`<p class="small">No player named “${esc($('lobSearch').value.trim())}” is online right now.</p>`+(window.sdAccount?.profile?`<button id="lobAddFriend">➕ ADD ${esc($('lobSearch').value.trim().toUpperCase())} AS FRIEND</button>`:''):'<p class="small">Nobody else is online right now — copy the invite link and send it to a friend!</p>';
@@ -1132,7 +1141,12 @@ function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach
 /* PORTRAIT PHONE: camera tuning (k = how much of the 16:9 width stays visible, ly = look lower so the scene sits higher above the cards) */
 const PTC=window.SD_PT={k:.82,ly:-.55,ks:.5,lys:-.95};const PT=()=>camera.aspect<.95;
 let previewHeroKey=null;const heroPortraits={};
-function layoutSelect(){setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const R=LOADED[previewHeroKey];if(R){R.holder.visible=true;R.holder.scale.setScalar(.82);R.holder.position.set(PT()?0:.15,FLOOR+1.05,.2);R.holder.rotation.y=-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}}
+let lobbyFriendKey=null;
+function layoutSelect(){setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const fk=lobbyFriendKey,F=fk?(fk===previewHeroKey?LOADED[fk+'#2']:LOADED[fk]):null,R=LOADED[previewHeroKey],two=!!F,sp=PT()?.72:.95;
+ if(R){R.holder.visible=true;R.holder.scale.setScalar(two?.72:.82);R.holder.position.set(two?-sp:(PT()?0:.15),FLOOR+1.05,.2);R.holder.rotation.y=two?.35:-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}
+ if(F){F.holder.visible=true;F.holder.scale.setScalar(.72);F.holder.position.set(sp,FLOOR+1.05,.2);F.holder.rotation.y=-.35;F.cur=null;F.play(F.cfg.anim.select||F.cfg.anim.idle)}}
+/* online room on the start screen: the friend's hero stands next to yours */
+API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
 API.heroPortrait=function(key){if(heroPortraits[key])return heroPortraits[key];const R=LOADED[key];if(!R)return '';const saved=Object.values(LOADED).map(o=>[o,o.holder.visible]);const pos=R.holder.position.clone(),scale=R.holder.scale.clone(),rot=R.holder.rotation.clone();try{saved.forEach(([o])=>o.holder.visible=false);R.holder.visible=true;R.holder.position.set(0,FLOOR+1.45,.2);R.holder.scale.setScalar(.82);R.holder.rotation.y=0;scene.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(R.holder);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());if(!Number.isFinite(size.y)||size.y<.01)return '';const pc=new THREE.PerspectiveCamera(35,cv.width/cv.height,.01,400);const y=center.y+size.y*.25;pc.position.set(center.x,y,center.z+Math.max(1.2,size.y*1.2));pc.lookAt(center.x,y,center.z);renderer.render(scene,pc);const thumb=document.createElement('canvas');thumb.width=128;thumb.height=128;const side=Math.min(cv.width,cv.height)*.65;thumb.getContext('2d').drawImage(cv,(cv.width-side)/2,(cv.height-side)/2,side,side,0,0,128,128);return heroPortraits[key]=thumb.toDataURL('image/jpeg',.85)}catch(e){return ''}finally{R.holder.position.copy(pos);R.holder.scale.copy(scale);R.holder.rotation.copy(rot);saved.forEach(([o,v])=>o.holder.visible=v);}};
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
@@ -2671,7 +2685,9 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage.selecting #online #onCancel{display:none}
  #stage.selecting #online p{margin:.25em 0;text-align:center}
  #stage.selecting #online #onStatus:empty,#stage.selecting #online #roomMapName:empty,#stage.selecting #online #lobStatus:empty{display:none}
- #stage.selecting #online #oppCard{margin:4px auto}
+ #stage.selecting #online #oppCard{display:none!important}
+ #stage.selecting #online:has(#invBox[hidden]) .onBox{bottom:12%;max-height:none!important}
+ #stage.selecting #online:has(#invBox[hidden]) .lobHead{display:none}
  #stage.selecting #online #onLinkBtn{align-self:center;font-size:clamp(10px,1.1vw,13px);margin:0}
  #stage:has(.xp) #online .onBox{opacity:0;pointer-events:none}
 }
