@@ -2059,7 +2059,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
    Data from sd_leaderboard() (supabase/leaderboard.sql): wins vs computer, server-verified. Anyone (also guests) can see it. */
 (()=>{const sel=document.getElementById('select');if(!sel)return;let data=null,ok=true;
  const css=document.createElement('style');css.textContent=`
-#podium{position:absolute;left:27.6%;bottom:9.5%;width:14.8%;z-index:4;padding:6px 6px 0;box-sizing:border-box;border:1px solid rgba(255,255,255,.3);border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.25);color:#fff;font:inherit;cursor:pointer;overflow:hidden;text-align:center}
+#podium{position:absolute;left:1.6%;top:26.6%;width:25%;z-index:4;padding:6px 6px 0;box-sizing:border-box;border:1px solid rgba(255,255,255,.3);border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.25);color:#fff;font:inherit;cursor:pointer;overflow:hidden;text-align:center}
 #podium:hover{border-color:#ffd54a;box-shadow:0 0 16px #ffd54a66}
 #podium .pdT{font:900 clamp(8px,.95vw,12px)/1.2 Arial,sans-serif;letter-spacing:.12em;color:#ffe9a8;margin-bottom:4px}
 #podium .pdRow{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:3px}
@@ -2074,6 +2074,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 #podium .pdCrown{font-size:clamp(9px,1.1vw,14px);line-height:1;margin-bottom:1px}
 #podium .pdMe{font:800 clamp(7px,.8vw,10px)/1.6 Arial,sans-serif;color:#bff6ff;background:rgba(8,16,45,.5);margin:0 -6px;padding:1px 0}
 #stage:not(.selecting) #podium{display:none}
+#podium .pdRow{grid-template-columns:1fr 1.1fr 1fr;gap:6px;padding:0 4px}#podium .p1 .pdB{height:clamp(16px,2.2vw,28px)!important}#podium .p2 .pdB{height:clamp(12px,1.6vw,20px)!important}#podium .p3 .pdB{height:clamp(8px,1.1vw,14px)!important}#podium .pdB{font-size:clamp(9px,1.05vw,14px)!important;padding-top:1px!important}#podium .p1 .pdAv{width:clamp(22px,2.7vw,34px)!important;height:clamp(22px,2.7vw,34px)!important}#podium .pdAv{width:clamp(18px,2.2vw,28px)!important;height:clamp(18px,2.2vw,28px)!important}#podium .pdCrown{display:none}#podium .p1 .pdN{color:#ffe9a8}
 @media (max-width:700px){#podium{display:none}}
 #rankDialog{width:min(420px,92vw);background:linear-gradient(145deg,#101b3d,#25184b);color:#fff;border:1px solid #ffd54a;border-radius:16px;padding:18px 20px;box-shadow:0 0 30px #ffd54a55}
 #rankDialog::backdrop{background:#070c20bb}#rankDialog h3{margin:0 0 4px;text-align:center;color:#ffe9a8;font:400 26px 'Lilita One',Arial,sans-serif;letter-spacing:.03em}
@@ -2111,6 +2112,12 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
   if(!window.sdAccount)list.appendChild(el('p','rkSub','Log in and win matches vs computer to get your name on the board!'))}
  async function load(){try{const c=await sbClient();const r=await c.rpc('sd_leaderboard',{p_limit:10});if(r.error){if(/Could not find|does not exist|PGRST202/i.test(r.error.message+' '+(r.error.code||''))){ok=false}paint();return}ok=true;data=r.data;paint();if(dlg.open)paintList()}catch(e){}}
  pod.onclick=()=>{paintList();if(!dlg.open)dlg.showModal();load()};
+ /* stack it under the player card and push HERO COLLECTION below it (positions measured, so it fits at every screen size) */
+ function place(){const st=document.getElementById('stage'),card=document.getElementById('playerCard'),hc=document.getElementById('heroCollection');if(!st||!card||!hc)return;
+  if(innerWidth<=700||pod.hidden){hc.style.removeProperty('top');return}const sr=st.getBoundingClientRect(),cr=card.getBoundingClientRect();if(!sr.height||!cr.height)return;const gap=sr.height*.016;
+  pod.style.top=(cr.bottom-sr.top+gap)+'px';const pr=pod.getBoundingClientRect();hc.style.setProperty('top',(pr.bottom-sr.top+gap)+'px','important')}
+ const _paint=paint;paint=function(){_paint();requestAnimationFrame(place)};addEventListener('resize',()=>requestAnimationFrame(place));
+ try{new ResizeObserver(()=>requestAnimationFrame(place)).observe(document.getElementById('playerCard')||document.body)}catch(e){}
  paint();setTimeout(load,1500);window.addEventListener('sd-profile',()=>setTimeout(load,800));
  setInterval(()=>{if(document.getElementById('stage')?.classList.contains('selecting')&&!document.hidden)load()},60000);
  window.sdLeaderboardRefresh=load;})();
