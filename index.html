@@ -548,7 +548,7 @@ function hush(){talkTimers.splice(0).forEach(clearTimeout);if(canSpeak)speechSyn
 const chat=(key,first='g',gap=1100)=>{const L=LINES[key],second=first==='g'?'a':'g';say(first,rnd(L[first]));say(second,rnd(L[second]),gap)};
 let pickTimer=null,pickLeft=0,autoPicked=false;
 const chant=document.createElement('div');chant.id='pickChant';stage.appendChild(chant);
-const CHANT={3:['rock','ROCK'],2:['scissors','SCISSORS'],1:['paper','PAPER']};
+const CHANT={3:['rock','ROCK'],2:['paper','PAPER'],1:['scissors','SCISSORS']};
 function showChant(n){const c=CHANT[n];if(!c){hideChant();return}const art=window.duelCardArt&&window.duelCardArt[c[0]];chant.replaceChildren();if(art){const im=document.createElement('img');im.src=art;im.alt='';chant.appendChild(im)}const t=document.createElement('span');t.textContent=c[1];chant.appendChild(t);chant.classList.remove('show');void chant.offsetWidth;chant.classList.add('show')}
 function hideChant(){chant.classList.remove('show');chant.replaceChildren()}
 function stopPick(){clearInterval(pickTimer);pickTimer=null;count.classList.remove('urgent');hideChant()}
