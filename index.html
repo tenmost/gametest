@@ -1879,6 +1879,25 @@ function updateArenaFX(dt,map){
  if(map==='jungle'){if(on&&t<2.2){const k=t/2.2;bird.position.set(birdHome.x+Math.sin(k*Math.PI)*-2.5,birdHome.y+Math.sin(k*Math.PI)*2.2,birdHome.z+Math.sin(k*Math.PI*2)*.8)}else bird.position.copy(birdHome)}
  if(map==='factory'&&on){graveFingers.forEach(f=>f.rotation.x+=1.05*env);wrist.rotation.z+=.25*env*Math.sin(t*12);owls.forEach(h=>h.rotation.y=h.rotation.y*(1-env)+sx*.9*env)}
 }
+/* SPACE LOGO: on the desktop start screen the RPS RIVALS logo floats in space behind the hero (canvas texture on a plane far back),
+   so the HTML title can go and the screen has more room. Portrait phones keep the HTML logo. */
+const SPACE_LOGO=(()=>{try{const W=2048,H=640,cvs=document.createElement('canvas');cvs.width=W;cvs.height=H;const g=cvs.getContext('2d');
+ const tex=new THREE.CanvasTexture(cvs);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ const mesh=new THREE.Mesh(new THREE.PlaneGeometry(12,12*H/W),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,fog:false,toneMapped:false,color:0xe8e8e8}));
+ mesh.position.set(0,4.2,-20);mesh.renderOrder=-1;mesh.visible=false;scene.add(mesh);
+ const xmas=!!window.SD_XMAS;let hat=null;
+ function draw(){g.clearRect(0,0,W,H);const fs=300,y=410;g.textBaseline='alphabetic';g.textAlign='left';g.font=`400 ${fs}px 'Lilita One','Arial Black',sans-serif`;
+  const t1='RPS ',t2='RIVALS',w1=g.measureText(t1).width,w2=g.measureText(t2).width,x0=(W-w1-w2)/2;
+  const c1=xmas?['#ffffff','#c8102e']:['#ffffff','#1d4d9c'],c2=xmas?['#3ddc6a','#0f5a28']:['#ffd166','#b5531f'];
+  g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=36;g.shadowOffsetY=10;g.fillStyle=c1[1];g.fillText(t1,x0,y+21);g.fillStyle=c2[1];g.fillText(t2,x0+w1,y+21);
+  g.shadowColor='transparent';g.fillStyle=c1[0];g.fillText(t1,x0,y);g.fillStyle=c2[0];g.fillText(t2,x0+w1,y);
+  if(hat)g.drawImage(hat,x0-.2*fs,y-.72*fs-.5*fs,.95*fs,.76*fs);
+  g.font='900 58px Arial,sans-serif';g.textAlign='center';try{g.letterSpacing='14px'}catch(e){}g.fillStyle=xmas?'#ffd6d6':'#dbe9ff';g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=12;
+  g.fillText(xmas?'MERRY CHRISTMAS · ROCK PAPER SCISSORS':'ROCK · PAPER · SCISSORS DUELS',W/2,y+150);try{g.letterSpacing='0px'}catch(e){}g.shadowColor='transparent';tex.needsUpdate=true}
+ draw();(document.fonts?document.fonts.load("400 300px 'Lilita One'"):Promise.resolve()).then(draw,draw);
+ if(xmas){try{const l1=document.querySelector('#brandLogo .l1');const bg=l1&&getComputedStyle(l1,'::before').backgroundImage;const m=bg&&bg.match(/url\("?(.*?)"?\)$/);if(m){const im=new Image();im.onload=()=>{hat=im;draw()};im.src=m[1]}}catch(e){}}
+ document.documentElement.classList.add('logo3d');
+ return {update(dt){const on=st.select&&!PT();mesh.visible=on;if(!on)return;mesh.position.y=4.2+Math.sin(TIME*.55)*.22;mesh.position.x=Math.sin(TIME*.23)*.35;mesh.rotation.z=Math.sin(TIME*.37)*.035;mesh.rotation.y=Math.sin(TIME*.29)*.14;mesh.rotation.x=Math.sin(TIME*.31)*.05}}}catch(e){console.warn('space logo',e);document.documentElement.classList.remove('logo3d');return{update(){}}}})();
 function updateBackground(dt){fightArena.visible=!st.select;const map=window.arenaMap||'temple';{const own=!st.select&&['atlantis','desert','pirate','dragon','celestial'].includes(map);giant.visible=earth.visible=!own;rocks.forEach(r=>r.m.visible=!own);}temple.visible=map==='temple';for(const child of fightArena.children){if(child!==deck&&!child.isGroup)child.visible=map==='temple';}for(const k in alternate)alternate[k].visible=k===map;
  if(map==='factory'&&!st.select){for(const o of alternate.factory.children){const m=o.userData.graveMist;if(m){o.position.x=((m.x+12+TIME*.38)%24)-12;o.position.y=m.y+Math.sin(TIME*.45+m.phase)*.12;o.material.opacity=.58+.22*Math.sin(TIME*.55+m.phase);}}}
 
@@ -2105,7 +2124,7 @@ function update(dt){
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,PT()?(st.select?PTC.lys:PTC.ly):0,0);
  /* portrait phone: keep the 16:9 horizontal view so both fighters fit, the taller picture shows more sky/floor */
  camera.fov=PT()?Math.atan(Math.tan(st.fov*Math.PI/360)*(16/9)*(st.select?PTC.ks:PTC.k)/camera.aspect)*360/Math.PI:st.fov;
- updateBackground(dt);updateCards(dt,pulse);
+ updateBackground(dt);SPACE_LOGO.update(dt);updateCards(dt,pulse);
  TALK.g=Math.max(0,TALK.g-dt);TALK.a=Math.max(0,TALK.a-dt);
  const live=st.select?Object.values(LOADED).filter(R=>R.holder.visible):['g','a'].map(k=>SL[k]&&SL[k].R?[SL[k].R,k]:null).filter(Boolean);
  if(st.select)live.forEach(R=>animChar(R,'g',dt,false));else live.forEach(([R,k])=>animChar(R,k,dt,anyRes));
@@ -2691,5 +2710,8 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #stage.selecting #online #onLinkBtn{align-self:center;font-size:clamp(10px,1.1vw,13px);margin:0}
  #stage:has(.xp) #online .onBox{opacity:0;pointer-events:none}
 }
+</style>
+<style>/* ===== SPACE LOGO: the 3D scene draws the logo floating in space (html.logo3d), so the HTML title is removed on wide landscape screens ===== */
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){html.logo3d #select h2#brandLogo{display:none!important}}
 </style>
 </html>
