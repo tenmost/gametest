@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+ <defs>
+  <radialGradient id="bg" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#3a4ad8"/><stop offset=".55" stop-color="#1a1a6a"/><stop offset="1" stop-color="#080828"/></radialGradient>
+  <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffbe0"/><stop offset=".35" stop-color="#ffe84a"/><stop offset="1" stop-color="#ffa800"/></linearGradient>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff07a" stop-opacity=".75"/><stop offset="1" stop-color="#fff07a" stop-opacity="0"/></radialGradient>
+ </defs>
+ <rect width="128" height="128" fill="url(#bg)"/>
+ <!-- storm clouds -->
+ <path d="M-4 30c4-14 20-16 26-8 6-12 26-12 30 2 10-4 20 4 18 12H-4z" fill="#2a2f6a" opacity=".9"/>
+ <path d="M70 22c4-12 20-14 26-6 8-8 24-2 24 10 8 0 12 6 10 12H66c-4-6-2-14 4-16z" fill="#2a2f6a" opacity=".9"/>
+ <!-- side sparks -->
+ <path d="M18 70l10-6-4 10 10-4" stroke="#bfe6ff" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+ <path d="M110 84l-10-4 4 10-10-2" stroke="#bfe6ff" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+ <circle cx="64" cy="66" r="54" fill="url(#glow)"/>
+ <!-- bolt body -->
+ <path d="M78 6L30 72h28l-12 50 52-70H70z" fill="url(#b)" stroke="#7a3a00" stroke-width="4" stroke-linejoin="round"/>
+ <path d="M72 16L40 64" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+ <!-- face -->
+ <path d="M52 56l10 3M76 56l-10 3" stroke="#5a2a00" stroke-width="3.4" stroke-linecap="round"/>
+ <ellipse cx="58" cy="64" rx="4" ry="5" fill="#2a1200"/><ellipse cx="72" cy="64" rx="4" ry="5" fill="#2a1200"/>
+ <circle cx="59.4" cy="62" r="1.6" fill="#fff"/><circle cx="73.4" cy="62" r="1.6" fill="#fff"/>
+ <path d="M58 75q7 7 14 0" stroke="#5a2a00" stroke-width="3" fill="#7a2a00" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+ <defs>
+  <radialGradient id="bg" cx="50%" cy="30%" r="85%"><stop offset="0" stop-color="#8a1a3a"/><stop offset=".55" stop-color="#3a0a24"/><stop offset="1" stop-color="#12030c"/></radialGradient>
+  <radialGradient id="moon" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffe9e9"/><stop offset="1" stop-color="#ffb0b8"/></radialGradient>
+  <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9eefc"/><stop offset="1" stop-color="#b6bfe0"/></linearGradient>
+  <linearGradient id="cape" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0203a"/><stop offset="1" stop-color="#6a0614"/></linearGradient>
+ </defs>
+ <rect width="128" height="128" fill="url(#bg)"/>
+ <circle cx="98" cy="26" r="16" fill="url(#moon)" opacity=".9"/>
+ <path d="M10 34q6-6 12 0q6-6 12 0q-6 2-12 8q-6-6-12-8z" fill="#1a0610"/>
+ <!-- collar -->
+ <path d="M6 128c4-28 14-44 28-54l30 22 30-22c14 10 24 26 28 54z" fill="#1a0a1e" stroke="#060208" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M34 74L14 52l30 14zM94 74l20-22-30 14z" fill="url(#cape)" stroke="#3a0008" stroke-width="2.6" stroke-linejoin="round"/>
+ <path d="M54 96l10 8 10-8-10 30z" fill="#f4f4f8" stroke="#060208" stroke-width="2"/><circle cx="64" cy="106" r="3.4" fill="#e0203a"/>
+ <!-- head -->
+ <path d="M64 22c20 0 32 16 32 36 0 20-14 36-32 36S32 78 32 58c0-20 12-36 32-36z" fill="url(#skin)" stroke="#2a1030" stroke-width="3.5"/>
+ <!-- hair widow's peak -->
+ <path d="M30 56c-2-22 12-38 34-38s36 16 34 38c-4-10-10-16-18-18l-16 14-16-14c-8 2-14 8-18 18z" fill="#14081e" stroke="#060208" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M44 30q16-10 36 0" stroke="#4a3a6a" stroke-width="3" fill="none" stroke-linecap="round"/>
+ <!-- ears -->
+ <path d="M33 58l-8-10 2 18zM95 58l8-10-2 18z" fill="url(#skin)" stroke="#2a1030" stroke-width="2.6" stroke-linejoin="round"/>
+ <!-- eyes -->
+ <path d="M42 60l16 3M86 60l-16 3" stroke="#14081e" stroke-width="4" stroke-linecap="round"/>
+ <ellipse cx="51" cy="68" rx="6" ry="5" fill="#fff" stroke="#2a1030" stroke-width="2"/><ellipse cx="77" cy="68" rx="6" ry="5" fill="#fff" stroke="#2a1030" stroke-width="2"/>
+ <circle cx="51" cy="68" r="3.4" fill="#e0203a"/><circle cx="77" cy="68" r="3.4" fill="#e0203a"/><circle cx="52" cy="67" r="1.2" fill="#fff"/><circle cx="78" cy="67" r="1.2" fill="#fff"/>
+ <!-- grin + fangs -->
+ <path d="M50 80q14 10 28 0" stroke="#2a1030" stroke-width="3" fill="#5a0a1a" stroke-linejoin="round"/>
+ <path d="M55 82l3 7 3-6zM67 83l3 6 3-7z" fill="#fff" stroke="#2a1030" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>

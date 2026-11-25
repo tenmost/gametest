@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+ <defs>
+  <radialGradient id="bg" cx="50%" cy="40%" r="80%"><stop offset="0" stop-color="#7a2a8a"/><stop offset=".55" stop-color="#34104a"/><stop offset="1" stop-color="#12041e"/></radialGradient>
+  <radialGradient id="ball" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffe6ff"/><stop offset=".35" stop-color="#ff9ae8"/><stop offset=".75" stop-color="#a64ad8"/><stop offset="1" stop-color="#4a1a8a"/></radialGradient>
+  <radialGradient id="mist" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset=".5" stop-color="#d89a2a"/><stop offset="1" stop-color="#7a4a0a"/></linearGradient>
+ </defs>
+ <rect width="128" height="128" fill="url(#bg)"/>
+ <g fill="#ffd0f4"><path d="M20 24l1.8 4.4 4.4 1.8-4.4 1.8-1.8 4.4-1.8-4.4-4.4-1.8 4.4-1.8z"/><path d="M108 40l1.4 3.4 3.4 1.4-3.4 1.4-1.4 3.4-1.4-3.4-3.4-1.4 3.4-1.4z"/><circle cx="104" cy="16" r="1.6"/><circle cx="16" cy="70" r="1.3"/></g>
+ <!-- stand -->
+ <path d="M34 112c0-10 12-16 30-16s30 6 30 16v6H34z" fill="url(#stand)" stroke="#4a2a00" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M40 100q24-8 48 0" stroke="#fff2c0" stroke-width="2.6" fill="none" opacity=".8"/>
+ <path d="M42 98l-6-8 10 2zM86 98l6-8-10 2z" fill="url(#stand)" stroke="#4a2a00" stroke-width="2.4" stroke-linejoin="round"/>
+ <!-- ball -->
+ <circle cx="64" cy="58" r="40" fill="url(#ball)" stroke="#3a0a5a" stroke-width="3.5"/>
+ <ellipse cx="64" cy="64" rx="26" ry="18" fill="url(#mist)" opacity=".55"/>
+ <!-- eye inside -->
+ <path d="M44 62q20-18 40 0q-20 18-40 0z" fill="#fff" stroke="#3a0a5a" stroke-width="2.6"/>
+ <circle cx="64" cy="62" r="8" fill="#6a2ad8"/><circle cx="64" cy="62" r="4" fill="#120430"/><circle cx="66.6" cy="59.4" r="2.2" fill="#fff"/>
+ <path d="M44 62l-6-4M84 62l6-4M48 54l-3-6M80 54l3-6M64 48v-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+ <path d="M36 44q8-18 28-20" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".8"/>
+ <circle cx="86" cy="36" r="3" fill="#fff" opacity=".85"/>
+</svg>

@@ -172,9 +172,12 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 [data-tier=epic],[data-tier=legend]{border-color:var(--g)!important;animation:avGlow 2s ease-in-out infinite}
 [data-tier=epic] .avE,[data-tier=legend] .avE{filter:drop-shadow(0 0 6px var(--g))}
 [data-tier=legend]{animation-duration:1.1s}
-[data-av=vortex] .avE{animation:avSpin 3.2s linear infinite}
-[data-av=crown] .avE{animation:avFloat 2s ease-in-out infinite}
-[data-av=dragon_king] .avE{animation:avFloat 2.4s ease-in-out infinite,avFire 1s ease-in-out infinite alternate}
+/* premium avatars are drawn pictures (assets/avatars/*.svg); legendary ones animate inside the picture itself */
+img.avE{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;filter:none!important;-webkit-user-drag:none;pointer-events:none}
+.hasArt{overflow:hidden;padding:0!important}
+.acAvatars button.hasArt{overflow:visible}.acAvatars button.hasArt img.avE{border-radius:12px}
+.acAvatars button.locked img.avE{opacity:.8}
+[data-tier=legend].hasArt{animation:avGlow 1.1s ease-in-out infinite}
 @keyframes avGlow{0%,100%{box-shadow:0 0 8px var(--g),inset 0 0 6px var(--g)}50%{box-shadow:0 0 20px var(--g),inset 0 0 12px var(--g)}}
 @keyframes avSpin{to{transform:rotate(360deg)}}
 @keyframes avFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12%) scale(1.06)}}
@@ -253,7 +256,9 @@ const AV_PRICE={moon:25,satellite:25,octopus:25,ghost:25,unicorn:100,shark:100,n
 const AV_NAME={moon:'Moon',satellite:'Satellite',octopus:'Space Octopus',ghost:'Ghost',unicorn:'Unicorn',shark:'Shark',ninja:'Ninja',vampire:'Vampire',flame:'Flame',bolt:'Lightning',galaxy:'Galaxy',crystal_ball:'Crystal Ball',vortex:'Black Vortex',crown:'Royal Crown',dragon_king:'Dragon King'};
 const AV_TIER=k=>{const p=AV_PRICE[k]||0;return p>=750?'legend':p>=300?'epic':p>=100?'rare':p?'cheap':''};
 /* fill any avatar box: emoji in an inner span + data-av / data-tier for the glow / moving CSS effects */
-function avatarFill(el,k,fallback){if(!el)return;el.dataset.av=k||'';const t=AV_TIER(k);if(t)el.dataset.tier=t;else delete el.dataset.tier;for(const n of [...el.childNodes])if(n.nodeType===3)n.remove();let e=el.querySelector(':scope>.avE');if(!e){e=document.createElement('span');e.className='avE';el.prepend(e)}e.textContent=AV[k]||fallback||AV.astronaut}
+function avatarFill(el,k,fallback){if(!el)return;el.dataset.av=k||'';const t=AV_TIER(k);if(t)el.dataset.tier=t;else delete el.dataset.tier;for(const n of [...el.childNodes])if(n.nodeType===3)n.remove();
+ const art=!!AV_PRICE[k],tag=art?'IMG':'SPAN';let e=el.querySelector(':scope>.avE');if(e&&e.tagName!==tag){e.remove();e=null}if(!e){e=document.createElement(tag);e.className='avE';if(art){e.alt='';e.draggable=false;e.decoding='async'}el.prepend(e)}
+ if(art){const src='assets/avatars/'+k+'.svg';if(e.getAttribute('src')!==src)e.src=src;el.classList.add('hasArt')}else{e.textContent=AV[k]||fallback||AV.astronaut;el.classList.remove('hasArt')}}
 const ARENAS=6;window.SD_AV=AV;window.SD_AV_PRICE=AV_PRICE;window.sdAvatarFill=avatarFill;
 const dlg=q('accountDialog');
 let client,lastSession=null,profile=null,tab='login';
