@@ -2397,7 +2397,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  function place(){const st=document.getElementById('stage'),card=document.getElementById('playerCard'),hc=document.getElementById('heroCollection');if(!st||!card||!hc)return;
   if(hc.classList.contains('xp'))return;if(innerWidth<=700){hc.style.removeProperty('top');return}const sr=st.getBoundingClientRect(),cr=card.getBoundingClientRect();if(!sr.height||!cr.height)return;const gap=sr.height*.016;
   /* DESKTOP LAYOUT (Nov 2026): left column = podium on top, then HERO COLLECTION; right column = player card, then CHOOSE ARENA (CSS block "DESKTOP START SCREEN v2" reads these variables) */
-  hc.style.removeProperty('top');pod.style.top=(sr.height*.022)+'px';const pr=pod.getBoundingClientRect(),top=pod.hidden?sr.height*.022:pr.bottom-sr.top+gap,cardBot=cr.bottom-sr.top+gap;
+  hc.style.removeProperty('top');const tb=document.getElementById('mute')?.getBoundingClientRect(),podTop=tb&&tb.height?tb.bottom-sr.top+gap:sr.height*.022;pod.style.top=podTop+'px';const pr=pod.getBoundingClientRect(),top=pod.hidden?podTop:pr.bottom-sr.top+gap,cardBot=cr.bottom-sr.top+gap;
   st.style.setProperty('--hcTop',top+'px');st.style.setProperty('--cardBot',cardBot+'px');st.style.setProperty('--arTop',cardBot+'px')}
  window.sdPlacePodium=place;const _paint=paint;paint=function(){_paint();requestAnimationFrame(place)};addEventListener('resize',()=>requestAnimationFrame(place));
  try{new ResizeObserver(()=>requestAnimationFrame(place)).observe(document.getElementById('playerCard')||document.body)}catch(e){}
@@ -2557,7 +2557,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 #stage:has(.xp) #online .onBox{opacity:0;pointer-events:none}
 }
 </style>
-<style>/* ===== DESKTOP START SCREEN v2 (≥701px): RIGHT column = player card (top-right corner), then CHOOSE ARENA; full screen / ? / SOUND buttons in one row at the top centre above the logo;
+<style>/* ===== DESKTOP START SCREEN v2 (≥701px): RIGHT column = player card (top-right corner), then CHOOSE ARENA; full screen / ? / SOUND buttons in one row in the top-LEFT corner above the podium;
    LEFT column = TOP 3 podium, then HERO COLLECTION; READY at the bottom centre under the 3D hero.
    Positions come from the podium script's place() as CSS variables on #stage: --hcTop, --arTop, --cardBot. ===== */
 @media (min-width:701px){
@@ -2570,13 +2570,12 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #select #readyPlayer{left:50%!important;right:auto!important;top:auto!important;bottom:3%!important;transform:translateX(-50%)!important;width:min(26%,300px)!important}
  #select #readyNotice{left:50%!important;right:auto!important;top:auto!important;bottom:calc(3% + clamp(44px,5.4vw,64px))!important;transform:translateX(-50%)!important;max-width:40%!important;text-align:center}
  #select #selHint{bottom:calc(3% + clamp(48px,6vw,70px))!important}
- /* full screen / ? / SOUND in one row at the top centre, above the logo */
- #stage.selecting{--tbR:clamp(26px,2.8vw,36px);--tbM:clamp(70px,8.6vw,105px);--tbL:calc(50% - (var(--tbR) * 2 + var(--tbM) + 16px) / 2)}
+ /* full screen / ? / SOUND in one row in the top-LEFT corner, above the TOP 3 podium */
+ #stage.selecting{--tbR:clamp(26px,2.8vw,36px);--tbM:clamp(70px,8.6vw,105px);--tbL:1.6%}
  #stage.selecting #fsBtn,#stage.selecting #rulesBtn,#stage.selecting #mute{top:1.6%!important;bottom:auto!important;right:auto!important;transform:none!important}
  #stage.selecting #fsBtn{left:var(--tbL)!important}
  #stage.selecting #rulesBtn{left:calc(var(--tbL) + var(--tbR) + 8px)!important}
  #stage.selecting #mute{left:calc(var(--tbL) + var(--tbR) * 2 + 16px)!important;width:var(--tbM)!important;height:var(--tbR)!important;box-sizing:border-box!important}
- #select .selWrap>div:first-child{padding-top:calc(var(--tbR) + 1.6%)!important}
 }
 </style>
 <style>/* ===== PORTRAIT PHONE (held upright): the whole screen is the stage, heroes + arenas in swipe rows, big thumb-sized cards at the bottom.
