@@ -322,7 +322,7 @@ const AV_TIER=k=>{const p=AV_PRICE[k]||0;if(AV_CUR[k]==='pink')return 'mythic';r
 function avatarFill(el,k,fallback){if(!el)return;el.dataset.av=k||'';const t=AV_TIER(k);if(t)el.dataset.tier=t;else delete el.dataset.tier;for(const n of [...el.childNodes])if(n.nodeType===3)n.remove();
  const art=!!AV_PRICE[k],tag=art?'IMG':'SPAN';let e=el.querySelector(':scope>.avE');if(e&&e.tagName!==tag){e.remove();e=null}if(!e){e=document.createElement(tag);e.className='avE';if(art){e.alt='';e.draggable=false;e.decoding='async'}el.prepend(e)}
  if(art){const src='assets/avatars/'+k+'.svg';if(e.getAttribute('src')!==src)e.src=src;el.classList.add('hasArt')}else{e.textContent=AV[k]||fallback||AV.astronaut;el.classList.remove('hasArt')}}
-const ARENAS=12;window.SD_AV=AV;window.SD_AV_PRICE=AV_PRICE;window.sdAvatarFill=avatarFill;
+const ARENAS=12;window.SD_AV_NAME=AV_NAME;window.SD_AV=AV;window.SD_AV_PRICE=AV_PRICE;window.sdAvatarFill=avatarFill;
 const dlg=q('accountDialog');
 let client,lastSession=null,profile=null,tab='login';
 const nice=e=>{const m=String(e&&e.message||e);return m==='Username already taken'?'That player name is taken — choose another one.':m==='Invalid username'?'Player name: 3–24 letters, numbers, spaces, _ . -':m;};
@@ -349,12 +349,21 @@ function avBuy(k){const price=AV_PRICE[k],tier=AV_TIER(k),pink=AV_CUR[k]==='pink
  if(!d.open)d.showModal();}/* null = premium avatars not on the server yet (hidden) */
 async function loadOwnedAv(){if(!profile||!client)return;const uid=lastSession.user.id;const r=await client.from('sd_player_profiles').select('unlocked_avatars').eq('id',uid).maybeSingle();ownedAv=r.error||!r.data?null:(r.data.unlocked_avatars||[]);
  const pr=await client.from('sd_player_profiles').select('pink_crystals').eq('id',uid).maybeSingle();if(profile&&!pr.error&&pr.data){profile.pink_crystals=pr.data.pink_crystals||0;window.sdPink=profile.pink_crystals;window.dispatchEvent(new Event('sd-pink'))}
- paint();claimReferral();}
+ loadSkins();paint();claimReferral();}
+/* CARD SKINS ownership (supabase/card_skins.sql): null = not on the server yet (shop shows them as "coming soon") */
+let skinsOwned=null,skinOn='classic';
+async function loadSkins(){if(!profile||!client)return;const r=await client.from('sd_player_profiles').select('card_skin,unlocked_card_skins').eq('id',lastSession.user.id).maybeSingle();
+ if(r.error||!r.data){skinsOwned=null;skinOn='classic'}else{skinsOwned=r.data.unlocked_card_skins||[];skinOn=r.data.card_skin||'classic'}pubSkins()}
+function pubSkins(){window.sdSkins=profile?{owned:skinsOwned,on:skinOn,ready:skinsOwned!==null}:null;window.Scene3D?.setCardSkin?.('g',profile?skinOn:'classic');window.dispatchEvent(new Event('sd-skins'))}
+window.sdSkinBuy=async k=>{const r=await client.rpc('sd_unlock_card_skin',{p_skin:k});if(r.error)return{error:nice(r.error)};skinsOwned=r.data.unlocked_card_skins||[];skinOn=r.data.card_skin||k;
+ if(profile){profile.crystals=r.data.crystals;profile.pink_crystals=r.data.pink_crystals;window.sdPink=r.data.pink_crystals;window.dispatchEvent(new Event('sd-pink'));window.demoProgress?.setServer?.({crystals:r.data.crystals})}pubSkins();return{ok:true}};
+window.sdSkinUse=async k=>{const r=await client.rpc('sd_set_card_skin',{p_skin:k});if(r.error)return{error:nice(r.error)};skinOn=k;pubSkins();return{ok:true}};
+window.sdAvBuy=k=>{if(!profile){open('login');return}avBuy(k)};window.sdAvOwned=()=>ownedAv;window.sdAvUse=async k=>{const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error)return{error:nice(r.error)};await refreshProfile(lastSession);return{ok:true}};
 /* invite link ?ref=xxxxxxxx — remembered until the new player has a profile, then claimed once (server checks it is a new account) */
 async function claimReferral(){let code=null;try{code=localStorage.getItem('sd_ref')}catch(e){}if(!code||!profile||!client)return;if(lastSession.user.id.startsWith(code)){try{localStorage.removeItem('sd_ref')}catch(e){}return}
  const r=await client.rpc('sd_claim_referral',{p_code:code});if(r.error&&/Could not find|does not exist|PGRST202/i.test(r.error.message+' '+(r.error.code||'')))return;try{localStorage.removeItem('sd_ref')}catch(e){}
  if(!r.error){await refreshProfile(lastSession);msg('Welcome! Your friend\'s invite gave you +5 💎 blue crystals.')}}
-function publish(p){profile=p;if(p)loadOwnedAv();else{ownedAv=null;avArm=null}window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();loadFriends();}
+function publish(p){profile=p;if(p)loadOwnedAv();else{ownedAv=null;avArm=null;skinsOwned=null;skinOn='classic';setTimeout(pubSkins,0)}window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();loadFriends();}
 const COLS='username,crystals,wins,losses,unlocked_characters,unlocked_maps,avatar,current_streak,best_streak';
 async function load(uid){return client.from('sd_player_profiles').select(COLS).eq('id',uid).maybeSingle();}
 async function refreshProfile(session){
@@ -678,7 +687,7 @@ const avEmoji=k=>(window.SD_AV||{})[k]||'🧑‍🚀';
 const myAvKey=()=>window.sdAccount?.profile?.avatar||'astronaut';
 const dispName=()=>window.sdAccount?.profile?.username||myName;
 let HUD={p:{av:'🧑‍🚀',k:'astronaut',name:'YOU'},c:{av:'🤖',k:'cpu',name:'COMPUTER'}};
-const myStats=()=>{const a=window.sdAccount,p=a?.profile;return p?{uid:a.userId,card:window.sdCardPublic?.()||[],cup:window.sdCups?window.sdCups(p.wins+p.losses).won:0}:{}};
+const myStats=()=>{const a=window.sdAccount,p=a?.profile;return p?{uid:a.userId,card:window.sdCardPublic?.()||[],cup:window.sdCups?window.sdCups(p.wins+p.losses).won:0,skin:window.sdSkins?.on||'classic'}:{}};
 const HUDAV={};for(const side of ['p','c']){const b=document.createElement('div');b.className='hudAv '+side;b.tabIndex=0;b.setAttribute('role','button');const tip=document.createElement('div');tip.className='hudTip';b.appendChild(tip);stage.appendChild(b);HUDAV[side]=b;
  const show=()=>{fillHudTip(side)};b.addEventListener('pointerenter',show);b.addEventListener('focus',show);b.addEventListener('click',e=>{e.stopPropagation();fillHudTip(side);b.classList.toggle('tipOpen')});}
 document.addEventListener('click',()=>{HUDAV.p.classList.remove('tipOpen');HUDAV.c.classList.remove('tipOpen')});
@@ -741,8 +750,9 @@ async function joinRoom(code,host=false){leaveOnline();showWait(code);$('onStatu
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
 function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map})}
+window.addEventListener('sd-skins',()=>{try{trackRoom()}catch(e){}});
 $('roomMap').onchange=()=>{if(!NET||!NET.isHost||NET.ready)return;NET.map=resolveMap($('roomMap').value);trackRoom()};$('roomReady').onclick=()=>{if(!NET||NET.ready)return;NET.ready=true;$('roomReady').disabled=true;$('roomMap').disabled=true;$('hostMap').querySelectorAll('button').forEach(b=>b.disabled=true);trackRoom()};
-function showOppCard(o){let c=document.getElementById('oppCard');if(!c){c=document.createElement('div');c.id='oppCard';const st=$('onStatus');st.parentNode.insertBefore(c,st.nextSibling)}
+function showOppCard(o){window.Scene3D?.setCardSkin?.('a',(o&&typeof o.skin==='string'&&window.SD_CARD_SKINS&&window.SD_CARD_SKINS[o.skin])?o.skin:'classic');let c=document.getElementById('oppCard');if(!c){c=document.createElement('div');c.id='oppCard';const st=$('onStatus');st.parentNode.insertBefore(c,st.nextSibling)}
  c.hidden=!o;if(!o)return;c.replaceChildren();const a=document.createElement('div');a.className='ocAv';if(window.sdAvatarFill)window.sdAvatarFill(a,o.av||'astronaut');const info=document.createElement('div');info.className='ocInfo';const n=document.createElement('b');n.textContent=(o.name||'FRIEND');
  const cup=o.cup&&window.sdCups?window.sdCups(0).list[o.cup-1]:null;if(cup){const im=document.createElement('img');im.src=cup.img;im.alt='';im.title=cup.name+' cup';n.appendChild(im)}const row=document.createElement('div');row.className='ocStats';
  for(const s of (Array.isArray(o.card)?o.card:[]).slice(0,3)){const d=document.createElement('div');const v=document.createElement('b');v.textContent=String(s[2]).slice(0,8);const l=document.createElement('span');l.textContent=String(s[0]).slice(0,4)+' '+String(s[1]).slice(0,10);d.append(v,l);row.appendChild(d)}
@@ -1866,13 +1876,36 @@ function updateBackground(dt){fightArena.visible=!st.select;const map=window.are
 /* ---------- cards: rock / paper / scissors shown as 3D cards ---------- */
 const CARD_COL={rock:['#ffa04a','#3a1a08','#ffcf9a'],paper:['#52dcff','#0b2a4e','#bff3ff'],scissors:['#ff5ad8','#3d0a42','#ffc2f2'],back:['#a77bff','#140a33','#e2d4ff']};
 function rrect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
-function cardTexture(kind){
- const c=document.createElement('canvas');c.width=512;c.height=736;const g=c.getContext('2d'),[edge,dark,light]=CARD_COL[kind];
+/* CARD SKINS (cosmetic): each skin re-draws the rock/paper/scissors cards + the card back with its own colours, background and frame.
+   Keys must match supabase/card_skins.sql (sd_card_skin_price). Your own cards use your skin; online your opponent's cards use theirs. */
+const SKN_RND=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();
+const sknCorner=(g,col)=>{g.fillStyle=col;for(const [x,y,sx,sy] of [[44,44,1,1],[468,44,-1,1],[44,692,1,-1],[468,692,-1,-1]]){g.save();g.translate(x,y);g.scale(sx,sy);g.beginPath();g.moveTo(0,0);g.lineTo(70,0);g.quadraticCurveTo(20,8,12,30);g.quadraticCurveTo(6,50,0,70);g.closePath();g.fill();g.beginPath();g.arc(20,20,9,0,7);g.fill();g.restore()}};
+const sknAll=c=>({rock:c,paper:c,scissors:c,back:c});
+const CARD_SKINS=window.SD_CARD_SKINS={
+ classic:{name:'Classic',tier:'free',price:0,cur:'blue'},
+ neon:{name:'Neon Arcade',tier:'rare',price:150,cur:'blue',col:{rock:['#ff3df0','#0a0618','#ffb3fa'],paper:['#2af6ff','#04101c','#c4fdff'],scissors:['#c6ff3d','#0c1404','#eaffb3'],back:['#ff3df0','#0a0618','#ffb3fa']},
+  bg:(g,k)=>{g.strokeStyle={rock:'#ff3df055',paper:'#2af6ff55',scissors:'#c6ff3d55',back:'#ff3df055'}[k];g.lineWidth=2;for(let y=420;y<736;y+=26){g.beginPath();g.moveTo(0,y);g.lineTo(512,y);g.stroke()}for(let x=-400;x<900;x+=52){g.beginPath();g.moveTo(256+(x-256)*.25,420);g.lineTo(x,736);g.stroke()}}},
+ frost:{name:'Frostbite',tier:'rare',price:150,cur:'blue',col:sknAll(['#9fe8ff','#0b2a48','#e8fbff']),
+  bg:g=>{g.strokeStyle='#ffffff40';g.lineWidth=3;for(let i=0;i<9;i++){const x=60+SKN_RND()*400,y=60+SKN_RND()*620,r=12+SKN_RND()*20;for(let a=0;a<3;a++){g.beginPath();g.moveTo(x-Math.cos(a)*r,y-Math.sin(a)*r);g.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);g.stroke()}}},
+  frame:g=>{g.fillStyle='#e8fbff';for(let i=0;i<14;i++){const x=40+i*31;g.beginPath();g.moveTo(x,24);g.lineTo(x+10,24);g.lineTo(x+5,24+12+SKN_RND()*22);g.closePath();g.fill()}}},
+ molten:{name:'Molten Core',tier:'epic',price:400,cur:'blue',col:sknAll(['#ff5a1a','#2a0602','#ffc078']),
+  bg:g=>{g.strokeStyle='#ff6a1acc';g.shadowColor='#ff4a00';g.shadowBlur=18;g.lineWidth=5;for(let i=0;i<7;i++){let x=SKN_RND()*512,y=SKN_RND()*736;g.beginPath();g.moveTo(x,y);for(let k=0;k<6;k++){x+=(SKN_RND()-.5)*90;y+=(SKN_RND()-.5)*90;g.lineTo(x,y)}g.stroke()}g.shadowBlur=0},
+  frame:g=>{g.fillStyle='#ffb04a';for(let i=0;i<26;i++){g.globalAlpha=.4+SKN_RND()*.6;g.beginPath();g.arc(30+SKN_RND()*452,30+SKN_RND()*676,2+SKN_RND()*3,0,7);g.fill()}g.globalAlpha=1}},
+ golden:{name:'Golden Royale',tier:'legend',price:1200,cur:'blue',col:sknAll(['#ffd04a','#2a1c04','#fff0b8']),
+  bg:g=>{const gr=g.createLinearGradient(0,0,512,736);gr.addColorStop(0,'#ffd04a22');gr.addColorStop(.48,'#0000');gr.addColorStop(.5,'#fff6c855');gr.addColorStop(.53,'#0000');g.fillStyle=gr;g.fillRect(0,0,512,736);g.strokeStyle='#ffd04a33';g.lineWidth=2;for(let r=60;r<420;r+=40){g.beginPath();g.arc(256,330,r,0,7);g.stroke()}},
+  frame:g=>{sknCorner(g,'#ffd04a');g.fillStyle='#ffd04a';g.save();g.translate(256,38);g.beginPath();g.moveTo(-34,14);g.lineTo(-34,-10);g.lineTo(-17,4);g.lineTo(0,-18);g.lineTo(17,4);g.lineTo(34,-10);g.lineTo(34,14);g.closePath();g.fill();g.restore()}},
+ prism:{name:'Cosmic Prism',tier:'mythic',price:150,cur:'pink',col:sknAll(['#c9a6ff','#100630','#ffffff']),
+  bg:g=>{const gr=g.createLinearGradient(0,0,512,736);['#ff5ad855','#52dcff55','#c6ff3d44','#ffd04a55','#ff5ad855'].forEach((c,i,a)=>gr.addColorStop(i/(a.length-1),c));g.globalCompositeOperation='screen';g.fillStyle=gr;g.fillRect(0,0,512,736);g.globalCompositeOperation='source-over';
+   for(let i=0;i<140;i++){g.fillStyle=`hsla(${SKN_RND()*360},100%,85%,${.4+SKN_RND()*.6})`;g.beginPath();g.arc(SKN_RND()*512,SKN_RND()*736,SKN_RND()*2.6,0,7);g.fill()}},
+  frame:g=>{const gr=g.createLinearGradient(0,0,512,0);['#ff5ad8','#52dcff','#c6ff3d','#ffd04a','#ff5ad8'].forEach((c,i,a)=>gr.addColorStop(i/(a.length-1),c));g.lineWidth=10;g.strokeStyle=gr;rrect(g,22,22,468,692,46);g.stroke();sknCorner(g,'#ffffffcc')}}};
+function cardTexture(kind,sk='classic'){const SKIN=CARD_SKINS[sk]||CARD_SKINS.classic;
+ const c=document.createElement('canvas');c.width=512;c.height=736;const g=c.getContext('2d'),[edge,dark,light]=(SKIN.col&&SKIN.col[kind])||CARD_COL[kind];
  rrect(g,10,10,492,716,54);const bg=g.createLinearGradient(0,0,0,736);bg.addColorStop(0,dark);bg.addColorStop(1,'#05030f');g.fillStyle=bg;g.fill();
  g.save();g.clip();const rg=g.createRadialGradient(256,330,10,256,330,330);rg.addColorStop(0,edge+'66');rg.addColorStop(1,'#0000');g.fillStyle=rg;g.fillRect(0,0,512,736);
- for(let i=0;i<70;i++){g.fillStyle=`rgba(255,255,255,${Math.random()*.6})`;g.beginPath();g.arc(Math.random()*512,Math.random()*736,Math.random()*2.2,0,7);g.fill()}g.restore();
+ for(let i=0;i<70;i++){g.fillStyle=`rgba(255,255,255,${Math.random()*.6})`;g.beginPath();g.arc(Math.random()*512,Math.random()*736,Math.random()*2.2,0,7);g.fill()}SKIN.bg&&SKIN.bg(g,kind);g.restore();
  g.lineWidth=14;g.strokeStyle=edge;g.shadowColor=edge;g.shadowBlur=30;rrect(g,22,22,468,692,46);g.stroke();g.shadowBlur=0;
  g.lineWidth=3;g.strokeStyle=light+'aa';rrect(g,44,44,424,648,34);g.stroke();
+SKIN.frame&&SKIN.frame(g,kind);
  const C=[256,320];
  if(kind==='back'){
   g.strokeStyle=edge;g.lineWidth=6;for(const r of[150,115,80]){g.beginPath();g.arc(C[0],C[1]+30,r,0,7);g.globalAlpha=.25+r/400;g.stroke()}g.globalAlpha=1;
@@ -1898,16 +1931,22 @@ function cardTexture(kind){
  }
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
 const CARD_TEX={rock:cardTexture('rock'),paper:cardTexture('paper'),scissors:cardTexture('scissors'),back:cardTexture('back')};
+const SKIN_TEX={classic:CARD_TEX};const skinTex=(sk,kind)=>{if(!CARD_SKINS[sk])sk='classic';const t=SKIN_TEX[sk]||(SKIN_TEX[sk]={});return t[kind]||(t[kind]=cardTexture(kind,sk))};
 window.duelCardArt=Object.fromEntries(['rock','paper','scissors'].map(k=>[k,CARD_TEX[k].image.toDataURL()]));
 for(const b of document.querySelectorAll('.controls [data-m]')){const img=b.querySelector('.moveArt');if(img){img.src=window.duelCardArt[b.dataset.m];img.hidden=false}}
 for(const el of document.querySelectorAll('.moveHistory [data-move] img'))el.src=window.duelCardArt[el.parentElement.dataset.move];
 const CARD_W=.62,CARD_H=CARD_W*736/512,cardGeo=new THREE.PlaneGeometry(CARD_W,CARD_H);
-function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.add(inner);
+function makeCard(){const grpC=new THREE.Group(),inner=new THREE.Group();grpC.add(inner);/* skin: see CARD_SKINS */
  const mk=tex=>new THREE.MeshStandardMaterial({map:tex,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.45,transparent:true,alphaTest:.4,roughness:.35,metalness:.1,side:THREE.FrontSide});
  const front=new THREE.Mesh(cardGeo,mk(CARD_TEX.rock)),back=new THREE.Mesh(cardGeo,mk(CARD_TEX.back));back.rotation.y=Math.PI;front.position.z=.002;back.position.z=-.002;
- front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock'}}
+ front.castShadow=back.castShadow=true;inner.add(front,back);scene.add(grpC);return{g:grpC,inner,front,back,u:0,kind:'rock',skin:'classic'}}
 const CARD={g:makeCard(),a:makeCard()};
-function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=CARD_TEX[kind];c.front.material.needsUpdate=true}
+function setCardKind(c,kind){c.kind=kind;c.front.material.map=c.front.material.emissiveMap=skinTex(c.skin,kind);c.front.material.needsUpdate=true}
+/* API: setCardSkin('g' = you | 'a' = opponent, key) and cardArt(key, kind) → picture for the shop */
+API.setCardSkin=(side,sk)=>{const c=CARD[side];if(!c)return;if(!CARD_SKINS[sk])sk='classic';if(c.skin===sk)return;c.skin=sk;c.back.material.map=c.back.material.emissiveMap=skinTex(sk,'back');c.back.material.needsUpdate=true;setCardKind(c,c.kind);
+ if(side==='g'){window.duelCardArt=Object.fromEntries(['rock','paper','scissors'].map(k=>[k,API.cardArt(sk,k)]));for(const b of document.querySelectorAll('.controls [data-m]')){const img=b.querySelector('.moveArt');if(img)img.src=window.duelCardArt[b.dataset.m]}window.dispatchEvent(new Event('sd-card-art'))}};
+const ART_CACHE={};API.cardArt=(sk,kind)=>{const k=sk+':'+kind;return ART_CACHE[k]||(ART_CACHE[k]=skinTex(sk,kind).image.toDataURL('image/png'))};
+if(window.sdSkins?.on)API.setCardSkin('g',window.sdSkins.on);
 const SLOT={g:V3(-.48,.11,2.2),a:V3(.48,.11,2.2)};
 const MID=SLOT.g.clone().lerp(SLOT.a,.5),SHARDS=[],CLASH_IN=.48-CARD_W*.55;
 function shatter(c){c.broken=true;const tex=c.front.material.map;
@@ -2389,4 +2428,90 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #select h2#brandLogo small{letter-spacing:.14em;font-size:8px}
 }
 </style>
+<style>/* ===== GAME SCROLLBARS: thin glassy cyan bar instead of the browser's grey box (hero/arena lists, profile, shop, dialogs) ===== */
+*{scrollbar-width:thin;scrollbar-color:rgba(125,231,255,.5) transparent}
+*::-webkit-scrollbar{width:7px;height:7px}*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(125,231,255,.45);border-radius:99px;border:1px solid rgba(255,255,255,.25)}*::-webkit-scrollbar-thumb:hover{background:rgba(125,231,255,.75)}
+*::-webkit-scrollbar-corner{background:transparent}
+/* ===== SHOP ===== */
+#playerCard .pcBtns{grid-column:3;grid-row:1;display:flex;gap:6px;align-items:flex-start}
+#accountBar #playerCard .pcBtns .pcMenu{grid-column:auto;grid-row:auto}
+#accountBar #playerCard #shopBtn{padding:5px 8px!important;font-size:16px!important;line-height:1;background:linear-gradient(180deg,#ffd166,#f29e2e)!important;border-color:#ffe9a8!important;color:#4a1f00;box-shadow:0 0 10px #ffd16688}
+#accountBar #playerCard #shopBtn:hover{filter:brightness(1.1)}
+#shopDialog{width:min(760px,94vw);max-height:88vh;overflow:auto;background:linear-gradient(145deg,#101b3d,#25184b);color:#fff;border:1px solid #ffd166;border-radius:18px;padding:16px 20px 18px;box-shadow:0 0 34px #ffd16655}
+#shopDialog::backdrop{background:#070c20c4}
+#shopDialog .shHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+#shopDialog h3{margin:0;font:400 30px 'Lilita One',Arial,sans-serif;color:#ffe9a8;letter-spacing:.03em}
+#shopDialog .shBal{display:flex;gap:12px;font-weight:900;font-size:15px}
+#shopDialog .shX{border:1px solid #83dfff;border-radius:10px;background:#112c65;color:#fff;font-weight:900;padding:6px 12px;cursor:pointer}
+#shopDialog .shTabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:#0c1634;margin:4px 0 12px}
+#shopDialog .shTabs button{border:0;border-radius:999px;padding:8px;background:transparent;color:#a9c4e8;font-weight:900;letter-spacing:.06em;cursor:pointer}
+#shopDialog .shTabs button.on{background:#ffd166;color:#3a2400}
+#shopDialog .shNote{text-align:center;font-size:12px;color:#a9c4e8;margin:-4px 0 10px}
+#shopDialog .shGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+#shopDialog .shItem{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 10px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(255,255,255,.06)}
+#shopDialog .shItem.on{border-color:#7affbb;box-shadow:0 0 14px #3fd39a66}
+#shopDialog .shCards{display:flex;gap:5px;justify-content:center}
+#shopDialog .shCard{position:relative;width:56px;aspect-ratio:512/736;border-radius:7px;overflow:hidden}
+#shopDialog .shCard img{width:100%;height:100%;display:block}
+#shopDialog [data-tier=epic] .shCard{box-shadow:0 0 12px #b06cffaa}
+#shopDialog [data-tier=legend] .shCard{box-shadow:0 0 14px #ffcc4dbb}
+#shopDialog [data-tier=mythic] .shCard{box-shadow:0 0 16px #ff7ad8cc}
+#shopDialog [data-tier=legend] .shCard::after,#shopDialog [data-tier=mythic] .shCard::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);background-size:250% 100%;animation:shShine 2.6s linear infinite;mix-blend-mode:screen}
+#shopDialog [data-tier=mythic] .shCard::after{background:linear-gradient(115deg,transparent 25%,rgba(255,90,216,.45) 40%,rgba(82,220,255,.45) 50%,rgba(198,255,61,.4) 60%,transparent 75%);background-size:250% 100%}
+@keyframes shShine{from{background-position:150% 0}to{background-position:-100% 0}}
+#shopDialog .shAv{width:74px;height:74px;border-radius:16px;border:2px solid #7de7ff;display:grid;place-items:center;font-size:40px;background:radial-gradient(circle,#2a3f88,#120f35);overflow:hidden}
+#shopDialog .shAv img{width:100%;height:100%}
+#shopDialog .shName{font-weight:900;font-size:15px;text-align:center}
+#shopDialog .shTier{font:900 10px Arial;letter-spacing:.12em;padding:3px 8px;border-radius:999px;background:#2a3b5a;color:#bcd6ff}
+#shopDialog [data-tier=rare] .shTier{background:#13406a;color:#7fd0ff}#shopDialog [data-tier=epic] .shTier{background:#3d1a6a;color:#d3a6ff}#shopDialog [data-tier=legend] .shTier{background:#5a4100;color:#ffd166}#shopDialog [data-tier=mythic] .shTier{background:#5a0f48;color:#ff9ae6}#shopDialog [data-tier=free] .shTier{background:#1a4a34;color:#7affbb}
+#shopDialog .shBtn{width:100%;border:1px solid #83dfff;border-radius:10px;background:#112c65;color:#fff;font-weight:900;padding:8px 6px;cursor:pointer}
+#shopDialog .shBtn.buy{background:linear-gradient(180deg,#ffd166,#f29e2e);border-color:#ffe9a8;color:#4a1f00}
+#shopDialog .shBtn.sure{background:#175e48;border-color:#3fd39a;color:#fff}
+#shopDialog .shBtn.inuse{background:#123a30;border-color:#3fd39a;color:#7affbb;cursor:default}
+#shopDialog .shBtn.poor{opacity:.7}
+#shopDialog .shMsg{min-height:1.2em;text-align:center;color:#ffd38a;font-size:13px;margin:10px 0 0}
+</style>
+<script>/* SHOP: 🛒 button next to the ☰ menu on the player card. Tabs: CARD SKINS (supabase/card_skins.sql) and AVATARS (same purchases as in the profile).
+   Prices and balance are always checked on the server; guests can look but must log in to buy. */
+(()=>{const card=document.getElementById('playerCard'),menu=document.getElementById('accountToggle');if(!card)return;
+ const wrap=document.createElement('div');wrap.className='pcBtns';const sb=document.createElement('button');sb.type='button';sb.id='shopBtn';sb.textContent='🛒';sb.title='Shop';sb.setAttribute('aria-label','Shop');
+ if(menu&&menu.parentElement===card){card.insertBefore(wrap,menu);wrap.append(sb,menu)}else{card.appendChild(wrap);wrap.append(sb)}
+ const PINK='<span class="pinkGem">💎</span>';const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
+ const dlg=el('dialog');dlg.id='shopDialog';dlg.innerHTML='<div class="shHead"><h3>🛒 SHOP</h3><div class="shBal"></div><button type="button" class="shX">✕</button></div><div class="shTabs"><button type="button" data-t="cards" class="on">CARD SKINS</button><button type="button" data-t="avatars">AVATARS</button></div><p class="shNote"></p><div class="shGrid"></div><p class="shMsg"></p>';
+ (document.querySelector('.stage')||document.body).appendChild(dlg);dlg.querySelector('.shX').onclick=()=>dlg.close();dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+ let tab='cards',sure=null;const msg=t=>dlg.querySelector('.shMsg').innerHTML=t||'';
+ dlg.querySelectorAll('.shTabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;sure=null;msg('');dlg.querySelectorAll('.shTabs button').forEach(x=>x.classList.toggle('on',x===b));paint()});
+ const bal=()=>{const p=window.sdAccount?.profile;return{blue:p?p.crystals:0,pink:p?(p.pink_crystals||0):0}};
+ const TIERS={free:'FREE',rare:'RARE',epic:'EPIC · GLOWS',legend:'LEGENDARY · SHINES',mythic:'MYTHIC · HOLOGRAPHIC',cheap:'COMMON'};
+ const priceTxt=(n,cur)=>n+' '+(cur==='pink'?PINK+' pink':'💎');
+ function paint(){const acc=window.sdAccount,b=bal();dlg.querySelector('.shBal').innerHTML=acc?'<span>💎 '+b.blue+'</span><span style="color:#ff9ae6">'+PINK+' '+b.pink+'</span>':'<span style="color:#a9c4e8">Log in to buy</span>';
+  const g=dlg.querySelector('.shGrid');g.replaceChildren();const note=dlg.querySelector('.shNote');
+  if(tab==='cards'){const S=window.SD_CARD_SKINS||{},sk=window.sdSkins,API=window.Scene3D;note.textContent='Card skins change how your rock, paper and scissors cards look. Online, your opponent sees them too. Cosmetic only — same rules for everyone.';
+   for(const [k,s] of Object.entries(S)){const it=el('div','shItem');it.dataset.tier=s.tier;const cs=el('div','shCards');for(const kind of ['rock','paper','scissors']){const c=el('div','shCard'),im=el('img');im.alt='';if(API&&API.cardArt)im.src=API.cardArt(k,kind);c.appendChild(im);cs.appendChild(c)}
+    it.append(cs,el('div','shName',s.name),el('span','shTier',TIERS[s.tier]||''));const btn=el('button','shBtn');btn.type='button';
+    const owned=k==='classic'||(sk&&sk.owned&&sk.owned.includes(k)),on=(sk?sk.on:'classic')===k;
+    if(!acc){btn.innerHTML=k==='classic'?'✓ IN USE':priceTxt(s.price,s.cur)+' · LOG IN';btn.onclick=()=>{if(k!=='classic'){dlg.close();document.getElementById('accountLoginMenu')?.click()}}}
+    else if(!sk||!sk.ready){btn.textContent=k==='classic'?'✓ IN USE':'COMING SOON';btn.disabled=k!=='classic';btn.className='shBtn'+(k==='classic'?' inuse':'')}
+    else if(on){btn.textContent='✓ IN USE';btn.className='shBtn inuse'}
+    else if(owned){btn.textContent='USE';btn.onclick=async()=>{btn.disabled=true;const r=await window.sdSkinUse(k);if(r.error)msg(r.error);else msg(s.name+' is now on your cards.');paint()}}
+    else{const have=s.cur==='pink'?b.pink:b.blue,enough=have>=s.price;
+     if(sure===k){btn.innerHTML='CONFIRM · '+priceTxt(s.price,s.cur);btn.className='shBtn sure';btn.onclick=async()=>{btn.disabled=true;msg('Buying…');const r=await window.sdSkinBuy(k);sure=null;if(r.error)msg(r.error);else msg('🎉 '+s.name+' unlocked and put on your cards!');paint()}}
+     else{btn.innerHTML='BUY · '+priceTxt(s.price,s.cur);btn.className='shBtn buy'+(enough?'':' poor');btn.onclick=()=>{if(!enough){msg('You need '+(s.price-have)+' more '+(s.cur==='pink'?'pink':'blue')+' crystals.');return}sure=k;msg('');paint()}}}
+    it.appendChild(btn);if(on)it.classList.add('on');g.appendChild(it)}}
+  else{const P=window.SD_AV_PRICE||{},N=window.SD_AV_NAME||{},own=window.sdAvOwned?window.sdAvOwned():null,cur=acc&&acc.profile.avatar;note.textContent='Premium avatars for your player card, the leaderboard and the match screen.';
+   const tierOf=k=>{const p=P[k];return k==='phoenix'?'mythic':p>=750?'legend':p>=300?'epic':p>=100?'rare':'cheap'};
+   for(const k of Object.keys(P)){if(k==='phoenix'&&!('sdPink' in window))continue;const it=el('div','shItem');it.dataset.tier=tierOf(k);const av=el('div','shAv');av.dataset.av=k;av.dataset.tier=tierOf(k);if(window.sdAvatarFill)window.sdAvatarFill(av,k);
+    it.append(av,el('div','shName',N[k]||k),el('span','shTier',TIERS[tierOf(k)]));const btn=el('button','shBtn');btn.type='button';const owned=own&&own.includes(k),on=cur===k;
+    if(!acc){btn.innerHTML=priceTxt(P[k],k==='phoenix'?'pink':'blue')+' · LOG IN';btn.onclick=()=>{dlg.close();document.getElementById('accountLoginMenu')?.click()}}
+    else if(own===null){btn.textContent='COMING SOON';btn.disabled=true}
+    else if(on){btn.textContent='✓ IN USE';btn.className='shBtn inuse'}
+    else if(owned){btn.textContent='USE';btn.onclick=async()=>{btn.disabled=true;const r=await window.sdAvUse(k);msg(r.error||'Avatar changed.');paint()}}
+    else{btn.innerHTML='BUY · '+priceTxt(P[k],k==='phoenix'?'pink':'blue');btn.className='shBtn buy';btn.onclick=()=>{window.sdAvBuy&&window.sdAvBuy(k)}}
+    it.appendChild(btn);if(on)it.classList.add('on');g.appendChild(it)}}}
+ sb.onclick=()=>{sure=null;msg('');paint();if(!dlg.open)dlg.showModal()};
+ for(const ev of ['sd-skins','sd-profile','sd-pink'])window.addEventListener(ev,()=>{if(dlg.open)paint()});
+ document.addEventListener('close',e=>{if(e.target&&e.target.id==='avBuyDialog'&&dlg.open)setTimeout(paint,300)},true);
+ window.sdOpenShop=t=>{if(t){tab=t;dlg.querySelectorAll('.shTabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===t))}sb.click()};})();
+</script>
 </html>
