@@ -2057,7 +2057,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  const fixTitle=()=>{const b=document.getElementById('demoGemBalance'),p=document.getElementById('pinkGemBalance');if(b){b.removeAttribute('title');b.dataset.tip=window.sdAccount?'💎 Blue crystals — saved to your profile. Click to see how to earn them and what they unlock.':'💎 Blue crystals — log in to earn them. Click to see how.';b.setAttribute('aria-label','Blue crystals: '+b.textContent.replace(/[^0-9]/g,'')+'. Click for info')}if(p){p.removeAttribute('title');p.dataset.tip=window.sdAccount?'Pink crystals — earned by inviting friends and social daily missions. Click for info.':'Pink crystals — log in, invite friends to earn them. Click for info.'}};fixTitle();window.addEventListener('sd-profile',()=>setTimeout(fixTitle,0));})();
 </script><script>/* LEADERBOARD: top-3 podium on the start screen (gold in the middle, like an F1 podium) + click → top 10 with your own rank.
    Data from sd_leaderboard() (supabase/leaderboard.sql): wins vs computer, server-verified. Anyone (also guests) can see it. */
-(()=>{const sel=document.getElementById('select');if(!sel)return;let data=null,ok=true;
+(()=>{const sel=document.getElementById('select');if(!sel)return;let data=null,ok=true,all=null,tab='week',prize=null;
  const css=document.createElement('style');css.textContent=`
 #podium{position:absolute;left:1.6%;top:26.6%;width:25%;z-index:4;padding:6px 6px 0;box-sizing:border-box;border:1px solid rgba(255,255,255,.3);border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.25);color:#fff;font:inherit;cursor:pointer;overflow:hidden;text-align:center}
 #podium:hover{border-color:#ffd54a;box-shadow:0 0 16px #ffd54a66}
@@ -2088,30 +2088,48 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 #rankDialog .rkRow small{display:block;font-size:11px;color:#a9c4e8;font-weight:700}
 #rankDialog .rkW{text-align:right;font-weight:900;font-size:15px}#rankDialog .rkW small{text-align:right}
 #rankDialog .rkGap{text-align:center;color:#6d7fa8;margin:2px 0 5px;letter-spacing:.3em}
+#rankDialog .rkTabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:6px 0 8px;border-radius:999px;background:#0c1634}#rankDialog .rkTabs button{border:0;border-radius:999px;padding:7px;background:transparent;color:#a9c4e8;font-weight:900;cursor:pointer}#rankDialog .rkTabs button.on{background:#ffd54a;color:#3a2400}
+#rankDialog .rkPrize{margin:0 0 10px;padding:10px;border:1px solid #ffd54a;border-radius:12px;background:linear-gradient(135deg,#4a3500,#2a1b4f);text-align:center;font-weight:900;animation:dailyPulse 1.6s infinite}#rankDialog .rkPrize[hidden]{display:none}#rankDialog .rkPrize button{margin-top:6px;border:0;border-radius:10px;padding:8px 18px;background:linear-gradient(180deg,#ffd166,#f29e2e);color:#4a1f00;font-weight:900;cursor:pointer}
+#rankDialog .rkPz{display:flex;justify-content:center;gap:10px;font-size:11px;color:#ffe9a8;margin:0 0 8px;flex-wrap:wrap}
+#podium.prize{border-color:#ffd54a!important;animation:dailyFlash .9s ease-in-out infinite}
 #rankDialog .rkClose{display:block;margin:12px auto 0;border:1px solid #83dfff;border-radius:8px;background:#112c65;color:#fff;padding:8px 22px;font-weight:bold;cursor:pointer}`;document.head.appendChild(css);
  const pod=document.createElement('button');pod.type='button';pod.id='podium';pod.title='';pod.setAttribute('aria-label','Top players — open the leaderboard');sel.appendChild(pod);
- const dlg=document.createElement('dialog');dlg.id='rankDialog';dlg.innerHTML='<h3>🏆 TOP PLAYERS</h3><p class="rkSub">Ranked by wins vs computer</p><div class="rkList"></div><button type="button" class="rkClose">CLOSE</button>';(document.querySelector('.stage')||document.body).appendChild(dlg);
+ const dlg=document.createElement('dialog');dlg.id='rankDialog';dlg.innerHTML='<h3>🏆 TOP PLAYERS</h3><div class="rkTabs"><button type="button" data-p="week" class="on">THIS WEEK</button><button type="button" data-p="all">ALL TIME</button></div><div class="rkPrize" hidden></div><p class="rkSub"></p><div class="rkList"></div><button type="button" class="rkClose">CLOSE</button>';(document.querySelector('.stage')||document.body).appendChild(dlg);
  dlg.querySelector('.rkClose').onclick=()=>dlg.close();
  const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
  const av=(box,key)=>{if(window.sdAvatarFill)window.sdAvatarFill(box,key||'astronaut');else box.textContent='🧑‍🚀'};
  const pct=p=>Math.round(100*p.wins/Math.max(1,p.wins+p.losses))+'%';
- function paint(){if(!ok){pod.hidden=true;return}pod.hidden=false;pod.replaceChildren();pod.appendChild(el('div','pdT','🏆 TOP PLAYERS'));
+ function paint(){if(!ok){pod.hidden=true;return}pod.hidden=false;pod.replaceChildren();pod.appendChild(el('div','pdT',prize?'🎁 YOU WON A PRIZE!':'🏆 TOP PLAYERS · WEEK'));
   const row=el('div','pdRow'),top=data?data.top:[];
   for(const r of [2,1,3]){const p=top.find(x=>x.rank===r),s=el('div','pdSpot p'+r);if(r===1)s.appendChild(el('div','pdCrown','👑'));
    const a=el('div','pdAv');if(p)av(a,p.avatar);else a.textContent='?';s.appendChild(a);s.appendChild(el('div','pdN',p?p.name:'—'));
    const b=el('div','pdB',String(r));s.appendChild(b);s.title=p?`#${r} ${p.name} — ${p.wins} wins`:'';row.appendChild(s)}
   pod.appendChild(row);const me=data&&data.me;
-  pod.appendChild(el('div','pdMe',!data?'Loading…':me?(me.rank<=3?'You are #'+me.rank+'! 🔥':'You: #'+me.rank+' · '+me.wins+' wins'):window.sdAccount?'Win a match to get ranked':top.length?'Tap to see the top 10':'Be the first on the podium!'))}
- function paintList(){const list=dlg.querySelector('.rkList');list.replaceChildren();const top=data?data.top:[];
-  if(!top.length){list.appendChild(el('p','rkSub','Nobody is ranked yet — win a match vs computer to be first!'));}
-  const row=(p)=>{const r=el('div','rkRow'+(p.me||(data.me&&data.me.rank===p.rank)?' me':''));r.appendChild(el('div','rkN',p.rank<=3?['🥇','🥈','🥉'][p.rank-1]:'#'+p.rank));
+  pod.appendChild(el('div','pdMe',!data?'Loading…':me?(me.rank<=3?'You are #'+me.rank+' this week! 🔥':'You: #'+me.rank+' · '+me.wins+' wins'):window.sdAccount?'Beat a player online to get ranked':top.length?'Tap to see the top 10':'Beat a player online to be first!'))}
+ function paintList(){const list=dlg.querySelector('.rkList');list.replaceChildren();const data=tab==='week'?window.__rkWeek:all,top=data?data.top:[];
+  const sub=dlg.querySelector('.rkSub');sub.replaceChildren();
+  if(tab==='week'){const d=window.__rkWeek;const h=d&&d.ends_in?Math.floor(d.ends_in/3600):0;sub.textContent='Online wins vs other players this week · resets Monday'+(d&&d.ends_in?' (in '+(h>=24?Math.floor(h/24)+'d '+(h%24)+'h':h+'h')+')':'');
+   if(d&&d.prizes){const pz=el('div','rkPz');for(const z of d.prizes){const s=el('span');s.innerHTML=['🥇','🥈','🥉'][z.rank-1]+' +'+z.blue+' 💎 +'+z.pink+' <span class="pinkGem">💎</span>';pz.appendChild(s)}list.appendChild(pz)}}
+  else sub.textContent='Online wins vs other players, all time · just for glory, no prizes';
+  const pb=dlg.querySelector('.rkPrize');pb.hidden=!prize;if(prize){pb.innerHTML='🏆 You finished <b>#'+prize.rank+'</b> last week!<br>Prize: +'+prize.blue+' 💎 +'+prize.pink+' <span class="pinkGem">💎</span><br>';const cb=el('button',null,'🎁 CLAIM PRIZE');cb.onclick=claimPrize;pb.appendChild(cb)}
+  if(!data){list.appendChild(el('p','rkSub','Loading…'));return}
+  if(!top.length){list.appendChild(el('p','rkSub','Nobody is ranked yet — beat a player online to be first!'));}
+  const row=(p)=>{const r=el('div','rkRow'+(p.me?' me':''));r.appendChild(el('div','rkN',p.rank<=3?['🥇','🥈','🥉'][p.rank-1]:'#'+p.rank));
    const a=el('div','rkAv');av(a,p.avatar);r.appendChild(a);const n=el('div');n.appendChild(el('b',null,p.name));n.appendChild(el('small',null,pct(p)+' win rate'+(p.best?' · best streak '+p.best:'')));r.appendChild(n);
    const w=el('div','rkW',p.wins+' W');w.appendChild(el('small',null,p.losses+' L'));r.appendChild(w);return r};
   for(const p of top)list.appendChild(row(p));
   const me=data&&data.me;if(me&&me.rank>top.length){list.appendChild(el('div','rkGap','• • •'));list.appendChild(row({...me,me:true,best:0}))}
-  if(!window.sdAccount)list.appendChild(el('p','rkSub','Log in and win matches vs computer to get your name on the board!'))}
- async function load(){try{const c=await sbClient();const r=await c.rpc('sd_leaderboard',{p_limit:10});if(r.error){if(/Could not find|does not exist|PGRST202/i.test(r.error.message+' '+(r.error.code||''))){ok=false}paint();return}ok=true;data=r.data;paint();if(dlg.open)paintList()}catch(e){}}
- pod.onclick=()=>{paintList();if(!dlg.open)dlg.showModal();load()};
+  if(!window.sdAccount)list.appendChild(el('p','rkSub','Log in and beat other players ONLINE to get your name on the board!'))}
+ async function claimPrize(){const acc=window.sdAccount;if(!acc)return;const r=await acc.client.rpc('sd_weekly_prize_claim');const pb=dlg.querySelector('.rkPrize');
+  if(r.error){pb.textContent=r.error.message;return}prize=null;pod.classList.remove('prize');pb.hidden=false;pb.style.animation='none';pb.innerHTML='🎉 +'+r.data.blue+' 💎 and +'+r.data.pink+' <span class="pinkGem">💎</span> added!';
+  if(acc.profile){acc.profile.pink_crystals=r.data.pink_crystals;window.sdPink=r.data.pink_crystals;window.dispatchEvent(new Event('sd-pink'))}window.demoProgress?.setServer?.({crystals:r.data.crystals});setTimeout(()=>{pb.hidden=true;pb.style.animation=''},3500)}
+ async function load(){try{const c=await sbClient();let r=await c.rpc('sd_leaderboard',{p_limit:10,p_period:'week'});if(r.error){if(/Could not find|does not exist|PGRST202/i.test(r.error.message+' '+(r.error.code||''))){ok=false}paint();return}ok=true;data=r.data;window.__rkWeek=data;paint();
+  if(dlg.open&&tab==='all'){const a=await c.rpc('sd_leaderboard',{p_limit:10,p_period:'all'});if(!a.error)all=a.data}
+  const acc=window.sdAccount;if(acc){const z=await acc.client.rpc('sd_weekly_prize');prize=z.error?null:z.data}else prize=null;pod.classList.toggle('prize',!!prize);
+  if(dlg.open)paintList()}catch(e){}}
+ async function loadAll(){try{const c=await sbClient();const a=await c.rpc('sd_leaderboard',{p_limit:10,p_period:'all'});if(!a.error){all=a.data;if(dlg.open)paintList()}}catch(e){}}
+ dlg.querySelectorAll('.rkTabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.p;dlg.querySelectorAll('.rkTabs button').forEach(x=>x.classList.toggle('on',x===b));paintList();if(tab==='all')loadAll()});
+ pod.onclick=()=>{paintList();if(!dlg.open)dlg.showModal();load();if(tab==='all')loadAll()};
  /* stack it under the player card and push HERO COLLECTION below it (positions measured, so it fits at every screen size) */
  function place(){const st=document.getElementById('stage'),card=document.getElementById('playerCard'),hc=document.getElementById('heroCollection');if(!st||!card||!hc)return;
   if(hc.classList.contains('xp'))return;if(innerWidth<=700||pod.hidden){hc.style.removeProperty('top');return}const sr=st.getBoundingClientRect(),cr=card.getBoundingClientRect();if(!sr.height||!cr.height)return;const gap=sr.height*.016;
