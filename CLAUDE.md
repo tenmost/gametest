@@ -30,6 +30,7 @@ Space Duel is a 3D space-themed rock-paper-scissors browser game.
 - EXIT MATCH button (`#matchExit`) shows only on the START ROUND screen (`#stage.waiting-fight-ready`). It warns first; leaving = lost match, no rewards. Signed in vs computer it calls `sd_match_forfeit` (loss, 0 crystals, losses +1, streak reset) — see `supabase/match_forfeit.sql`.
 - Player name: free when the profile is created; changing it later costs 150 blue crystals (`NAME_PRICE` in index.html + `sd_set_username` in `supabase/username_price.sql`, keep in sync). Register/setup forms warn about it; rename needs a second CONFIRM click.
 - Crystal counters: instant hover tooltip (`data-tip`, "saved to your profile" / "log in to earn") and a click opens `#gemInfo`: how to earn blue crystals, what they unlock (arenas, name change, characters coming soon); pink = coming soon (real money / rare events).
+- Profile stat tiles (`.acStat`) have hover/tap tooltips (`data-tip`, texts in `TIPS` in the crystal-info script); the crystals tile opens `#gemInfo`.
 - Account menu (☰): guests see LOG IN + REGISTER + PLAY AS GUEST; signed-in players see PROFILE + LOG OUT.
 - Guests get no rewards: no crystals, only the free arena (Orbital Temple), no name entry (they appear as "Guest123"). Crystals, unlocks, player name, avatar and friends need an account.
 
