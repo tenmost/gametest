@@ -1452,7 +1452,7 @@ function nwPalm(par,x,z,h,lean,trunkM,leafM){const g=new THREE.Group();g.positio
 // ---------- SUNKEN ATLANTIS (blue 150): marble ruins on the sea floor, coral, kelp, fish, jellyfish, light rays, bubbles ----------
 {const g=new THREE.Group();alternate.atlantis=g;fightArena.add(g);g.visible=false;const A=NEWA.atlantis={};
  nwSky(g,['#3fb7d6','#0c5f86','#053457','#021628']);
- const sand=nwM(0x7d8a7a,{r:.95}),marble=nwM(0xc9d4d2,{r:.6}),marbleD=nwM(0xb9b2a2,{r:.7}),gold=nwM(0xffc94a,{r:.3,m:.6,e:0x5a3a00,ei:.5}),rock=nwM(0x5d6b70,{r:.95,flat:true});
+ const sand=nwM(0x4f6e74,{r:.95}),marble=nwM(0xa9c2c6,{r:.6}),marbleD=nwM(0xb9b2a2,{r:.7}),gold=nwM(0xffc94a,{r:.3,m:.6,e:0x5a3a00,ei:.5}),rock=nwM(0x5d6b70,{r:.95,flat:true});
  nwMesh(new THREE.BoxGeometry(30,.6,18),sand,0,arenaY-.31,-4,g);
  for(let i=0;i<26;i++){const r=nwMesh(new THREE.DodecahedronGeometry(.18+rand()*.45),rock,-12+rand()*24,arenaY+.05,-3-rand()*8,g);r.scale.y=.6}
  const col=(x,z,h,broken)=>{nwMesh(new THREE.BoxGeometry(1.15,.3,1.15),marbleD,x,arenaY+.15,z,g);nwMesh(new THREE.CylinderGeometry(.42,.46,h,16),marble,x,arenaY+.3+h/2,z,g);if(!broken)nwMesh(new THREE.BoxGeometry(1.1,.28,1.1),marbleD,x,arenaY+.44+h,z,g)};
@@ -1578,7 +1578,7 @@ function nwPalm(par,x,z,h,lean,trunkM,leafM){const g=new THREE.Group();g.positio
 // ---------- CELESTIAL PALACE (PINK 120): golden palace above the clouds — marble colonnade, throne, a giant turning golden halo, floating orbs ----------
 {const g=new THREE.Group();alternate.celestial=g;fightArena.add(g);g.visible=false;const C=NEWA.celestial={};
  nwSky(g,['#07062a','#24165c','#5a3a8c','#d78a5a','#ffd9a0']);nwStars(g,320,0xfff4d6);
- const marble=new THREE.MeshStandardMaterial({color:0xf4efe6,roughness:.32,metalness:.05}),marbleV=new THREE.MeshStandardMaterial({color:0xe6dccb,roughness:.4}),gold=new THREE.MeshStandardMaterial({color:0xffc94a,roughness:.28,metalness:.55,emissive:0x7a4a00,emissiveIntensity:.45}),red=nwM(0xa0142a,{r:.7}),goldGlow=new THREE.MeshBasicMaterial({color:0xffd773});
+ const marble=new THREE.MeshStandardMaterial({color:0xc9bfb2,roughness:.38,metalness:.05}),marbleV=new THREE.MeshStandardMaterial({color:0xd8cfc0,roughness:.4}),gold=new THREE.MeshStandardMaterial({color:0xffc94a,roughness:.28,metalness:.55,emissive:0x7a4a00,emissiveIntensity:.45}),red=nwM(0xa0142a,{r:.7}),goldGlow=new THREE.MeshBasicMaterial({color:0xffd773});
  // floor: marble disc with gold inlay
  nwMesh(new THREE.CylinderGeometry(11,10.4,.6,48),marble,0,arenaY-.31,-3,g).scale.set(1,1,.62);nwMesh(new THREE.CylinderGeometry(11.1,11.1,.12,48),gold,0,arenaY-.1,-3,g).scale.set(1,1,.62);
  for(const r of [5.6,8.2]){const ring=nwMesh(new THREE.TorusGeometry(r,.05,6,72),goldGlow,0,arenaY+.02,-3,g);ring.rotation.x=-Math.PI/2;ring.scale.set(1,.62,1)}
