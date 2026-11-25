@@ -1907,7 +1907,9 @@ let watched=false;const watch=()=>{const c=document.getElementById('playerCard')
 /* ---------- DAILY MISSIONS: 3 missions per day (reset 00:00 UTC), progress + rewards checked on the server
    (sd_daily_missions / sd_daily_claim, see supabase/daily_missions.sql). The button stays hidden until the server part exists. ---------- */
 /* invite links: ?ref=xxxxxxxx is remembered and claimed after the new player creates a profile (see claimReferral) */
-try{const ref=new URLSearchParams(location.search).get('ref');if(ref&&/^[0-9a-f]{8}$/.test(ref))localStorage.setItem('sd_ref',ref)}catch(e){}
+try{const ref=new URLSearchParams(location.search).get('ref');if(ref&&/^[0-9a-f]{8}$/.test(ref)){localStorage.setItem('sd_ref',ref);
+ /* tell the server a friend really opened this invite link (counts for the sharer's daily mission; server dedupes by network, ignores the sharer) */
+ const k='sd_refv_'+ref+'_'+new Date().toISOString().slice(0,10);if(!localStorage.getItem(k)){localStorage.setItem(k,'1');setTimeout(async()=>{try{const c=await sbClient();await c.rpc('sd_share_visit',{p_code:ref})}catch(e){}},2500)}}}catch(e){}
 /* share the game (invite link with your code). Signed-in shares count for the daily "share" mission (server caps it at 3 a day). */
 window.sdInviteLink=()=>{const acc=window.sdAccount,u=new URL(location.origin+location.pathname);if(acc)u.searchParams.set('ref',acc.userId.slice(0,8));return u.toString()};
 window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Rivals with me — 3D rock-paper-scissors duels!';let ok=false;
@@ -1927,7 +1929,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
   for(const m of data.missions||[]){const done=m.progress>=m.goal;if(done&&!m.claimed)ready++;
    const it=el('div','dItem'+(m.claimed?' done':''));it.appendChild(el('div','dTitle',m.title));
    const rw=m.reward+' 💎'+(m.pink?' + '+m.pink+' PINKGEM':'');const b=el('button',done&&!m.claimed?'claim':'');b.innerHTML=(m.claimed?'✓ DONE':done?'CLAIM '+rw:rw).replace('PINKGEM','<span class="pinkGem">💎</span>');b.disabled=!done||m.claimed||busy;b.onclick=()=>claim(m.id);it.appendChild(b);
-   if(!done&&!m.claimed&&m.id==='share3'){const a=el('button','dAct','📤 SHARE');a.onclick=async()=>{const r=await window.sdShareGame();dlg.querySelector('.dMsg').textContent=r==='copied'?'Invite link copied — paste it to a friend!':r?'Thanks for sharing!':''};it.appendChild(a)}
+   if(!done&&!m.claimed&&m.id==='share3'){const a=el('button','dAct','📤 SHARE');a.onclick=async()=>{const r=await window.sdShareGame();dlg.querySelector('.dMsg').textContent=r?(r==='copied'?'Invite link copied — paste it to a friend! ':'')+'It counts when a friend opens your link.':''};it.appendChild(a)}
    if(!done&&!m.claimed&&m.id==='online3'){const a=el('button','dAct','🌐 PLAY ONLINE');a.onclick=()=>{dlg.close();document.querySelector('#modeBtns [data-mode=online]')?.click()};it.appendChild(a)}
    const bar=el('div','dBar'),fill=el('i');fill.style.width=Math.round(100*Math.min(1,m.progress/m.goal))+'%';bar.appendChild(fill);it.appendChild(bar);it.appendChild(el('div','dNum',m.progress+' / '+m.goal));list.appendChild(it)}
   const todo=(data.missions||[]).some(m=>m.progress<m.goal&&!m.claimed);
