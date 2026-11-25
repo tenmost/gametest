@@ -1102,7 +1102,7 @@ const rosterInfo=()=>available().map(c=>({key:c.key,name:c.name,voice:c.voice,pl
 function setAstroVisible(v){astro.root.visible=v;Object.values(astro.L).forEach(l=>l.setVis(v));astro.cuffM.visible=astro.offFist.visible=astro.offCuff.visible=v;HA.root.visible=v}
 function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach(l=>l.hide());hero.cuffM.visible=hero.offFist.visible=hero.offCuff.visible=false;HG.root.visible=false}
 /* PORTRAIT PHONE: camera tuning (k = how much of the 16:9 width stays visible, ly = look lower so the scene sits higher above the cards) */
-const PTC=window.SD_PT={k:.8,ly:-.9};const PT=()=>camera.aspect<.95;
+const PTC=window.SD_PT={k:.72,ly:-.9,ks:.5,lys:-.75};const PT=()=>camera.aspect<.95;
 let previewHeroKey=null;const heroPortraits={};
 function layoutSelect(){setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const R=LOADED[previewHeroKey];if(R){R.holder.visible=true;R.holder.scale.setScalar(.82);R.holder.position.set(PT()?0:.15,FLOOR+1.05,.2);R.holder.rotation.y=-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}}
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
@@ -2060,9 +2060,9 @@ function update(dt){
  for(const q of plist){const f=1-q.age/q.life;pPos.set([q.p.x,q.p.y,q.p.z],n*3);pCol.set(q.c.map(v=>v*f),n*3);n++}
  pGeo.setDrawRange(0,n);pGeo.attributes.position.needsUpdate=pGeo.attributes.color.needsUpdate=true;
  const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
- const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,PT()?PTC.ly:0,0);
+ const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,PT()?(st.select?PTC.lys:PTC.ly):0,0);
  /* portrait phone: keep the 16:9 horizontal view so both fighters fit, the taller picture shows more sky/floor */
- camera.fov=PT()?Math.atan(Math.tan(st.fov*Math.PI/360)*(16/9)*PTC.k/camera.aspect)*360/Math.PI:st.fov;
+ camera.fov=PT()?Math.atan(Math.tan(st.fov*Math.PI/360)*(16/9)*(st.select?PTC.ks:PTC.k)/camera.aspect)*360/Math.PI:st.fov;
  updateBackground(dt);updateCards(dt,pulse);
  TALK.g=Math.max(0,TALK.g-dt);TALK.a=Math.max(0,TALK.a-dt);
  const live=st.select?Object.values(LOADED).filter(R=>R.holder.visible):['g','a'].map(k=>SL[k]&&SL[k].R?[SL[k].R,k]:null).filter(Boolean);
@@ -2566,5 +2566,29 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  #fsBtn,#rulesBtn{top:calc(env(safe-area-inset-top) + 12px)!important}
  #mute{top:calc(env(safe-area-inset-top) + 12px)!important;bottom:auto!important;height:auto!important;left:auto!important;right:8px!important;width:auto!important}
  #changeP{display:none!important}
+
+ /* ---------- MATCH HUD ---------- */
+ .hudAv{--avs:44px!important;width:44px!important;height:44px!important;top:calc(env(safe-area-inset-top) + 8px)!important}
+ .hudAv.p{left:6px!important}.hudAv.c{right:6px!important;left:auto!important}
+ .label{top:calc(env(safe-area-inset-top) + 8px)!important;font-size:13px!important;max-width:110px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+ .label.p{left:56px!important}.label.c{right:56px!important;left:auto!important;justify-content:flex-end!important}
+ .hearts{top:calc(env(safe-area-inset-top) + 30px)!important;width:96px!important;height:20px!important}
+ .hearts.p{left:52px!important}.hearts.c{right:52px!important;left:auto!important}
+ .hearts span{height:13px!important}
+ #fightHUD{top:calc(env(safe-area-inset-top) + 6px)!important;left:50%!important;transform:translateX(-50%)!important;width:auto!important}
+ .count{width:34px!important;font-size:21px!important}
+ .moveHistory{top:calc(env(safe-area-inset-top) + 64px)!important}
+ #status{top:calc(env(safe-area-inset-top) + 92px)!important;left:8%!important;width:84%!important;font-size:15px!important;text-align:center!important}
+ /* the three cards: big, side by side, in thumb reach */
+ .controls button{position:absolute!important;top:auto!important;bottom:calc(env(safe-area-inset-bottom) + 14px)!important;width:30.5vw!important;height:auto!important;aspect-ratio:.68!important;max-height:30dvh!important;transform:none!important;margin:0!important}
+ .controls button.rock{left:2.5vw!important}
+ .controls button.paper{left:34.75vw!important}
+ .controls button.scissors{left:67vw!important;right:auto!important}
+ .controls button .moveArt{width:100%!important;height:100%!important;object-fit:contain!important}
+ .controls button small{display:none!important}
+ #fsBtn,#rulesBtn{display:none!important}
+ #select.show~#fsBtn,#select.show~#rulesBtn,.stage:has(#select.show) #fsBtn,.stage:has(#select.show) #rulesBtn{display:block!important}
+ .stage:not(:has(#select.show)) #mute{top:calc(env(safe-area-inset-top) + 60px)!important;right:6px!important;font-size:10px!important;padding:3px 7px!important}
+ #restart{bottom:auto!important;top:calc(env(safe-area-inset-top) + 60px)!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;font-size:10px!important;padding:3px 8px!important}
 }
 </style>
