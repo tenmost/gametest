@@ -82,6 +82,18 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .hearts span{flex:1;min-width:0;border-radius:2px;background:#352035;transition:background .25s,box-shadow .25s}
 .hearts span.full{background:linear-gradient(180deg,#b9ff9b,#39d76b 55%,#168c48);box-shadow:0 0 7px #39d76b88}
 .label{max-width:36%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* in-match HUD: big square avatar in the corner, name + health bar moved inward (bars shorter); hover/tap the avatar for stats */
+#stage{--avs:clamp(30px,6.4vw,80px);--avg:calc(var(--avs) + 10px)}
+.label .lav{display:none}
+.label.p{left:calc(2% + var(--avg))}.label.c{right:calc(2% + var(--avg))}.label{max-width:calc(36% - var(--avg))}
+.hearts.p{left:calc(2% + var(--avg))}.hearts.c{right:calc(2% + var(--avg))}.hearts{width:calc(36% - var(--avg))}
+.score{display:none}
+.hudAv{position:absolute;top:1%;z-index:9;width:var(--avs);height:var(--avs);box-sizing:border-box;border-radius:12px;display:grid;place-items:center;font-size:calc(var(--avs) * .6);background:radial-gradient(circle,#2a3f88,#120f35);border:2px solid #7de7ff;box-shadow:0 0 12px #52d4ff99;cursor:help;outline:none}
+.hudAv.p{left:2%}.hudAv.c{right:2%}#stage.selecting .hudAv{visibility:hidden}
+.hudAv:hover,.hudAv:focus-visible{border-color:#fff}
+.hudTip{display:none;position:absolute;top:calc(100% + 8px);left:0;width:max-content;max-width:230px;padding:8px 11px;border:1px solid #83dfff;border-radius:9px;background:#0d1638f5;box-shadow:0 0 16px #52d4ff66;font:bold 12px/1.45 Arial,sans-serif;color:#fff;text-align:left;white-space:pre-line;pointer-events:none;z-index:50}
+.hudAv.c .hudTip{left:auto;right:0}.hudAv:hover .hudTip,.hudAv:focus .hudTip,.hudAv.tipOpen .hudTip{display:block}
+.hudTip b{display:block;font-size:13px;color:#a9eaff;margin-bottom:3px}
 #fightHUD{position:absolute;top:1%;left:39%;width:22%;z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}#stage.selecting #fightHUD{visibility:hidden}.fightNumber{font-size:clamp(10px,1.7vw,23px);font-weight:900;color:#ffe17a;letter-spacing:.08em;text-shadow:0 0 9px #fbbf24,0 2px 4px #000;white-space:nowrap}.fightTrack{display:flex;width:100%;gap:8px;align-items:center}.fightMarks{display:flex;flex:1;gap:4px}.fightMarks i{flex:1;height:clamp(7px,1.2vw,15px);border:1px solid #8499b6;background:#17243c;transform:skewX(-15deg);border-radius:2px}.fightMarks i.won{background:linear-gradient(#fff4a3,#e9a71b);border-color:#fff0a0;box-shadow:0 0 10px #ffbf35}.fightVS{font-size:clamp(8px,1vw,13px);font-weight:900;color:#d9e9ff}.score{top:11%}
 #fightReadyStatus[hidden]{display:none!important}.fightReadyBadge{flex:1;min-width:0;text-align:center;padding:8px 5px;border:1px solid #8196b8;border-radius:8px;background:#14203aee;color:#c2cce0;font-size:clamp(9px,1.3vw,16px);font-weight:900;overflow-wrap:anywhere}.fightReadyBadge.isReady{border-color:#55ff9a;color:#8affb2;box-shadow:0 0 12px #36df7977}
 .moveHistory{position:absolute;top:16%;display:flex;flex-direction:column;gap:5px;z-index:5;pointer-events:none}.moveHistory.p{left:2%}.moveHistory.c{right:2%}.moveHistory span{display:grid;place-items:center;width:clamp(26px,3.8vw,49px);aspect-ratio: .78;border:1px solid #83dfff;border-radius:5px;background:#17243cee;font-size:clamp(15px,2.25vw,26px);box-shadow:0 0 6px #38caff55}.moveHistory span.empty{opacity:.35}#stage.selecting .moveHistory{visibility:hidden}
@@ -149,6 +161,23 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .acAvatars button{aspect-ratio:1;border-radius:14px;border:2px solid #7de7ff44;background:#0d1838cc;font-size:clamp(22px,3.4vw,32px);cursor:pointer;padding:0;line-height:1}
 .acAvatars button:hover,.acAvatars button:focus-visible{border-color:#7de7ff;transform:scale(1.08);outline:none;box-shadow:0 0 12px #52d4ff88}
 .acAvatars button.chosen{border-color:#7affbb;background:#175e48;box-shadow:0 0 14px #7affbb88}
+.acAvatars button{position:relative}.acAvatars button.locked{background:#0a1028cc;border-style:dashed}.acAvatars button.locked .avE{opacity:.72}.acAvatars button.armed{border-color:#ffd38a!important;box-shadow:0 0 16px #ffd38a!important}
+.avPrice{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);font-size:10px;font-weight:900;line-height:1;padding:2px 5px;border-radius:6px;background:#2a1650;border:1px solid #a56cff;color:#e8d7ff;white-space:nowrap;pointer-events:none}
+.avDiv{grid-column:1/-1;margin:10px 0 2px;font-size:12px;font-weight:900;letter-spacing:.08em;color:#ffd38a}
+/* avatar effects: epic = glowing, legendary = glowing + moving */
+.avE{display:inline-block;line-height:1}
+[data-av=flame]{--g:#ff7a1a}[data-av=bolt]{--g:#ffe14a}[data-av=galaxy]{--g:#b06cff}[data-av=crystal_ball]{--g:#ff6ad5}[data-av=vortex]{--g:#5ad8ff}[data-av=crown]{--g:#ffd54a}[data-av=dragon_king]{--g:#ff4a2a}
+[data-tier=epic],[data-tier=legend]{border-color:var(--g)!important;animation:avGlow 2s ease-in-out infinite}
+[data-tier=epic] .avE,[data-tier=legend] .avE{filter:drop-shadow(0 0 6px var(--g))}
+[data-tier=legend]{animation-duration:1.1s}
+[data-av=vortex] .avE{animation:avSpin 3.2s linear infinite}
+[data-av=crown] .avE{animation:avFloat 2s ease-in-out infinite}
+[data-av=dragon_king] .avE{animation:avFloat 2.4s ease-in-out infinite,avFire 1s ease-in-out infinite alternate}
+@keyframes avGlow{0%,100%{box-shadow:0 0 8px var(--g),inset 0 0 6px var(--g)}50%{box-shadow:0 0 20px var(--g),inset 0 0 12px var(--g)}}
+@keyframes avSpin{to{transform:rotate(360deg)}}
+@keyframes avFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12%) scale(1.06)}}
+@keyframes avFire{from{filter:drop-shadow(0 0 4px #ff4a2a)}to{filter:drop-shadow(0 0 12px #ffb02a) brightness(1.15)}}
+@media (prefers-reduced-motion:reduce){[data-tier] .avE,[data-tier]{animation:none!important}}
 .acRow{display:flex;gap:10px;align-items:flex-end}
 .acRow .acField{flex:1;margin:0}
 .acRow .acBtn{height:46px;padding-top:0;padding-bottom:0;box-shadow:none}
@@ -215,8 +244,14 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 </dialog>
 <script type="module">
 const q=id=>document.getElementById(id);
-const AV={astronaut:'🧑‍🚀',astronaut_f:'👩‍🚀',astronaut_m:'👨‍🚀',robot:'🤖',alien:'👽',invader:'👾',ufo:'🛸',rocket:'🚀',planet:'🪐',comet:'☄️',star:'🌟',dragon:'🐉',fox:'🦊',wolf:'🐺',lion:'🦁',skull:'💀'};
-const ARENAS=6;window.SD_AV=AV;
+const AV={astronaut:'🧑‍🚀',astronaut_f:'👩‍🚀',astronaut_m:'👨‍🚀',robot:'🤖',alien:'👽',invader:'👾',ufo:'🛸',rocket:'🚀',planet:'🪐',comet:'☄️',star:'🌟',dragon:'🐉',fox:'🦊',wolf:'🐺',lion:'🦁',skull:'💀',
+ /* premium (unlock with blue crystals) — keys + prices must match sd_avatar_price() in supabase/premium_avatars.sql */
+ moon:'🌙',satellite:'🛰️',octopus:'🐙',ghost:'👻',unicorn:'🦄',shark:'🦈',ninja:'🥷',vampire:'🧛',flame:'🔥',bolt:'⚡',galaxy:'🌌',crystal_ball:'🔮',vortex:'🌀',crown:'👑',dragon_king:'🐲'};
+const AV_PRICE={moon:25,satellite:25,octopus:25,ghost:25,unicorn:100,shark:100,ninja:100,vampire:100,flame:300,bolt:300,galaxy:300,crystal_ball:300,vortex:750,crown:750,dragon_king:750};
+const AV_TIER=k=>{const p=AV_PRICE[k]||0;return p>=750?'legend':p>=300?'epic':p>=100?'rare':p?'cheap':''};
+/* fill any avatar box: emoji in an inner span + data-av / data-tier for the glow / moving CSS effects */
+function avatarFill(el,k,fallback){if(!el)return;el.dataset.av=k||'';const t=AV_TIER(k);if(t)el.dataset.tier=t;else delete el.dataset.tier;for(const n of [...el.childNodes])if(n.nodeType===3)n.remove();let e=el.querySelector(':scope>.avE');if(!e){e=document.createElement('span');e.className='avE';el.prepend(e)}e.textContent=AV[k]||fallback||AV.astronaut}
+const ARENAS=6;window.SD_AV=AV;window.SD_AV_PRICE=AV_PRICE;window.sdAvatarFill=avatarFill;
 const dlg=q('accountDialog');
 let client,lastSession=null,profile=null,tab='login';
 const nice=e=>{const m=String(e&&e.message||e);return m==='Username already taken'?'That player name is taken — choose another one.':m==='Invalid username'?'Player name: 3–24 letters, numbers, spaces, _ . -':m;};
@@ -226,11 +261,13 @@ function msg(t,where){q(where||({auth:'acMsgAuth',setup:'acMsgSetup',profile:'ac
 function setTab(t){tab=t;q('acTabLogin').classList.toggle('on',t==='login');q('acTabRegister').classList.toggle('on',t==='register');q('acTabLogin').setAttribute('aria-selected',String(t==='login'));q('acTabRegister').setAttribute('aria-selected',String(t==='register'));q('acNameField').hidden=t!=='register';q('accountSubmit').textContent=t==='register'?'CREATE ACCOUNT':'LOG IN';q('accountPass').autocomplete=t==='register'?'new-password':'current-password';q('acAuthHint').textContent=t==='register'?'Create an account — your crystals, wins and arenas are saved and follow you to any device.':'Log in to save your crystals, wins and unlocked arenas.';q('acMsgAuth').textContent='';view();}
 function open(t){if(t)setTab(t);const v=view();if(!dlg.open)dlg.showModal();if(v==='profile'){frMsg('');loadFriends();}const f=v==='auth'?(tab==='register'?q('accountName'):q('accountEmail')):v==='setup'?q('setupName'):null;if(f)setTimeout(()=>f.focus(),30);}
 function paint(){const s=q('accountSummary');if(!lastSession){s.textContent='Guest';s.title='Guests earn no crystals';view();return;}if(!profile){s.textContent='Choose a name';view();return;}
- const av=AV[profile.avatar]||AV.astronaut,inc=friends.filter(f=>f.status==='pending'&&f.incoming).length;s.textContent=av+' '+profile.username+(inc?' 🔔'+inc:'');q('acAvatar').textContent=av;q('acName').textContent=profile.username;q('acEmail').textContent=lastSession.user.email||'';
+ const av=AV[profile.avatar]||AV.astronaut,inc=friends.filter(f=>f.status==='pending'&&f.incoming).length;s.textContent=av+' '+profile.username+(inc?' 🔔'+inc:'');avatarFill(q('acAvatar'),profile.avatar);q('acName').textContent=profile.username;q('acEmail').textContent=lastSession.user.email||'';
  q('acStCrystals').textContent=profile.crystals;q('acStWins').textContent=profile.wins;q('acStLosses').textContent=profile.losses;q('acStMaps').textContent=profile.unlocked_maps.length+'/'+ARENAS;const games=profile.wins+profile.losses;q('acStGames').textContent=games;q('acStRate').textContent=games?Math.round(profile.wins*100/games)+'%':'–';q('acStStreak').textContent=profile.current_streak||0;q('acStBest').textContent=profile.best_streak||0;
  if(document.activeElement!==q('acRename'))q('acRename').value=profile.username;
- for(const b of q('acAvatars').children){const on=b.dataset.av===profile.avatar;b.classList.toggle('chosen',on);b.setAttribute('aria-checked',String(on));}view();}
-function publish(p){profile=p;window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();loadFriends();}
+ const prem=ownedAv!==null;for(const b of q('acAvatars').children){if(b.classList.contains('avDiv')){b.hidden=!prem;continue}const k=b.dataset.av,price=AV_PRICE[k]||0,locked=price>0&&!(ownedAv||[]).includes(k),on=k===profile.avatar;b.hidden=price>0&&!prem;b.classList.toggle('chosen',on);b.classList.toggle('locked',locked);b.classList.toggle('armed',avArm===k);b.setAttribute('aria-checked',String(on));const tag=b.querySelector('.avPrice');if(tag)tag.hidden=!locked;b.title=locked?'Unlock for '+price+' blue crystals':'';}view();}
+var ownedAv=null,avArm=null;/* null = premium avatars not on the server yet (hidden) */
+async function loadOwnedAv(){if(!profile||!client)return;const r=await client.from('sd_player_profiles').select('unlocked_avatars').eq('id',lastSession.user.id).maybeSingle();ownedAv=r.error||!r.data?null:(r.data.unlocked_avatars||[]);paint();}
+function publish(p){profile=p;if(p)loadOwnedAv();else{ownedAv=null;avArm=null}window.sdAccount=p?{client,userId:lastSession.user.id,profile:p,refresh:()=>refreshProfile(lastSession).catch(e=>msg(e.message))}:null;window.dispatchEvent(new CustomEvent('sd-profile',{detail:p}));paint();loadFriends();}
 const COLS='username,crystals,wins,losses,unlocked_characters,unlocked_maps,avatar,current_streak,best_streak';
 async function load(uid){return client.from('sd_player_profiles').select(COLS).eq('id',uid).maybeSingle();}
 async function refreshProfile(session){
@@ -258,7 +295,15 @@ function paintFriends(){const list=q('acFrList');list.replaceChildren();const ac
 async function loadFriends(){if(!client||!lastSession||!profile){friends=[];paintFriends();return;}const r=await client.rpc('sd_friends_list');if(r.error){frMsg('Could not load friends: '+r.error.message);return;}friends=r.data||[];paintFriends();}
 q('acFrAdd').onclick=async()=>{const n=q('acFrName').value.trim();if(!profile||n.length<3){frMsg('Type your friend’s player name.');return;}q('acFrAdd').disabled=true;const r=await client.rpc('sd_friend_request',{p_username:n});q('acFrAdd').disabled=false;if(r.error){frMsg(frNice(r.error));return;}q('acFrName').value='';frMsg(r.data==='accepted'?'You are now friends with '+n+'!':'Friend request sent to '+n+'!');await loadFriends();};
 q('acFrName').addEventListener('keydown',e=>{if(e.key==='Enter')q('acFrAdd').click();});
-for(const [k,e] of Object.entries(AV)){const b=document.createElement('button');b.type='button';b.dataset.av=k;b.textContent=e;b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' '));b.onclick=async()=>{if(!profile||profile.avatar===k)return;const prev=profile.avatar;profile.avatar=k;paint();const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error){profile.avatar=prev;paint();msg(nice(r.error));}else msg('Avatar saved!');};q('acAvatars').appendChild(b);}
+{const div=document.createElement('div');div.className='avDiv';div.hidden=true;div.textContent='✨ PREMIUM AVATARS — unlock with 💎 blue crystals';
+for(const [k,e] of Object.entries(AV)){const price=AV_PRICE[k]||0;if(price&&!div.isConnected)q('acAvatars').appendChild(div);const b=document.createElement('button');b.type='button';avatarFill(b,k);if(price){b.hidden=true;const t=document.createElement('span');t.className='avPrice';t.textContent=price+'💎';b.appendChild(t);}b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' ')+(price?' ('+price+' blue crystals)':''));
+ b.onclick=async()=>{if(!profile)return;const locked=price>0&&!(ownedAv||[]).includes(k);
+  if(locked){if(profile.crystals<price){avArm=null;paint();msg(e+' costs '+price+' 💎 blue crystals. You have '+profile.crystals+'.');return}
+   if(avArm!==k){avArm=k;paint();msg('Unlock '+e+' for '+price+' blue crystals? Click it again to buy.');return}
+   avArm=null;b.disabled=true;const r=await client.rpc('sd_unlock_avatar',{p_avatar:k});b.disabled=false;if(r.error){paint();msg(nice(r.error));return}
+   ownedAv=r.data.unlocked_avatars||[];await refreshProfile(lastSession);msg('Unlocked '+e+'! −'+price+' 💎');return}
+  avArm=null;if(profile.avatar===k){paint();return}const prev=profile.avatar;profile.avatar=k;paint();const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error){profile.avatar=prev;paint();msg(nice(r.error));}else{msg('Avatar saved!');window.dispatchEvent(new CustomEvent('sd-profile',{detail:profile}))}};
+ q('acAvatars').appendChild(b);}}
 /* changing the player name costs NAME_PRICE blue crystals (checked + charged on the server in sd_set_username — keep in sync with supabase/username_price.sql) */
 const NAME_PRICE=150;let renameArm=null;const renameReset=()=>{renameArm=null;q('acRenameSave').textContent='SAVE'};q('acRename').addEventListener('input',renameReset);
 q('acRenameSave').onclick=async()=>{const n=q('acRename').value.trim();if(!profile||n===profile.username){renameReset();return;}
@@ -528,14 +573,27 @@ function openSelect(){stage.classList.remove('move-resolving');awaitingMatchRead
 const avEmoji=k=>(window.SD_AV||{})[k]||'🧑‍🚀';
 const myAvKey=()=>window.sdAccount?.profile?.avatar||'astronaut';
 const dispName=()=>window.sdAccount?.profile?.username||myName;
-let HUD={p:{av:'🧑‍🚀',name:'YOU'},c:{av:'🤖',name:'COMPUTER'}};
-function setHud(pl,op){HUD={p:pl,c:op};for(const [sel,x] of [['.label.p',pl],['.label.c',op]]){const el=document.querySelector(sel);const a=document.createElement('span');a.className='lav';a.textContent=x.av;a.setAttribute('aria-hidden','true');const n=document.createElement('span');n.className='lname';n.textContent=x.name;el.replaceChildren(a,n);el.title=x.name}}
+let HUD={p:{av:'🧑‍🚀',k:'astronaut',name:'YOU'},c:{av:'🤖',k:'cpu',name:'COMPUTER'}};
+const myStats=()=>{const p=window.sdAccount?.profile;return p?{w:p.wins,l:p.losses,st:p.current_streak||0,bs:p.best_streak||0}:{}};
+const HUDAV={};for(const side of ['p','c']){const b=document.createElement('div');b.className='hudAv '+side;b.tabIndex=0;b.setAttribute('role','button');const tip=document.createElement('div');tip.className='hudTip';b.appendChild(tip);stage.appendChild(b);HUDAV[side]=b;
+ const show=()=>{fillHudTip(side)};b.addEventListener('pointerenter',show);b.addEventListener('focus',show);b.addEventListener('click',e=>{e.stopPropagation();fillHudTip(side);b.classList.toggle('tipOpen')});}
+document.addEventListener('click',()=>{HUDAV.p.classList.remove('tipOpen');HUDAV.c.classList.remove('tipOpen')});
+/* stats shown when hovering / tapping a HUD avatar */
+function fillHudTip(side){const x=HUD[side]||{},tip=HUDAV[side].querySelector('.hudTip'),prof=window.sdAccount?.profile;let lines;
+ if(side==='p'){const st=prof?{w:prof.wins,l:prof.losses,s:prof.current_streak||0,b:prof.best_streak||0}:{w:stats.wins,l:stats.losses,s:stats.streak,b:stats.best};lines=statLines(st)+(prof?'':'\n(guest — stats on this device only)')}
+ else if(x.k==='cpu'){lines='Matches won against you: '+(prof?prof.losses:stats.losses)+'\nMatches you won against it: '+(prof?prof.wins:stats.wins)}
+ else lines=x.st&&x.st.w!=null?statLines(x.st):'Stats not available (guest or older version)';
+ tip.replaceChildren();const h=document.createElement('b');h.textContent=x.name||'';tip.append(h,document.createTextNode(lines))}
+function statLines(st){const g=(st.w||0)+(st.l||0);return '🏆 Matches won: '+(st.w||0)+'   💥 Lost: '+(st.l||0)+'\n🎮 Matches: '+g+'   📈 Win %: '+(g?Math.round((st.w||0)*100/g)+'%':'–')+'\n🔥 Streak: '+(st.s||0)+'   ⭐ Best: '+(st.b||0)}
+function setHud(pl,op){HUD={p:pl,c:op};for(const [sel,x,side] of [['.label.p',pl,'p'],['.label.c',op,'c']]){const el=document.querySelector(sel);const a=document.createElement('span');a.className='lav';a.textContent=x.av;a.setAttribute('aria-hidden','true');const n=document.createElement('span');n.className='lname';n.textContent=x.name;el.replaceChildren(a,n);el.title=x.name;
+  const box=HUDAV[side];if(window.sdAvatarFill&&x.k!=='cpu')window.sdAvatarFill(box,x.k,x.av);else{box.dataset.av=x.k||'';delete box.dataset.tier;let e=box.querySelector(':scope>.avE');if(!e){e=document.createElement('span');e.className='avE';box.prepend(e)}e.textContent=x.av}
+  box.setAttribute('aria-label',x.name+' — show stats');if(box.classList.contains('tipOpen'))fillHudTip(side)}}
 const oppName=()=>HUD.c.name;
-window.addEventListener('sd-profile',()=>{if(!selecting&&!(NET&&NET.live))setHud({av:avEmoji(myAvKey()),name:dispName()},HUD.c)});
+window.addEventListener('sd-profile',()=>{if(!selecting&&!(NET&&NET.live))setHud({av:avEmoji(myAvKey()),k:myAvKey(),name:dispName()},HUD.c)});
 async function choosePlayer(key){if(MODE==='online'){openOnline(key);return}
   const ros=Scene3D.roster?Scene3D.roster():[];if(ros.length<2&&Scene3D.prepareTwin)await Scene3D.prepareTwin(key);
   const r=Scene3D.choose?Scene3D.choose(key):{g:{name:'PLAYER',voice:'f'},a:{name:'COMPUTER',voice:'m'}};
-  SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),name:dispName()},{av:'🤖',name:'COMPUTER'});
+  SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),k:myAvKey(),name:dispName()},{av:'🤖',k:'cpu',name:'COMPUTER'});
   selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');reset();say('a',`${dispName()}? Ready to lose?`,300);say('g',"Bring it on!",1600)}
 $('mute').setAttribute('aria-pressed','false');$('mute').onclick=()=>{muted=!muted;if(muted&&canSpeak)speechSynthesis.cancel();$('mute').textContent=muted?'🔇 MUTED':'🔊 SOUND';$('mute').setAttribute('aria-pressed',String(muted));};
 document.addEventListener('keydown',e=>{
@@ -575,16 +633,16 @@ async function joinRoom(code,host=false){leaveOnline();showWait(code);$('onStatu
     ch.on('broadcast',{event:'reveal'},({payload})=>{if(NET!==net||!payload)return;if(!net.oppHashes[payload.round]){net.earlyReveal[payload.round]=payload;return}checkReveal(net,payload)});
     ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
-    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),host:net.host,ready:false,map:net.map});$('onStatus').textContent='Waiting for your friend…'}
+    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:false,map:net.map});$('onStatus').textContent='Waiting for your friend…'}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
-function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),host:NET.host,ready:NET.ready,map:NET.map})}
+function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map})}
 $('roomMap').onchange=()=>{if(!NET||!NET.isHost||NET.ready)return;NET.map=resolveMap($('roomMap').value);trackRoom()};$('roomReady').onclick=()=>{if(!NET||NET.ready)return;NET.ready=true;$('roomReady').disabled=true;$('roomMap').disabled=true;$('hostMap').querySelectorAll('button').forEach(b=>b.disabled=true);trackRoom()};
 function leaveOnline(){$('roomMap').disabled=false;$('hostMap').querySelectorAll('button').forEach(b=>b.disabled=false);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}}
 async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
   if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
   const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
-  SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),name:dispName()},{av:avEmoji(o.av),name:o.name||'FRIEND'});
+  SEL.g=r.g;SEL.a=r.a;setHud({av:avEmoji(myAvKey()),k:myAvKey(),name:dispName()},{av:avEmoji(o.av),k:o.av,name:o.name||'FRIEND',st:{w:o.w,l:o.l,s:o.st,b:o.bs}});
   net.live=true;net.round=0;lobbyTrack();onEl.classList.remove('show');selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');
   stats0();reset();say('a','Let\'s duel!',400)}
 function stats0(){}
