@@ -586,6 +586,7 @@ function startPick(){stopPick();pickLeft=pickTime();count.textContent=pickLeft;i
     count.textContent=pickLeft;if(pickLeft<=3){count.classList.remove('urgent');void count.offsetWidth;count.classList.add('urgent');sfx.tick();showChant(pickLeft)}},1000)}
 function idle(waitForReady=false){
  stage.classList.remove('move-resolving');
+  if(window.SD_SPEC){busy=false;awaitingMatchReady=false;stopReadyCountdown();matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('waiting-fight-ready');stopPick();Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');buttons.forEach(x=>{x.disabled=true;x.classList.remove('picked')});stage.classList.add('match-active');statusEl.textContent='👁 WATCHING — waiting for the players to pick…';statusEl.className='';setTimeout(()=>window.SD_SPEC&&window.SD_SPEC.next&&window.SD_SPEC.next(),250);return}
   if(NET&&NET.live){NET.round++;NET.myPick=null;if(NET.oppHashes[NET.round])setTimeout(oppReady,50)}
   busy=false;Scene3D.setShaking(false);Scene3D.clear&&Scene3D.clear();Scene3D.setHands('rock','scissors');
   buttons.forEach(x=>{x.disabled=false;x.classList.remove('picked')});
@@ -596,13 +597,14 @@ let srvMatch=null,srvPending=false,srvLast=null;
 function startServerMatch(){srvLast=null;srvPending=false;const acc=window.sdAccount,rule=MAP_RULES[window.arenaMap]||{fw:2};
   /* guests and online: the arena rule applies directly. Signed in vs computer: the server decides (old server without sd_match_start2 = best of 3) */
   matchFW=rule.fw;
-  srvMatch=(acc&&acc.profile&&!(NET&&NET.live))?acc.client.rpc('sd_match_start2',{p_map:window.arenaMap||'temple'}).then(r=>{if(r.error)throw r.error;matchFW=r.data.fw||2;render();return r.data.id})
+  srvMatch=(acc&&acc.profile&&!(NET&&NET.live)&&!window.SD_SPEC)?acc.client.rpc('sd_match_start2',{p_map:window.arenaMap||'temple'}).then(r=>{if(r.error)throw r.error;matchFW=r.data.fw||2;render();return r.data.id})
    .catch(()=>{matchFW=2;render();return acc.client.rpc('sd_match_start').then(r=>{if(r.error)throw r.error;return r.data})}).catch(e=>{console.warn('sd_match_start',e);return null}):null;
   if(srvMatch)matchFW=2/* until the server answers */}
 function reset(){if(selecting)return;stopPick();hush();started=true;token++;startServerMatch();p=3;c=3;playerFights=0;opponentFights=0;perfectMatch=true;historyP=[];historyC=[];Scene3D.reset&&Scene3D.reset();over.classList.remove('show');idle(true);render()}
 function shake(el){el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit')}
 
 function play(choice){
+  if(window.SD_SPEC)return;
   if(selecting||busy||awaitingMatchReady||!p||!c)return;
   if(NET&&NET.live){if(NET.myPick)return;NET.myPick=choice;stage.classList.add('move-resolving');stopPick();started=true;
     buttons.forEach(x=>{x.disabled=true;x.classList.toggle('picked',x.dataset.m===choice)});
@@ -653,6 +655,7 @@ async function runRound(choice,other){
       p=3;c=3;Scene3D.reset&&Scene3D.reset();render();idle(true);
       statusEl.textContent='';return;
     }
+    if(window.SD_SPEC){window.SD_SPEC.end&&window.SD_SPEC.end(youWon);return}
     const srvWin=srvLast&&srvLast.match_over;if(srvWin)window.demoProgress?.setServer?.({crystals:srvLast.crystals});else window.demoProgress?.reward(youWon, perfectMatch);logStat('sd_matches',{winner:youWon?'player':'opp'});
     if(NET&&NET.opp&&NET.opp.uid&&window.sdAccount){const g0=window.sdAccount.profile?.crystals??0;window.sdAccount.client.rpc('sd_online_report',{p_room:NET.code,p_opp:NET.opp.uid,p_won:youWon}).then(r=>{if(r.error)return;const chk=async()=>{const a=window.sdAccount;if(!a)return false;await a.refresh();const d=(window.sdAccount?.profile?.crystals??g0)-g0;if(d>0){const t=document.createElement('div');t.className='sdToast';t.innerHTML='💎 <b>+'+d+'</b> online '+(youWon?'win':'match')+' reward';(document.querySelector('.stage')||document.body).appendChild(t);setTimeout(()=>t.classList.add('out'),4200);setTimeout(()=>t.remove(),5000);return true}return false};setTimeout(async()=>{window.sdDailyRefresh?.();if(!await chk())setTimeout(chk,4000)},2500)},()=>{})}
     const guest=!window.sdAccount?.profile;/* guests: no stats and no crystals — every match stands on its own */
@@ -717,7 +720,7 @@ document.addEventListener('keydown',e=>{
 });
 /* ---------- online multiplayer (Supabase Realtime: no database tables, just a live channel per room) ---------- */
 const SB_URL='https://mrrqfrmgblbgrvkbrwvt.supabase.co',SB_KEY='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
-function logStat(table,row){try{if(NET&&NET.live&&NET.opp&&!(myId<NET.opp.id))return;
+function logStat(table,row){try{if(window.SD_SPEC)return;if(NET&&NET.live&&NET.opp&&!(myId<NET.opp.id))return;
   fetch(SB_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
    body:JSON.stringify({mode:NET&&NET.live?'online':'cpu',player_char:SEL.g.key||null,opp_char:SEL.a.key||null,...row})}).catch(()=>{})}catch(e){}}
 const myId=Math.random().toString(36).slice(2,10),urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -791,7 +794,7 @@ setTimeout(stripPanel,0);
 async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
     NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:resolveMap($('arenaChoice').value),starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;try{readyState()}catch(e){}roomUI();
-    ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps=ch.presenceState(),ids=Object.keys(ps).sort();
+    ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps0=ch.presenceState(),ps={};for(const k in ps0)if(!(ps0[k][0]&&ps0[k][0].spec))ps[k]=ps0[k];const ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
       if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
         if(net.friendChar!==(o.char||null)){net.friendChar=o.char||null;Scene3D.setLobbyFriend?.(net.friendChar)}roomUI();
@@ -824,7 +827,7 @@ function oppReady(){if(!NET||!NET.live||busy)return;if(!NET.myPick){statusEl.tex
 /* commit-reveal: a move is sent as a SHA-256 seal first and only revealed after the opponent has sealed theirs */
 function randomSalt(){const b=new Uint8Array(16);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')}
 async function pickHash(round,move,salt){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(round+':'+move+':'+salt));return Array.from(new Uint8Array(d),x=>x.toString(16).padStart(2,'0')).join('')}
-function sendReveal(net,round){if(NET!==net||!net.live||net.revealSent[round]||round!==net.round||!net.myPick||!net.hashSent[round]||!net.oppHashes[round])return;net.revealSent[round]=true;net.ch.send({type:'broadcast',event:'reveal',payload:{round,move:net.myPick,salt:net.mySalt[round]}})}
+function sendReveal(net,round){if(NET!==net||!net.live||net.revealSent[round]||round!==net.round||!net.myPick||!net.hashSent[round]||!net.oppHashes[round])return;net.revealSent[round]=true;net.ch.send({type:'broadcast',event:'reveal',payload:{round,move:net.myPick,salt:net.mySalt[round],by:myId,st:[p,c,playerFights,opponentFights]}})}
 async function checkReveal(net,payload){const {round,move,salt}=payload,hash=net.oppHashes[round];if(!hash||net.oppPicks[round]||!MOVES.includes(move)||typeof salt!=='string')return;if(await pickHash(round,move,salt)!==hash){if(NET===net){statusEl.textContent='OPPONENT SENT AN INVALID MOVE';statusEl.className='lose'}return}if(NET!==net)return;net.oppPicks[round]=move;if(round===net.round)tryReveal()}
 function tryReveal(){if(!NET||!NET.live||busy)return;const o=NET.oppPicks[NET.round];if(NET.myPick&&o)runRound(NET.myPick,o)}
 function oppLeft(){if(!NET)return;stage.classList.remove('move-resolving');awaitingMatchReady=false;stage.classList.remove('waiting-fight-ready');matchReady.hidden=true;readyPanel.hidden=true;stage.classList.remove('match-active');NET.live=false;hush();stopPick();token++;busy=false;statusEl.textContent='YOUR FRIEND LEFT THE ROOM';statusEl.className='lose';
@@ -2285,7 +2288,7 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
  if(window.sdAccount){load();loadWeek()}})();
 </script><script>
 /* ---------- crystal info: click the 💎 / pink crystal counters to see how to earn them ---------- */
-(()=>{const d=document.createElement('dialog');d.id='gemInfo';d.innerHTML='<h3>💎 BLUE CRYSTALS</h3><ul><li>Win an ONLINE match vs a player: <b>+25</b> (lose: <b>+5</b>; max 3 rewarded matches vs the same player a day, 20 a day in total)</li><li>Win a match vs computer: <b>+5</b> (+8 if you lose no health)</li><li>Lose a match: <b>+1</b> (leaving with EXIT gives 0)</li><li>Daily missions 📋: <b>+3 to +10</b> each</li><li>Weekly login calendar 📋: <b>+10</b> every day you collect (day 7: +10 pink too)</li><li>Reward codes: PROFILE → REDEEM CODE</li></ul><h3 style="font-size:15px;margin-top:12px">WHAT YOU CAN DO WITH THEM</h3><ul><li>Unlock arenas (35–400 💎; Celestial Palace: 120 pink)</li><li>Change your player name (150 💎)</li><li><i>Coming soon:</i> unlock new characters</li></ul><p>Crystals are saved to your profile, so you need an account — guests don\'t earn crystals.</p><h3 class="pink"><span class="pinkGem">💎</span> PINK CRYSTALS</h3><ul><li>Invite a friend: <b>+1</b> for each friend who creates an account with your invite link (PROFILE → INVITE FRIENDS)</li><li>Social daily missions 📋 (share the game, play online with friends): <b>+1</b> each</li></ul><p>Spend them on the mythic <b>Cosmic Phoenix</b> avatar (100). Coming soon: buy them and win them in rare events.</p><button type="button">OK</button>';(document.querySelector('.stage')||document.body).appendChild(d);
+(()=>{const d=document.createElement('dialog');d.id='gemInfo';d.innerHTML='<h3>💎 BLUE CRYSTALS</h3><ul><li>Win an ONLINE match vs a player: <b>+25</b> (lose: <b>+5</b>; max 3 rewarded matches vs the same player a day, 20 a day in total)</li><li>Win a match vs computer: <b>+2</b> (+5 if you lose no health)</li><li>Lose a match: <b>+1</b> (leaving with EXIT gives 0)</li><li>Daily missions 📋: <b>+3 to +10</b> each</li><li>Weekly login calendar 📋: <b>+10</b> every day you collect (day 7: +10 pink too)</li><li>Reward codes: PROFILE → REDEEM CODE</li></ul><h3 style="font-size:15px;margin-top:12px">WHAT YOU CAN DO WITH THEM</h3><ul><li>Unlock arenas (35–400 💎; Celestial Palace: 120 pink)</li><li>Change your player name (150 💎)</li><li><i>Coming soon:</i> unlock new characters</li></ul><p>Crystals are saved to your profile, so you need an account — guests don\'t earn crystals.</p><h3 class="pink"><span class="pinkGem">💎</span> PINK CRYSTALS</h3><ul><li>Invite a friend: <b>+1</b> for each friend who creates an account with your invite link (PROFILE → INVITE FRIENDS)</li><li>Social daily missions 📋 (share the game, play online with friends): <b>+1</b> each</li></ul><p>Spend them on the mythic <b>Cosmic Phoenix</b> avatar (100). Coming soon: buy them and win them in rare events.</p><button type="button">OK</button>';(document.querySelector('.stage')||document.body).appendChild(d);
  d.querySelector('button').onclick=()=>d.close();d.addEventListener('click',e=>{if(e.target===d)d.close()});
  /* profile stat tiles: hover (or tap) shows a short explanation; the crystals tile opens the crystal info */
  const TIPS={acStCrystals:'Blue crystals you have. Earn them by winning matches and doing daily missions; spend them on arenas and name changes. Click for more.',acStWins:'Matches you won vs the computer.',acStLosses:'Matches you lost vs the computer. Leaving with EXIT also counts as a loss.',acStMaps:'Arenas you have unlocked, out of all 7.',acStGames:'All finished matches vs the computer (wins + losses). Online matches don\'t count yet.',acStRate:'How many of your matches you won, in percent.',acStStreak:'Wins in a row right now. A loss resets it to 0.',acStBest:'Your longest win streak ever.'};
@@ -2836,7 +2839,7 @@ html body #stage#stage[data-mode=cpu] :is(#online,#podium){display:none!importan
  const mb=document.getElementById('modeBtns'),back=document.createElement('div');back.id='modeBack';back.innerHTML='<span id="modeBackLbl"></span><button type="button">⇄ CHANGE MODE</button>';
  mb.insertAdjacentElement('afterend',back);
  const info=document.createElement('div');info.id='cpuInfo';
- info.innerHTML='<h4>🤖 OFFLINE · VS COMPUTER</h4><ul><li>1 · Pick your hero</li><li>2 · Choose an arena</li><li>3 · Press READY</li></ul><p style="margin:.7em 0 0;color:#c7e9ff">Win = 💎 5 crystals, perfect win = 💎 8. Log in to keep your crystals and stats.</p>';
+ info.innerHTML='<h4>🤖 OFFLINE · VS COMPUTER</h4><ul><li>1 · Pick your hero</li><li>2 · Choose an arena</li><li>3 · Press READY</li></ul><p style="margin:.7em 0 0;color:#c7e9ff">Win = 💎 2 crystals, perfect win = 💎 5. Log in to keep your crystals and stats.</p>';
  sel.appendChild(info);
  const setMode=m=>{stage.dataset.mode=m;document.getElementById('modeBackLbl').textContent=m==='online'?'🌐 ONLINE':m==='cpu'?'🤖 OFFLINE · VS COMPUTER':'';setTimeout(()=>{try{window.sdPlacePodium?.()}catch(e){}window.dispatchEvent(new Event('resize'))},0)};
  /* the old switch buttons still do the work (online room, lobby…); they just also set the page */
@@ -2948,6 +2951,19 @@ html body #stage#stage[data-mode=cpu] :is(#online,#podium){display:none!importan
 #rmReady.on{background:linear-gradient(180deg,#3fe08f,#17a862)!important;color:#03210f!important}
 #rmEmotes{display:flex;gap:4px;justify-content:center}#rmEmotes button{margin:0;padding:.2em .45em;font-size:13px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
 #rmLog{font:700 clamp(8px,.8vw,10px)/1.45 Arial,sans-serif;color:#b9cbe8;max-height:6.5em;overflow:auto}
+#hub .rmChat{display:flex;gap:4px}#hub .rmChat input{flex:1}#hub .rmChat button{margin:0;padding:.3em .7em}
+#rmLive .lvBtns{display:flex;gap:4px;justify-content:center;margin-top:5px;flex-wrap:wrap}#rmLive .lvBtns button{margin:0;padding:.3em .6em;font-size:10px}
+#rmLive .lvWatch{background:linear-gradient(180deg,#ffd54a,#f29e2e)!important;color:#3a2600!important}
+.cheerPop{position:absolute;z-index:45;pointer-events:none;max-width:42%;padding:6px 12px;border-radius:16px 16px 16px 4px;background:rgba(10,18,50,.88);border:1px solid #7de7ff;color:#fff;font:900 clamp(11px,1.3vw,17px)/1.25 Arial,sans-serif;box-shadow:0 0 14px #52d4ff77;animation:cheerUp 3.3s ease-out forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cheerPop.forMe{border-color:#ffd54a;box-shadow:0 0 20px #ffd54a;font-size:clamp(13px,1.6vw,21px)}.cheerPop.mine{opacity:.85;border-style:dashed}
+@keyframes cheerUp{0%{transform:translateY(16px) scale(.8);opacity:0}12%{transform:none;opacity:1}75%{opacity:1}100%{transform:translateY(-46px);opacity:0}}
+#specBar{display:none;position:absolute;z-index:44;left:50%;transform:translateX(-50%);bottom:4%;align-items:center;gap:10px;padding:5px 8px 5px 14px;border-radius:999px;background:rgba(10,18,50,.8);border:1px solid rgba(125,231,255,.6);font-family:Arial,sans-serif;color:#fff}
+#stage.spectating #specBar{display:flex}#stage.roomDuel:not(.spectating) #specBar{display:flex;top:auto;bottom:1.5%;left:1.5%;transform:none;padding:4px 6px}
+#stage.roomDuel:not(.spectating) #specBar :is(#specTitle,#specBack){display:none}
+#specBar b{font:900 clamp(10px,1.1vw,14px)/1 Arial,sans-serif;letter-spacing:.06em;white-space:nowrap}
+#specBar .sbEm{display:flex;gap:3px}#specBar .sbEm button{margin:0;padding:.2em .4em;font-size:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:9px;color:#fff;cursor:pointer}
+#specBar #specBack{margin:0;padding:.5em 1em;font:900 11px/1 Arial,sans-serif;white-space:nowrap;border:0;border-radius:999px;background:linear-gradient(180deg,#7de7ff,#3a8bff);color:#04122e;cursor:pointer}
+#stage.spectating .controls,#stage.spectating #matchExit,#stage.spectating #readyCount{display:none!important}
 #hub .spin{width:46px;height:46px;margin:10px auto;border-radius:50%;border:5px solid rgba(125,231,255,.25);border-top-color:#7de7ff;animation:hubSpin 1s linear infinite}
 @keyframes hubSpin{to{transform:rotate(360deg)}}
 #hub .hv[data-v=search]{align-items:center;text-align:center;justify-content:center}
@@ -3020,7 +3036,7 @@ left.innerHTML='<div id="myHero" class="glass" title="Change your hero"><div cla
   '<p class="small" id="rmDesc" style="margin:0;font-size:11px;color:#c7e9ff"></p><div class="hRow" id="rmInfo"></div>'+
   '<div id="rmLive"></div><div id="rmMembers"></div>'+
   '<div class="rmBtns"><button type="button" id="rmReady">✓ READY</button><button type="button" class="ghost" id="rmInvite">✉ INVITE</button><button type="button" class="ghost" id="rmLink" title="Copy the room link">🔗</button></div>'+
-  '<p class="msg" id="rmMsg"></p><div id="rmEmotes"></div><div id="rmLog"></div></div>'+
+  '<p class="msg" id="rmMsg"></p><div id="rmEmotes"></div><div id="rmLog"></div><div class="rmChat"><input id="rmChatIn" maxlength="80" placeholder="💬 say something…" autocomplete="off"><button type="button" id="rmChatGo">➤</button></div></div>'+
  '<div class="hv" data-v="search"><h4>⚡ FINDING A PLAYER…</h4><div class="spin"></div><p class="small" id="qmTxt" style="font-size:12px"></p><button type="button" class="ghost" id="qmCancel">CANCEL</button></div>'+
  '</div>';
 sel.appendChild(left);
@@ -3060,7 +3076,9 @@ async function joinRoomR(chan,opt={}){leaveRoomR(true);stopSearch();let client;t
  const R=ROOM={chan,ch,host:!!opt.host,set:opt.set||null,members:[],ready:false,t:Date.now(),order:[],st:{playing:null},wins:{},log:[],joinedOk:!!opt.host,hostSeen:false,subscribed:false,handled:null,live:null};
  view('room');$('rmMsg').textContent=opt.host?'':'Joining…';
  ch.on('presence',{event:'sync'},()=>{if(ROOM===R)roomSync()});
- ch.on('broadcast',{event:'emote'},({payload:p})=>{if(ROOM===R&&p)addLog((p.name||'?')+': '+String(p.e).slice(0,4))});
+ ch.on('broadcast',{event:'emote'},({payload:p})=>{if(ROOM===R&&p){const t=(p.name||'?')+': '+String(p.e).slice(0,4);addLog(t);popCheer(t)}});
+ ch.on('broadcast',{event:'chat'},({payload:p})=>{if(ROOM===R&&p&&p.t){const t='💬 '+(p.name||'?')+': '+String(p.t).slice(0,80);addLog(t);popCheer(t)}});
+ ch.on('broadcast',{event:'cheer'},({payload:p})=>{if(ROOM===R&&p){const t='📣 '+(p.name||'?')+': GO '+String(p.forName||'').toUpperCase()+'!';addLog(t);popCheer(t,p.for===myId)}});
  ch.on('broadcast',{event:'live'},({payload:p})=>{if(ROOM===R&&p&&R.st&&p.code===R.st.code){R.live=p;renderRoom()}});
  ch.on('broadcast',{event:'result'},({payload:p})=>{if(ROOM===R&&R.host&&p)applyResult(p)});
  ch.subscribe(async st=>{if(ROOM!==R)return;if(st==='SUBSCRIBED'){R.subscribed=true;await roomTrack();lobbyTrack();if(R.host){addLog('Room open — press READY. Matches start when 2 players are ready.');hostTick()}
@@ -3096,7 +3114,8 @@ function checkMyMatchLater(){if(selecting)checkMyMatch()}
 function renderRoom(){const R=ROOM;if(!R||!$('rmName'))return;const s=R.set||{};$('rmName').textContent=(s.locked?'🔒 ':'')+(s.name||'ROOM');$('rmDesc').textContent=s.desc||'';
  $('rmInfo').innerHTML='<span>👥 '+Math.min(R.members.length,s.max||2)+'/'+(s.max||2)+'</span><span>🗺 '+(s.maps?s.maps.length:1)+' arena'+((s.maps||[]).length===1?'':'s')+'</span><span>'+(s.listed===false?'🙈 friends only':s.locked?'🔒 password':'🌍 public')+'</span>';
  const st=R.st||{};const playing=st.playing||[];
- $('rmLive').textContent=playing.length?'⚔ LIVE: '+st.names[0]+(R.live&&R.live.code===st.code?'  '+R.live.s[0]+' – '+R.live.s[1]+'  ':' vs ')+st.names[1]+' · '+mapLabel(st.map):st.last?'🏆 Last: '+st.last[0]+' beat '+st.last[1]:'';
+ const lv=$('rmLive');lv.textContent=playing.length?'⚔ LIVE: '+st.names[0]+(R.live&&R.live.code===st.code?'  '+R.live.s[0]+' – '+R.live.s[1]+'  ':' vs ')+st.names[1]+' · '+mapLabel(st.map):st.last?'🏆 Last: '+st.last[0]+' beat '+st.last[1]:'';
+ if(playing.length&&!playing.includes(myId)){const row=document.createElement('div');row.className='lvBtns';row.innerHTML='<button type="button" class="lvWatch">👁 WATCH</button><button type="button" class="ghost" data-c="0">📣 '+esc(st.names[0])+'</button><button type="button" class="ghost" data-c="1">📣 '+esc(st.names[1])+'</button>';lv.appendChild(row);row.querySelector('.lvWatch').onclick=spectate;row.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>sendCheer(+b.dataset.c))}
  const ord=R.order&&R.order.length?R.order:R.members.slice().sort(memSort).map(m=>m.id);
  $('rmMembers').innerHTML=ord.map((id,i)=>{const m=R.members.find(x=>x.id===id);if(!m)return '';const pl=playing.includes(id);
   return '<div class="mb'+(id===myId?' me':'')+(pl?' play':'')+'"><span>'+(m.host?'👑':(i+1)+'.')+'</span><span class="nm">'+esc(m.name||'Player')+(id===myId?' (you)':'')+'</span><span class="hr">'+esc(heroName(m.hero))+(m.acc?' · Lv '+(m.lvl||1):'')+'</span><span title="wins in this room">🏆'+(R.wins[id]||0)+'</span><span class="rd" title="'+(pl?'playing':m.ready?'ready':'not ready')+'">'+(pl?'⚔':m.ready?'✅':'⏳')+'</span></div>'}).join('');
@@ -3110,7 +3129,7 @@ async function copyLink(){if(!ROOM)await openRoom({name:dispName()+"'s room",des
  (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>{$('rmMsg').textContent='Link copied — send it to your friends.';$('lobStatus').textContent='Room link copied.'},()=>{$('rmMsg').textContent=link})}
 $('rmLink').onclick=copyLink;$('onLinkBtn').onclick=copyLink;
 $('rmEmotes').innerHTML=['👋','😂','🔥','👏','😮','GG'].map(e=>'<button type="button" class="ghost">'+e+'</button>').join('');
-$('rmEmotes').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!ROOM)return;const p={name:dispName(),e:b.textContent};try{ROOM.ch.send({type:'broadcast',event:'emote',payload:p})}catch(e){}addLog(p.name+': '+p.e)});
+$('rmEmotes').querySelectorAll('button').forEach(b=>b.onclick=()=>sendEmote(b.textContent));
 hub.querySelectorAll('.hBack').forEach(b=>b.onclick=()=>{if(hub.dataset.v==='room'){leaveRoomR()}else view('menu')});
 /* rooms list (from the lobby: every host's presence carries its room) */
 function renderRooms(){const list=lobbyUsers.filter(u=>u.room&&u.room.chan).map(u=>u.room);const n=list.length;hub.querySelectorAll('.roomsN').forEach(x=>x.textContent=n||'no');
@@ -3180,6 +3199,43 @@ new MutationObserver(()=>{if(isOnlinePage()){if(selecting)enterOnline()}else{sto
 {const oc=$('onCancel'),old=oc.onclick;oc.onclick=e=>{if(stage.classList.contains('showFriends')){stage.classList.remove('showFriends');return}old&&old.call(oc,e)}}
 /* ?room= link: open that room */
 if(urlRoom){setTimeout(()=>{goOnline();joinRoomR(urlRoom)},600)}
+
+/* ---------- CHAT + CHEERS: room messages pop up on the screen of everyone in a match (players and watchers) ---------- */
+let lastSend=0;const canSend=()=>{const n=Date.now();if(n-lastSend<900)return false;lastSend=n;return true};
+function sendEmote(e){if(!ROOM||!canSend())return;const p={name:dispName(),e};try{ROOM.ch.send({type:'broadcast',event:'emote',payload:p})}catch(err){}const t=p.name+': '+e;addLog(t);if(!selecting)popCheer(t,false,true)}
+function sendChat(){const i=$('rmChatIn');const t=i.value.trim().slice(0,80);if(!ROOM||!t||!canSend())return;i.value='';try{ROOM.ch.send({type:'broadcast',event:'chat',payload:{name:dispName(),t}})}catch(err){}addLog('💬 '+dispName()+': '+t)}
+function sendCheer(i){const R=ROOM;if(!R||!R.st||!R.st.playing||!canSend())return;const id=R.st.playing[i],nm=R.st.names[i];try{R.ch.send({type:'broadcast',event:'cheer',payload:{name:dispName(),for:id,forName:nm}})}catch(err){}const t='📣 '+dispName()+': GO '+String(nm).toUpperCase()+'!';addLog(t);if(!selecting)popCheer(t,false,true)}
+$('rmChatGo').onclick=sendChat;$('rmChatIn').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')sendChat()};
+function popCheer(text,forMe,mine){if(selecting)return;const d=document.createElement('div');d.className='cheerPop'+(forMe?' forMe':'')+(mine?' mine':'');d.textContent=text;
+ d.style.left=(14+Math.random()*58)+'%';d.style.top=(20+Math.random()*26)+'%';stage.appendChild(d);setTimeout(()=>d.remove(),3400);if(forMe)try{beep(880,.08,'triangle',.05)}catch(e){}}
+/* quick-emote bar during a room match (players) and while watching */
+const sb=document.createElement('div');sb.id='specBar';sb.innerHTML='<b id="specTitle"></b><div class="sbEm"></div><button type="button" id="specBack">⬅ BACK TO ROOM</button>';stage.appendChild(sb);
+sb.querySelector('.sbEm').innerHTML=['👋','😂','🔥','👏','😮','GG'].map(e=>'<button type="button">'+e+'</button>').join('');
+sb.querySelectorAll('.sbEm button').forEach(b=>b.onclick=()=>sendEmote(b.textContent));
+setInterval(()=>{stage.classList.toggle('roomDuel',!!(NET&&NET.live&&NET.roomMatch&&ROOM))},500);
+/* ---------- WATCH: room members replay the live duel in their own 3D scene (full screen) ---------- */
+let SPEC=null;
+async function spectate(){const R=ROOM;if(!R||!R.st||!R.st.playing||SPEC||!selecting)return;const st=R.st,[a,b]=st.playing;let client;try{client=await sbClient()}catch(e){return}
+ const ch=client.channel('spaceduel-'+st.code,{config:{presence:{key:myId},broadcast:{self:false}}});
+ const S=SPEC={ch,code:st.code,a,b,map:st.map,rev:{},last:0,started:false,P:{},names:st.names};$('rmMsg').textContent='Connecting to the match…';
+ ch.on('presence',{event:'sync'},()=>{if(SPEC!==S)return;const ps=ch.presenceState();for(const id of [a,b])if(ps[id])S.P[id]=ps[id][ps[id].length-1];
+  if(!S.started&&S.P[a]&&S.P[b]&&ps[a]&&ps[b])specStart(S);
+  else if(S.started&&(!ps[a]||!ps[b])&&!S.ending){S.ending=true;statusEl.textContent='A PLAYER LEFT THE MATCH';setTimeout(()=>specExit(S),2500)}});
+ ch.on('broadcast',{event:'reveal'},({payload:p})=>{if(SPEC!==S||!p||(p.by!==a&&p.by!==b)||!MOVES.includes(p.move))return;const r=S.rev[p.round]||(S.rev[p.round]={});r[p.by===a?'a':'b']={m:p.move,st:p.by===a?p.st:(Array.isArray(p.st)?[p.st[1],p.st[0],p.st[3],p.st[2]]:null)};specNext(S)});
+ ch.subscribe(async x=>{if(SPEC!==S)return;if(x==='SUBSCRIBED')await ch.track({spec:true,name:dispName()})});
+ setTimeout(()=>{if(SPEC===S&&!S.started){specExit(S,true);$('rmMsg').textContent='Could not watch this match — try again.'}},8000)}
+async function specStart(S){S.started=true;const A=S.P[S.a],B=S.P[S.b];if(A.char&&A.char===B.char&&Scene3D.prepareTwin)await Scene3D.prepareTwin(A.char);if(SPEC!==S)return;
+ window.arenaMap=S.map;const r=Scene3D.choose?Scene3D.choose(A.char,B.char):{g:{name:A.name||'A',voice:'f'},a:{name:B.name||'B',voice:'m'}};SEL.g=r.g;SEL.a=r.a;
+ setHud({av:avEmoji(A.av),k:A.av,name:A.name||'Player'},{av:avEmoji(B.av),k:B.av,name:B.name||'Player'});
+ S.next=()=>specNext(S);S.end=won=>specEnd(S,won);window.SD_SPEC=S;$('rmMsg').textContent='';
+ selecting=false;selEl.classList.remove('show');stage.classList.remove('selecting');onEl.classList.remove('show');stage.classList.add('spectating');
+ $('specTitle').textContent='👁 WATCHING '+(A.name||'?')+' vs '+(B.name||'?');reset()}
+function specNext(S){if(window.SD_SPEC!==S||busy||awaitingMatchReady)return;const ready=Object.keys(S.rev).map(Number).filter(r=>r>S.last&&S.rev[r].a&&S.rev[r].b).sort((x,y)=>x-y);if(!ready.length)return;
+ const r=ready.length>2?ready[ready.length-1]:ready[0],x=S.rev[r];S.last=r;const st=x.a.st;if(Array.isArray(st)&&st.length===4&&st.every(n=>Number.isInteger(n)&&n>=0&&n<=5)){p=st[0];c=st[1];playerFights=st[2];opponentFights=st[3];render()}
+ runRound(x.a.m,x.b.m)}
+function specEnd(S,won){if(window.SD_SPEC!==S)return;const A=S.P[S.a]||{},B=S.P[S.b]||{};statusEl.textContent='🏆 '+String((won?A:B).name||'?').toUpperCase()+' WINS THE MATCH!';statusEl.className='win';try{announce('Victory!')}catch(e){}setTimeout(()=>specExit(S),5000)}
+function specExit(S,quiet){if(SPEC!==S)return;SPEC=null;window.SD_SPEC=null;try{S.ch.unsubscribe()}catch(e){}stage.classList.remove('spectating');if(S.started)openSelect()}
+$('specBack').onclick=()=>{if(SPEC)specExit(SPEC)};
 if(isOnlinePage())setTimeout(enterOnline,300);loadLevels();setTimeout(paintHeroCard,1500);
 })();
 </script>
