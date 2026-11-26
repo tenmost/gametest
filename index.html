@@ -4206,7 +4206,7 @@ function paint(){if(!W.open)return;const f=flow(),id=f[W.step][0],body=q('.wzBod
  if(id==='mode'){head(stepTxt,'HOW DO YOU WANT TO PLAY?','Pick one — you can always come back.');next.hidden=true;
   body.innerHTML='<div class="wzGrid big"><button type="button" class="wzCard'+(W.mode==='online'?' on':'')+'" data-m="online"><span class="wzI">🌐</span><div><b>ONLINE</b><small>Play your friends or other players</small></div></button>'+
    '<button type="button" class="wzCard'+(W.mode==='cpu'?' on':'')+'" data-m="cpu"><span class="wzI">🤖</span><div><b>OFFLINE</b><small>Play against the computer'+(signedIn()?' and earn crystals':'')+'</small></div></button></div>';
-  body.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{beepS();W.mode=b.dataset.m;W.step=1;paint()})}
+  body.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{beepS();W.mode=b.dataset.m;try{localStorage.setItem('sd_wiz_seen','1')}catch(e){}close();toMode(W.mode)})}
  else if(id==='hero'){head(stepTxt,'CHOOSE YOUR HERO','Tap a hero, then press NEXT.');const H=heroes();
   if(!W.hero||!H.some(h=>h.k===W.hero))W.hero=(window.sdFavHero&&window.sdFavHero())||null;if(W.hero&&!H.some(h=>h.k===W.hero))W.hero=H[0]?H[0].k:null;
   body.innerHTML=H.length?'<div class="wzGrid">'+H.map(h=>{const pic=heroPic(h.k),lv=heroLv(h.k);return '<button type="button" class="wzCard'+(h.k===W.hero?' on':'')+'" data-h="'+esc(h.k)+'"><span class="wzPic">'+(pic?'<img alt="" src="'+esc(pic)+'">':'🦸')+'</span><b>'+esc(h.name)+'</b>'+(lv?'<small>Lv '+lv+'</small>':'')+'</button>'}).join('')+'</div>':'<div class="wzEmpty">Loading heroes…</div>';
@@ -4254,11 +4254,11 @@ async function startOnline(g){const hero=W.hero;close();try{window.sdSetFav&&win
 /* PLAY opens the steps instead of the old ONLINE / OFFLINE pop-up */
 document.addEventListener('click',e=>{const b=e.target.closest('#playBig');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open()},true);
 /* the OFFLINE tab in the top menu: straight to the hero step of the offline flow */
-document.addEventListener('click',e=>{const t=e.target.closest('#topNav [data-tab=cpu]');if(!t||stage.dataset.mode==='cpu')return;e.preventDefault();e.stopImmediatePropagation();open({mode:'cpu',step:1})},true);
+/* (Nov 2026: the OFFLINE tab goes straight to the offline page again — no forced steps) */
 document.addEventListener('keydown',e=>{if(!W.open)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(W.step>0){W.step--;paint()}else close()}else if(e.key==='Enter'&&!e.target.closest('input,textarea')){const c=e.target.closest('.wzCard');if(c)return;e.preventDefault();goNext()}},true);
 /* first visit of the page: start with the steps (not for ?room= invite links) */
-let first=true;const t0=Date.now();
-const iv=setInterval(()=>{if(!first){clearInterval(iv);return}if(Date.now()-t0>20000){first=false;return}
+let first=(()=>{try{return !localStorage.getItem('sd_wiz_seen')}catch(e){return true}})();const t0=Date.now();
+const iv=setInterval(()=>{if(!first){clearInterval(iv);return}if(Date.now()-t0>20000){first=false;return}if(stage.dataset.mode!=='gate'){first=false;return}
  const room=new URLSearchParams(location.search).get('room');if(room){first=false;return}
  if(stage.dataset.mode==='gate'&&stage.classList.contains('selecting')&&!document.querySelector('dialog[open]')){first=false;open()}},300);
 /* a match starting (or the game leaving the start screen) always hides the steps */
