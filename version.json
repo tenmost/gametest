@@ -1,6 +1,16 @@
 {
-  "current": "1.1.0",
+  "current": "1.1.1",
   "releases": [
+    {
+      "v": "1.1.1",
+      "date": "2026-11-26",
+      "title": "Daily moved to your player card",
+      "new": [
+        "DAILY is now the 📋 button on your player card, right under the 🔔 bell (for logged-in players). It shines and shows a red number when rewards are waiting",
+        "The top menu is shorter and tidier"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.1.0",
       "date": "2026-11-26",

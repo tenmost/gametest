@@ -4279,6 +4279,12 @@ setInterval(()=>{if(W.open&&!stage.classList.contains('selecting'))close()},500)
 <style>/* ===== INBOX (Nov 2026): 🔔 on the player card + a red number when you have friend requests or unread private messages (also a dot on ACCOUNT); the INBOX panel lists requests (✓ / ✕), your friends (online dot, unread count) and a chat with each friend. Server: supabase/messages.sql (sd_inbox, sd_msg_send — accepted friends only, 200 chars, links removed, 8/min — sd_msg_list). ===== */
 #inboxBtn{position:absolute;top:6px;right:6px;z-index:3;width:34px;height:34px;padding:0!important;display:grid;place-items:center;border-radius:50%!important;border:1px solid var(--ln2,#555)!important;background:var(--th0,#111)!important;color:var(--gd,#ffb627)!important;font-size:16px!important;cursor:pointer}
 #inboxBtn[hidden]{display:none!important}
+#dailyCardBtn{position:absolute;top:46px;right:6px;z-index:3;width:34px;height:34px;padding:0!important;display:grid;place-items:center;border-radius:50%!important;border:1px solid var(--ln2,#555)!important;background:var(--th0,#111)!important;color:var(--gd,#ffb627)!important;font-size:16px!important;cursor:pointer}
+#dailyCardBtn[hidden]{display:none!important}
+#dailyCardBtn .ibN{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#ff3b4f;color:#fff;font:900 11px/18px Arial,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--th0,#111),0 0 12px #ff3b4f;display:none}
+#dailyCardBtn.has .ibN{display:block}
+#dailyCardBtn.sdShine{animation:sdShine 1.6s ease-in-out infinite}
+#topNav .tnTabs button[data-tab=daily]{display:none!important}
 #inboxBtn.inl{position:relative;top:auto;right:auto;width:auto;height:auto;min-width:32px;padding:5px 8px!important;border-radius:8px!important;flex:0 0 auto}
 #inboxBtn .ibN{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#ff3b4f;color:#fff;font:900 11px/18px Arial,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--th0,#111),0 0 12px #ff3b4f;display:none}
 #inboxBtn.has .ibN{display:block}
@@ -4318,6 +4324,13 @@ const btn=document.createElement('button');btn.type='button';btn.id='inboxBtn';b
 function placeBtn(){const c=document.getElementById('playerCard');if(!c)return;const sh=document.getElementById('shopBtn');const inl=sh&&c.contains(sh)&&sh.offsetParent!==null;btn.classList.toggle('inl',!!inl);if(inl){if(btn.nextSibling!==sh)sh.parentNode.insertBefore(btn,sh)}else if(btn.parentNode!==c)c.appendChild(btn)}
 addEventListener('resize',()=>setTimeout(placeBtn,200));
 setInterval(placeBtn,1500);placeBtn();
+/* 📋 DAILY on the player card, right under the bell (wide screens; only for logged-in players — the top-menu DAILY tab is gone) */
+const dcb=document.createElement('button');dcb.type='button';dcb.id='dailyCardBtn';dcb.hidden=true;dcb.title='Daily rewards and missions';dcb.setAttribute('aria-label','Daily');dcb.innerHTML='📋<span class="ibN"></span>';
+dcb.onclick=e=>{e.stopPropagation();document.getElementById('dailyBtn')?.click()};
+function placeDcb(){const c=document.getElementById('playerCard'),db=document.getElementById('dailyBtn');if(!c)return;if(dcb.parentNode!==c)c.appendChild(dcb);
+ dcb.hidden=btn.hidden||btn.classList.contains('inl')||!db;if(dcb.hidden)return;
+ const n=parseInt((db.textContent.match(/\((\d+)\)/)||[])[1]||'0',10);dcb.classList.toggle('has',db.classList.contains('has'));dcb.querySelector('.ibN').textContent=n>9?'9+':String(n||'!')}
+setInterval(placeDcb,700);placeDcb();
 const total=()=>(IN.requests||0)+Object.values(IN.unread||{}).reduce((a,b)=>a+b,0);
 function paintBadge(){const n=signed()?total():0;btn.hidden=!signed();btn.classList.toggle('has',n>0);btn.querySelector('.ibN').textContent=n>9?'9+':String(n);
  const at=document.querySelector('#topNav [data-tab=account]');if(at)at.classList.toggle('has',n>0)}
@@ -4417,7 +4430,7 @@ const STEPS=[
  [['#inboxBtn'],'🔔 INBOX','A red number means a friend request or a message from a friend. Tap it to answer and to chat.'],
  [['#rankCard'],'🏆 YOUR RANK','Win online matches to climb: Bronze → Silver → Gold → Platinum → Diamond → Master → Grandmaster → Legend.'],
  [['#lobbyBoard','#topNav [data-tab=rank]'],'📊 LEADERBOARD','The best players this week. The top 3 win crystals every Monday!'],
- [['#topNav [data-tab=daily]','#dailyBtn'],'📋 DAILY','Collect a free reward every day and finish missions for more crystals. Don\'t miss a day — day 7 is the big one.'],
+ [['#dailyCardBtn','#topNav [data-tab=daily]','#dailyBtn'],'📋 DAILY','Collect a free reward every day and finish missions for more crystals. Don\'t miss a day — day 7 is the big one.'],
  [['#topNav [data-tab=shop]','#shopBtn'],'🛒 SHOP','Card skins and avatars to show off.'],
  [['#topNav [data-tab=theme]'],'🎨 THEME','Change the look of the menus. Two looks are free, more are in the theme shop.'],
  [['#topNav [data-tab=account]','#accountToggle'],'🔑 ACCOUNT','Log in or register to keep your crystals, levels, rank and friends on every device. Guests can play, but nothing is saved.'],
@@ -4494,7 +4507,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.1.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.1.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4527,7 +4540,7 @@ function paint(){const lobby=stage.classList.contains('selecting');
  const tb=document.getElementById('tutBtn');if(tb){const on=lobby&&!LS('sd_tut_done');tb.classList.toggle('sdShine',on);tb.title=on?'Tutorial — not done yet!':'Tutorial — how to play'}
  const upNew=LS('sd_seen_ver')!==SD_VERSION;ub.classList.toggle('sdShine',lobby&&upNew);dot(ub,lobby&&upNew);
  const db=document.getElementById('dailyBtn'),dt=document.querySelector('#topNav [data-tab="daily"]');
- if(dt){const on=lobby&&!!db&&(db.classList.contains('has')||db.classList.contains('todo'));dt.classList.toggle('sdShine',on)}}
+ const dOn=lobby&&!!db&&(db.classList.contains('has')||db.classList.contains('todo'));if(dt)dt.classList.toggle('sdShine',dOn);const dc=document.getElementById('dailyCardBtn');if(dc)dc.classList.toggle('sdShine',dOn)}
 setInterval(()=>{place();paint()},700);addEventListener('resize',()=>setTimeout(place,120));
 /* ---- show WHAT'S NEW once after an update (not for brand-new players, not during a match) ---- */
 const newPlayer=!LS('sd_seen_ver')&&!LS('sd_wiz_seen')&&!LS('sd_tut_done');
