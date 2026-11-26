@@ -4115,4 +4115,155 @@ document.addEventListener('click',e=>{const b=e.target.closest('#roomsRefresh');
 })();
 </script>
 <style>#roomsRefresh{margin-left:auto!important;width:auto!important;padding:.5em .8em!important;font:900 11px/1 Arial,sans-serif!important;letter-spacing:.06em;border-radius:999px!important}</style>
+<style>/* ===== STEP BY STEP START (Nov 2026): PLAY (and the first visit) opens one clear full-screen flow:
+   1 HOW TO PLAY (ONLINE / OFFLINE) → 2 HERO → OFFLINE: 3 ARENA → 4 START  ·  ONLINE: 3 PLAY WITH (friends / host / join / random).
+   It only presses the game's own buttons (#modeGate cards, #selBtns heroes via sdSetFav, #mapPick arenas, #readyPlayer, sdHubGo), so the old pages still work. ===== */
+#wiz{position:absolute;inset:0;z-index:62;display:none;flex-direction:column;font-family:Arial,sans-serif;color:var(--tx,#f4f6fb);
+ background:radial-gradient(120% 90% at 50% 0%,#262a38,#0a0c12 70%);user-select:none;outline:none}
+#wiz .wzCard>div{display:flex;flex-direction:column;align-items:center;gap:.4em}#wiz .wzCard:focus:not(:focus-visible){outline:none}
+#stage.wizOn #wiz{display:flex}
+#wiz .wzTop{display:flex;align-items:center;gap:12px;padding:clamp(8px,1.6vw,18px) clamp(10px,2.4vw,28px) 0}
+#wiz .wzBrand{font:900 clamp(13px,1.5vw,20px)/1 Cinzel,'Lilita One',serif;letter-spacing:.08em;color:var(--gd,#ffb627);white-space:nowrap}
+#wiz .wzSteps{flex:1;display:flex;justify-content:center;gap:clamp(4px,.8vw,10px);flex-wrap:wrap}
+#wiz .wzSteps button{display:flex;align-items:center;gap:.45em;border:1px solid var(--ln2,#ffffff2e);background:rgba(255,255,255,.04);color:var(--mu,#a7afc0);
+ border-radius:999px;padding:.45em .9em;font:900 clamp(9px,.95vw,12px)/1 Arial,sans-serif;letter-spacing:.06em;cursor:default}
+#wiz .wzSteps button i{font-style:normal;display:inline-grid;place-items:center;width:1.7em;height:1.7em;border-radius:50%;background:rgba(255,255,255,.1);color:#fff}
+#wiz .wzSteps button.done{color:var(--tx,#fff);cursor:pointer;border-color:var(--tl,#2fd3b5)}#wiz .wzSteps button.done i{background:var(--tl,#2fd3b5);color:#04231d}
+#wiz .wzSteps button.cur{color:#2a1600;background:linear-gradient(180deg,var(--gd,#ffb627),var(--gd2,#ff8a00));border-color:transparent}#wiz .wzSteps button.cur i{background:#2a1600;color:var(--gd,#ffb627)}
+#wiz .wzX{border:1px solid var(--ln2,#ffffff2e);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:.6em 1em;font:900 11px/1 Arial,sans-serif;cursor:pointer;white-space:nowrap}
+#wiz .wzX:hover{border-color:var(--gd,#ffb627)}
+#wiz .wzHead{text-align:center;padding:clamp(8px,2vh,22px) 12px clamp(6px,1.4vh,14px)}
+#wiz .wzHead small{display:block;font:900 clamp(10px,1vw,13px)/1 Arial,sans-serif;letter-spacing:.16em;color:var(--tl,#2fd3b5);margin-bottom:.5em}
+#wiz .wzHead h2{margin:0;font:900 clamp(22px,3.4vw,44px)/1.05 Cinzel,'Lilita One',serif;letter-spacing:.04em;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6)}
+#wiz .wzHead p{margin:.55em 0 0;color:var(--mu,#a7afc0);font-size:clamp(11px,1.1vw,15px)}
+#wiz .wzBody{flex:1;min-height:0;overflow:auto;padding:4px clamp(10px,3vw,40px) 10px;display:flex;justify-content:center;align-items:flex-start}
+#wiz .wzGrid{display:grid;gap:clamp(8px,1.2vw,16px);width:100%;max-width:1100px;grid-template-columns:repeat(auto-fill,minmax(clamp(110px,13vw,170px),1fr))}
+#wiz .wzGrid.big{grid-template-columns:repeat(2,minmax(0,330px));justify-content:center;margin-top:clamp(0px,3vh,30px)}
+#wiz .wzGrid.four{grid-template-columns:repeat(4,minmax(0,1fr));max-width:980px}
+#wiz .wzCard{position:relative;display:flex;flex-direction:column;align-items:center;gap:.4em;padding:clamp(8px,1vw,12px);cursor:pointer;color:#fff;text-align:center;
+ border:2px solid var(--ln2,#ffffff2e);border-radius:16px;background:var(--pnl,rgba(17,20,28,.9));box-shadow:0 10px 26px rgba(0,0,0,.4);transition:transform .12s,border-color .12s,box-shadow .12s;font:inherit}
+#wiz .wzCard:hover,#wiz .wzCard:focus-visible{transform:translateY(-3px);border-color:var(--gd,#ffb627);outline:none}
+#wiz .wzCard.on{border-color:var(--tl,#2fd3b5);box-shadow:0 0 0 2px var(--tl,#2fd3b5),0 10px 30px rgba(47,211,181,.3)}
+#wiz .wzCard.on::after{content:'✓';position:absolute;top:6px;right:8px;width:1.6em;height:1.6em;display:grid;place-items:center;border-radius:50%;background:var(--tl,#2fd3b5);color:#04231d;font-weight:900}
+#wiz .wzPic{width:100%;aspect-ratio:1;border-radius:11px;background:#0c0f16 center/cover no-repeat;display:grid;place-items:center;font-size:clamp(34px,4.4vw,60px);overflow:hidden}
+#wiz .wzPic img{width:100%;height:100%;object-fit:cover}
+#wiz .wzCard.ar .wzPic{aspect-ratio:16/10}
+#wiz .wzCard b{font:900 clamp(11px,1.1vw,15px)/1.15 Arial,sans-serif;letter-spacing:.03em}
+#wiz .wzCard small{color:var(--mu,#a7afc0);font-size:clamp(9px,.9vw,12px);line-height:1.3}
+#wiz .wzCard .wzLock{position:absolute;top:8px;left:8px;padding:.25em .5em;border-radius:8px;background:#000c;color:#ffe5a3;font:900 clamp(9px,.85vw,12px)/1 Arial,sans-serif}
+#wiz .wzCard.locked .wzPic{filter:grayscale(.7) brightness(.6)}
+#wiz .wzGrid.big .wzCard{padding:clamp(16px,2.4vw,30px) 14px;gap:.6em}
+#wiz .wzGrid.big .wzCard .wzI{font-size:clamp(46px,7vw,90px);line-height:1}
+#wiz .wzGrid.big .wzCard b{font:900 clamp(20px,2.6vw,34px)/1 Cinzel,'Lilita One',serif}
+#wiz .wzGrid.big .wzCard small,#wiz .wzGrid.four .wzCard small{font-size:clamp(11px,1.1vw,14px)}
+#wiz .wzGrid.four .wzCard{padding:clamp(14px,2vw,24px) 10px}#wiz .wzGrid.four .wzI{font-size:clamp(34px,4.6vw,58px);line-height:1}
+#wiz .wzSum{display:flex;gap:clamp(10px,2vw,26px);justify-content:center;align-items:stretch;flex-wrap:wrap;width:100%;max-width:900px;margin-top:clamp(0px,2vh,20px)}
+#wiz .wzSum .wzCard{width:clamp(150px,21vw,250px);cursor:pointer}#wiz .wzSum .wzPic{aspect-ratio:4/3;max-height:30vh}
+#wiz .wzSum .wzCard small.k{font:900 clamp(9px,.9vw,11px)/1 Arial,sans-serif;letter-spacing:.14em;color:var(--tl,#2fd3b5)}
+#wiz .wzNote{width:100%;text-align:center;color:var(--mu,#a7afc0);font-size:clamp(10px,1vw,13px);margin-top:12px}
+#wiz .wzBar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:clamp(8px,1.4vw,16px) clamp(10px,2.4vw,28px) clamp(10px,1.8vw,20px);border-top:1px solid var(--ln,#ffffff1a);background:rgba(0,0,0,.25)}
+#wiz .wzBack{border:1px solid var(--ln2,#ffffff2e);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:.8em 1.3em;font:900 clamp(11px,1.1vw,14px)/1 Arial,sans-serif;cursor:pointer}
+#wiz .wzBack[hidden]{display:block;visibility:hidden}
+#wiz .wzMsg{flex:1;text-align:center;color:var(--mu,#a7afc0);font-size:clamp(10px,1vw,13px)}
+#wiz .wzNext{border:0;border-radius:14px;padding:.75em 1.8em;cursor:pointer;font:900 clamp(15px,1.8vw,24px)/1 'Lilita One','Arial Black',sans-serif;letter-spacing:.08em;color:#2a1600;
+ background:linear-gradient(180deg,#ffd166,var(--gd,#ffb627) 55%,var(--gd2,#ff8a00));box-shadow:0 8px 22px rgba(255,150,30,.35)}
+#wiz .wzNext:disabled{filter:saturate(.2) brightness(.6);cursor:default;box-shadow:none}
+#wiz .wzNext[hidden]{display:none}
+#wiz .wzEmpty{color:var(--mu,#a7afc0);padding:30px;text-align:center}
+@media (orientation:portrait) and (max-width:820px){
+ #wiz .wzBrand{display:none}#wiz .wzTop{flex-wrap:wrap}#wiz .wzSteps{order:2;width:100%}#wiz .wzSteps button span{display:none}#wiz .wzX{margin-left:auto}
+ #wiz .wzGrid{grid-template-columns:repeat(2,minmax(0,1fr))}#wiz .wzGrid.big{grid-template-columns:1fr;max-width:340px}
+ #wiz .wzGrid.four{grid-template-columns:repeat(2,minmax(0,1fr))}#wiz .wzSum .wzCard{width:44%}
+ #wiz .wzGrid.big .wzCard{flex-direction:row;justify-content:flex-start;text-align:left;gap:14px}#wiz .wzGrid.big .wzCard>div{display:flex;flex-direction:column;gap:.3em}}
+@media (max-height:520px) and (orientation:landscape){#wiz .wzHead p{display:none}#wiz .wzGrid.big .wzCard .wzI{font-size:44px}#wiz .wzGrid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
+</style>
+<script>/* ===== STEP BY STEP START — see the style block above ===== */
+(()=>{const stage=document.getElementById('stage');if(!stage)return;const $=id=>document.getElementById(id);
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const beepS=()=>{try{beep(620,.05,'triangle',.035)}catch(e){}};
+const W={mode:null,step:0,hero:null,map:null,how:null,open:false};
+const FLOW={cpu:[['mode','MODE'],['hero','HERO'],['arena','ARENA'],['go','START']],online:[['mode','MODE'],['hero','HERO'],['how','PLAY WITH']]};
+const flow=()=>FLOW[W.mode||'online'];
+const el=document.createElement('div');el.id='wiz';el.setAttribute('role','dialog');el.setAttribute('aria-label','Start a game step by step');
+el.innerHTML='<div class="wzTop"><div class="wzBrand">RPS RIVALS</div><div class="wzSteps"></div><button type="button" class="wzX">✕ LOBBY</button></div>'+
+ '<div class="wzHead"><small></small><h2></h2><p></p></div><div class="wzBody"></div>'+
+ '<div class="wzBar"><button type="button" class="wzBack">‹ BACK</button><div class="wzMsg"></div><button type="button" class="wzNext">NEXT ›</button></div>';
+stage.appendChild(el);
+const q=s=>el.querySelector(s);
+/* ---- data from the game's own buttons ---- */
+const heroes=()=>[...document.querySelectorAll('#selBtns button[data-character-key]')].map(b=>({k:b.dataset.characterKey,name:(window.sdHeroName&&window.sdHeroName(b.dataset.characterKey))||(b.querySelector('span')||b).textContent.trim(),btn:b}));
+const heroPic=k=>{try{return (window.sdHeroPic&&window.sdHeroPic(k))||''}catch(e){return ''}};
+const heroLv=k=>{try{const L=window.sdLV&&window.sdLV();const x=L&&(L[k]||(Array.isArray(L)&&L.find(r=>r.hero===k)));return x&&x.level?x.level:0}catch(e){return 0}};
+const arenas=()=>[...document.querySelectorAll('#mapPick .mapButtons [data-map]')].filter(b=>b.dataset.map!=='random'&&b.style.display!=='none').map(b=>({k:b.dataset.map,name:b.dataset.originalLabel||b.textContent.trim(),pic:b.querySelector('img.mpImg')?.src||'',lock:(b.querySelector('.mpLock')?.textContent||'').trim(),pink:b.classList.contains('pinkMap'),rule:String((window.SD_RULE_TIP&&window.SD_RULE_TIP[b.dataset.map])||(b.querySelector('.mpRule')?.textContent||'')).replace(new RegExp('^'+(b.dataset.originalLabel||'#').replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+':\\s*'),''),btn:b}));
+const arenaOf=k=>arenas().find(a=>a.k===k);
+const signedIn=()=>!!(window.sdAccount&&window.sdAccount.profile);
+/* ---- render ---- */
+function paintSteps(){const f=flow();q('.wzSteps').innerHTML=f.map(([id,n],i)=>'<button type="button" data-i="'+i+'" class="'+(i<W.step?'done':i===W.step?'cur':'')+'"><i>'+(i<W.step?'✓':i+1)+'</i><span>'+n+'</span></button>').join('');
+ q('.wzSteps').querySelectorAll('button.done').forEach(b=>b.onclick=()=>{beepS();W.step=+b.dataset.i;paint()})}
+function head(k,h,p){q('.wzHead small').textContent=k;q('.wzHead h2').textContent=h;q('.wzHead p').textContent=p||''}
+function paint(){if(!W.open)return;const f=flow(),id=f[W.step][0],body=q('.wzBody'),next=q('.wzNext'),back=q('.wzBack'),msg=q('.wzMsg');paintSteps();
+ back.hidden=W.step===0;next.hidden=false;next.disabled=false;msg.textContent='';const stepTxt='STEP '+(W.step+1)+' OF '+f.length;
+ if(id==='mode'){head(stepTxt,'HOW DO YOU WANT TO PLAY?','Pick one — you can always come back.');next.hidden=true;
+  body.innerHTML='<div class="wzGrid big"><button type="button" class="wzCard'+(W.mode==='online'?' on':'')+'" data-m="online"><span class="wzI">🌐</span><div><b>ONLINE</b><small>Play your friends or other players</small></div></button>'+
+   '<button type="button" class="wzCard'+(W.mode==='cpu'?' on':'')+'" data-m="cpu"><span class="wzI">🤖</span><div><b>OFFLINE</b><small>Play against the computer'+(signedIn()?' and earn crystals':'')+'</small></div></button></div>';
+  body.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{beepS();W.mode=b.dataset.m;W.step=1;paint()})}
+ else if(id==='hero'){head(stepTxt,'CHOOSE YOUR HERO','Tap a hero, then press NEXT.');const H=heroes();
+  if(!W.hero||!H.some(h=>h.k===W.hero))W.hero=(window.sdFavHero&&window.sdFavHero())||null;if(W.hero&&!H.some(h=>h.k===W.hero))W.hero=H[0]?H[0].k:null;
+  body.innerHTML=H.length?'<div class="wzGrid">'+H.map(h=>{const pic=heroPic(h.k),lv=heroLv(h.k);return '<button type="button" class="wzCard'+(h.k===W.hero?' on':'')+'" data-h="'+esc(h.k)+'"><span class="wzPic">'+(pic?'<img alt="" src="'+esc(pic)+'">':'🦸')+'</span><b>'+esc(h.name)+'</b>'+(lv?'<small>Lv '+lv+'</small>':'')+'</button>'}).join('')+'</div>':'<div class="wzEmpty">Loading heroes…</div>';
+  body.querySelectorAll('[data-h]').forEach(b=>{b.onclick=()=>{beepS();W.hero=b.dataset.h;body.querySelectorAll('[data-h]').forEach(x=>x.classList.toggle('on',x===b));next.disabled=false;try{window.sdSetFav&&window.sdSetFav(W.hero)}catch(e){}};b.ondblclick=()=>goNext()});
+  next.disabled=!W.hero;if(!H.length)setTimeout(()=>{if(W.open&&flow()[W.step][0]==='hero'&&heroes().length)paint()},700)}
+ else if(id==='arena'){head(stepTxt,'CHOOSE AN ARENA','Each arena has its own rule. 🔒 = unlock with crystals.');const A=arenas();
+  if(!W.map||!A.some(a=>a.k===W.map&&!a.lock)){const cur=($('arenaChoice')||{}).value;W.map=(A.find(a=>a.k===cur&&!a.lock)||A.find(a=>!a.lock)||{}).k||null}
+  body.innerHTML='<div class="wzGrid">'+A.map(a=>'<button type="button" class="wzCard ar'+(a.k===W.map?' on':'')+(a.lock?' locked':'')+'" data-a="'+esc(a.k)+'"><span class="wzPic">'+(a.pic&&!/^data:image\/gif/.test(a.pic)?'<img alt="" src="'+esc(a.pic)+'">':'🏟')+'</span>'+(a.lock?'<span class="wzLock">'+esc(/🔒/.test(a.lock)?a.lock:'🔒 '+a.lock)+'</span>':'')+'<b>'+esc(a.name)+'</b><small>'+esc(a.rule)+'</small></button>').join('')+'</div>';
+  body.querySelectorAll('[data-a]').forEach(b=>{b.onclick=()=>{beepS();const a=arenaOf(b.dataset.a);if(!a)return;
+   if(a.lock){if(!signedIn()){msg.textContent='🔒 Log in (ACCOUNT) to unlock '+a.name+' with crystals.';return}a.btn.click();msg.textContent='🔒 '+a.name+' — unlock it in the window, or pick a free arena.';setTimeout(()=>{const x=arenaOf(a.k);if(x&&!x.lock){W.map=a.k;paint()}},1500);return}
+   W.map=a.k;body.querySelectorAll('[data-a]').forEach(x=>x.classList.toggle('on',x===b));next.disabled=false};b.ondblclick=()=>{if(!b.classList.contains('locked'))goNext()}});
+  next.disabled=!W.map}
+ else if(id==='go'){const h=heroes().find(x=>x.k===W.hero),a=arenaOf(W.map);head(stepTxt,'READY TO FIGHT?','Best of three fights. Pick rock, paper or scissors each round.');
+  const pic=W.hero?heroPic(W.hero):'';
+  body.innerHTML='<div class="wzSum"><button type="button" class="wzCard" data-j="1"><small class="k">YOUR HERO</small><span class="wzPic">'+(pic?'<img alt="" src="'+esc(pic)+'">':'🦸')+'</span><b>'+esc(h?h.name:'?')+'</b><small>tap to change</small></button>'+
+   '<div class="wzCard" style="justify-content:center;cursor:default;width:auto;background:none;border:0;box-shadow:none"><b style="font:900 clamp(26px,3.4vw,46px)/1 Cinzel,serif;color:var(--gd,#ffb627)">VS</b><small>🤖 COMPUTER</small></div>'+
+   '<button type="button" class="wzCard ar" data-j="2"><small class="k">ARENA</small><span class="wzPic">'+(a&&a.pic&&!/^data:image\/gif/.test(a.pic)?'<img alt="" src="'+esc(a.pic)+'">':'🏟')+'</span><b>'+esc(a?a.name:'?')+'</b><small>'+esc(a?a.rule:'')+'</small></button>'+
+   '<div class="wzNote">'+(signedIn()?'💎 Win to earn crystals and hero XP.':'Playing as a guest — log in (ACCOUNT) to earn crystals, levels and rank.')+'</div></div>';
+  body.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{beepS();W.step=+b.dataset.j;paint()});next.textContent='▶ START MATCH';next.disabled=!(h&&a)}
+ else if(id==='how'){head(stepTxt,'WHO DO YOU WANT TO PLAY?','Pick how to find an opponent.');next.hidden=true;
+  const O=[['friends','👥','PLAY WITH FRIENDS','Open a room and invite your friends'],['host','🏠','HOST A ROOM','Your own room: name, players, arenas'],['rooms','🚪','JOIN A ROOM','Join a room another player opened'],['quick','⚡','RANDOM PLAYER','Quick match with anyone online']];
+  body.innerHTML='<div class="wzGrid four">'+O.map(([g,i,n,d])=>'<button type="button" class="wzCard" data-g="'+g+'"><span class="wzI">'+i+'</span><b>'+n+'</b><small>'+d+'</small></button>').join('')+'</div>'+
+   '<div class="wzNote" style="position:absolute;left:0;right:0;bottom:calc(clamp(10px,1.8vw,20px) + 70px)">In a room both players press ✓ READY — the match starts by itself.</div>';
+  body.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{beepS();startOnline(b.dataset.g)})}
+ if(id!=='go')next.textContent='NEXT ›'}
+function goNext(){const f=flow(),id=f[W.step][0];if(q('.wzNext').disabled)return;if(id==='go'){startCpu();return}if(W.step<f.length-1){W.step++;paint()}}
+q('.wzNext').onclick=()=>{beepS();goNext()};
+q('.wzBack').onclick=()=>{beepS();if(W.step>0){W.step--;paint()}};
+q('.wzX').onclick=()=>{beepS();close()};
+/* ---- open / close ---- */
+function open(o){o=o||{};if(o.mode)W.mode=o.mode;W.step=o.step||0;if(W.step&&!W.mode)W.step=0;W.open=true;try{window.sdCloseXP&&window.sdCloseXP()}catch(e){}stage.classList.remove('playPick');stage.classList.add('wizOn');paint();el.tabIndex=-1;setTimeout(()=>{try{el.focus({preventScroll:true})}catch(e){}},50)}
+function close(){W.open=false;stage.classList.remove('wizOn')}
+window.sdWizard={open,close,state:W};
+/* ---- leave the wizard and press the game's own buttons ---- */
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function closeSide(){['heroPick','arenaSide'].forEach(id=>document.getElementById(id)?.classList.remove('show'));document.querySelectorAll('dialog.sdSide[open],dialog.sdPage[open]').forEach(d=>{try{d.close()}catch(e){}});document.querySelectorAll('#topNav .tnTabs button.on').forEach(b=>{if(!/online|cpu/.test(b.dataset.tab||''))b.classList.remove('on')})}
+async function toMode(m){closeSide();if(stage.dataset.mode===m){return}if(stage.dataset.mode!=='gate'){document.querySelector('#modeBack button')?.click();await wait(120)}document.querySelector('#modeGate button[data-go="'+m+'"]')?.click();await wait(220)}
+async function startCpu(){const hero=W.hero,map=W.map;close();await toMode('cpu');
+ try{window.sdSetFav&&window.sdSetFav(hero)}catch(e){}const hb=document.querySelector('#selBtns button[data-character-key="'+hero+'"]');if(hb&&!hb.classList.contains('chosen'))hb.click();await wait(150);
+ const a=arenaOf(map);if(a&&!a.btn.classList.contains('chosen'))a.btn.click();await wait(150);
+ const r=$('readyPlayer');if(r&&!r.disabled)r.click()}
+async function startOnline(g){const hero=W.hero;close();try{window.sdSetFav&&window.sdSetFav(hero)}catch(e){}
+ const hub=$('hub');if(stage.dataset.mode==='online'&&hub&&hub.dataset.v&&hub.dataset.v!=='menu'&&hub.dataset.v!==g){hub.querySelector('.hv[data-v="'+hub.dataset.v+'"] .hBack')?.click();await wait(80)}
+ await toMode('online');try{window.sdNavDrop&&window.sdNavDrop.close&&window.sdNavDrop.close()}catch(e){}window.sdHubGo&&window.sdHubGo(g);setTimeout(closeSide,400)}
+/* PLAY opens the steps instead of the old ONLINE / OFFLINE pop-up */
+document.addEventListener('click',e=>{const b=e.target.closest('#playBig');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open()},true);
+/* the OFFLINE tab in the top menu: straight to the hero step of the offline flow */
+document.addEventListener('click',e=>{const t=e.target.closest('#topNav [data-tab=cpu]');if(!t||stage.dataset.mode==='cpu')return;e.preventDefault();e.stopImmediatePropagation();open({mode:'cpu',step:1})},true);
+document.addEventListener('keydown',e=>{if(!W.open)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(W.step>0){W.step--;paint()}else close()}else if(e.key==='Enter'&&!e.target.closest('input,textarea')){const c=e.target.closest('.wzCard');if(c)return;e.preventDefault();goNext()}},true);
+/* first visit of the page: start with the steps (not for ?room= invite links) */
+let first=true;const t0=Date.now();
+const iv=setInterval(()=>{if(!first){clearInterval(iv);return}if(Date.now()-t0>20000){first=false;return}
+ const room=new URLSearchParams(location.search).get('room');if(room){first=false;return}
+ if(stage.dataset.mode==='gate'&&stage.classList.contains('selecting')&&!document.querySelector('dialog[open]')){first=false;open()}},300);
+/* a match starting (or the game leaving the start screen) always hides the steps */
+setInterval(()=>{if(W.open&&!stage.classList.contains('selecting'))close()},500);
+})();
+</script>
+
 </html>
