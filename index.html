@@ -4260,7 +4260,7 @@ document.addEventListener('keydown',e=>{if(!W.open)return;if(e.key==='Escape'){e
 let first=(()=>{try{return !localStorage.getItem('sd_wiz_seen')}catch(e){return true}})();const t0=Date.now();
 const iv=setInterval(()=>{if(!first){clearInterval(iv);return}if(Date.now()-t0>20000){first=false;return}if(stage.dataset.mode!=='gate'){first=false;return}
  const room=new URLSearchParams(location.search).get('room');if(room){first=false;return}
- if(stage.dataset.mode==='gate'&&stage.classList.contains('selecting')&&!document.querySelector('dialog[open]')){first=false;open()}},300);
+ if(stage.dataset.mode==='gate'&&stage.classList.contains('selecting')&&!document.querySelector('dialog[open]')){first=false;window.sdWelcome?window.sdWelcome(()=>open()):open()}},300);
 /* a match starting (or the game leaving the start screen) always hides the steps */
 setInterval(()=>{if(W.open&&!stage.classList.contains('selecting'))close()},500);
 })();
@@ -4354,6 +4354,97 @@ setInterval(()=>{if(!document.hidden)loadInbox()},25000);
 window.addEventListener('sd-profile',async()=>{myH=signed()?await hash(ACC().userId):'';loadInbox()});
 setTimeout(async()=>{if(signed())myH=await hash(ACC().userId);loadInbox()},2500);
 dlg.addEventListener('close',()=>{chat=null});
+})();
+</script>
+
+<style>/* ===== TUTORIAL (Nov 2026): first visit → WELCOME card (🎓 SHOW ME HOW / ▶ JUST PLAY); the guided tour lights up each part of the lobby with a speech bubble (BACK / NEXT / SKIP), skips parts that aren't on screen; 🎓 TUTORIAL pill on the lobby until the tour is done, and a 🎓 button in the ? rules window. localStorage sd_tut_done. ===== */
+#tutWel{position:fixed;inset:0;z-index:9990;display:none;place-items:center;background:rgba(4,6,10,.78);backdrop-filter:blur(3px)}
+#tutWel.show{display:grid}
+#tutWel .twBox{width:min(520px,92vw);box-sizing:border-box;padding:clamp(18px,3vw,30px);border-radius:10px;text-align:center;color:var(--tx,#fff);background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#0d0f14)),var(--th0,#0d0f14);border:1px solid var(--ln2,#785a28);box-shadow:inset 0 0 0 4px var(--th0,#0d0f14),inset 0 0 0 5px var(--ln,#463714),0 30px 80px rgba(0,0,0,.8);font-family:Arial,sans-serif;animation:twIn .25s ease-out}
+@keyframes twIn{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+#tutWel h2{margin:0 0 6px;font:900 clamp(22px,3.2vw,34px)/1.1 Cinzel,'Lilita One',serif;letter-spacing:.06em;color:var(--gd,#ffb627)}
+#tutWel p{margin:0 0 18px;color:var(--mu,#bbb);font:700 clamp(13px,1.3vw,15px)/1.4 Arial,sans-serif}
+#tutWel .twBtns{display:grid;gap:10px}
+#tutWel .twBtns button{cursor:pointer;border-radius:8px;padding:clamp(12px,1.6vw,16px);font:900 clamp(15px,1.6vw,19px)/1.15 Arial,sans-serif;letter-spacing:.06em;border:1px solid var(--ln2,#785a28);background:var(--th0,#111);color:var(--tx,#fff)}
+#tutWel .twBtns button small{display:block;font:700 11px/1.3 Arial,sans-serif;letter-spacing:0;color:var(--mu,#aaa);margin-top:4px}
+#tutWel .twBtns .twTut{background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600);border:0;box-shadow:0 0 24px var(--thGlow,rgba(255,182,39,.45));animation:twPulse 1.8s ease-in-out infinite}
+#tutWel .twBtns .twTut small{color:inherit;opacity:.75}
+@keyframes twPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+#tour{position:fixed;inset:0;z-index:9995;display:none;pointer-events:auto}
+#tour.show{display:block}
+#tour .tHole{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(4,6,10,.72),0 0 0 3px var(--gd,#ffb627),0 0 28px 6px var(--thGlow,rgba(255,182,39,.5));transition:all .28s ease;pointer-events:none}
+#tour .tHole.none{width:0!important;height:0!important;left:50%!important;top:50%!important;box-shadow:0 0 0 9999px rgba(4,6,10,.72)}
+#tour .tBub{position:fixed;width:min(340px,88vw);box-sizing:border-box;padding:14px 16px 12px;border-radius:10px;color:var(--tx,#fff);background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#0d0f14)),var(--th0,#0d0f14);border:1px solid var(--gd,#ffb627);box-shadow:0 18px 50px rgba(0,0,0,.75);font-family:Arial,sans-serif;transition:left .28s ease,top .28s ease}
+#tour .tBub small{display:block;font:900 10px/1 Arial,sans-serif;letter-spacing:.14em;color:var(--tl,#2fd3b5);margin-bottom:6px}
+#tour .tBub h4{margin:0 0 6px;font:900 17px/1.2 Cinzel,'Lilita One',serif;letter-spacing:.05em;color:var(--gd,#ffb627)}
+#tour .tBub p{margin:0 0 12px;font:700 13.5px/1.45 Arial,sans-serif}
+#tour .tBub .tRow{display:flex;gap:8px;align-items:center}
+#tour .tBub button{cursor:pointer;border-radius:6px;padding:.65em 1em;font:900 12px/1 Arial,sans-serif;letter-spacing:.06em;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff)}
+#tour .tBub .tNext{margin-left:auto;background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600);border:0}
+#tour .tBub .tSkip{background:none;border:0;color:var(--mu,#aaa);padding-left:0}
+#tutPill{position:absolute;z-index:12;display:none;cursor:pointer;padding:8px 14px;border-radius:999px;border:0;background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600);font:900 12px/1 Arial,sans-serif;letter-spacing:.08em;box-shadow:0 0 18px var(--thGlow,rgba(255,182,39,.5));animation:twPulse 1.8s ease-in-out infinite}
+#stage.selecting[data-mode=gate]:not(.wizOn) #tutPill.need{display:block}
+#tutPill{left:0;right:0;margin:0 auto;width:max-content;white-space:nowrap}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){#tutPill{top:calc(var(--navH,8%) + 2.2%)}}
+@media (orientation:portrait) and (max-width:820px){#tutPill{top:calc(env(safe-area-inset-top) + 150px)}}
+#rulesDialog .rTut{background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e))!important;color:var(--thBtnTx,#2a1600)!important;border:0!important;font-weight:900!important;padding:.75em 1.3em!important;margin:0 auto 12px!important}
+</style>
+<script>/* ===== TUTORIAL — see the style block above ===== */
+(()=>{const stage=$('stage');if(!stage)return;const done=()=>{try{return !!localStorage.getItem('sd_tut_done')}catch(e){return false}};const setDone=()=>{try{localStorage.setItem('sd_tut_done','1')}catch(e){}pill.classList.remove('need')};
+const beepS=()=>{try{beep(660,.05,'triangle',.035)}catch(e){}};
+const vis=e=>{if(!e)return false;const r=e.getBoundingClientRect();if(r.width<4||r.height<4)return false;const cs=getComputedStyle(e);return cs.display!=='none'&&cs.visibility!=='hidden'&&+cs.opacity>0.05&&r.bottom>0&&r.top<innerHeight};
+const pick=list=>{for(const q of list){const e=document.querySelector(q);if(vis(e))return e}return null};
+/* the steps: [where (first visible one wins), title, text]. No "where" = a bubble in the middle. */
+const STEPS=[
+ [[],'👋 WELCOME, RIVAL!','RPS Rivals is rock · paper · scissors with heroes.<br>🪨 Rock beats ✂️ scissors · ✂️ scissors beat 📄 paper · 📄 paper beats 🪨 rock.<br>This short tour shows you around — tap NEXT.'],
+ [['#topNav .tnTabs'],'THE MENU','Everything starts here. Tap a tab to open it, tap it again to go back.'],
+ [['#topNav [data-tab=online]'],'🌐 ONLINE','Play real players: your friends, a room you host, a room you join, or a random player. Online wins move you up the leaderboard.'],
+ [['#topNav [data-tab=cpu]'],'🤖 OFFLINE','Practice against the computer. When you are logged in, every win gives 💎 crystals.'],
+ [['#topNav [data-tab=heroes]','#heroPlate'],'🦸 HEROES','Pick your fighter. Every match gives your hero XP — heroes level up the more you play with them.'],
+ [['#heroPlate'],'YOUR HERO','Your hero\'s level, XP bar, wins and losses are always shown here.'],
+ [['#topNav [data-tab=arenas]'],'🗺️ ARENAS','Each arena has its own rule: a faster timer, SUDDEN DEATH (one fight decides) or BEST OF 5. 3 arenas are free — unlock the others with 💎.'],
+ [['#playerCard'],'👤 YOUR PROFILE','Your name, avatar and crystals. 💎 blue crystals buy arenas, avatars, card skins and looks; pink 💎 are rare. Log in so they are saved.'],
+ [['#inboxBtn'],'🔔 INBOX','A red number means a friend request or a message from a friend. Tap it to answer and to chat.'],
+ [['#rankCard'],'🏆 YOUR RANK','Win online matches to climb: Bronze → Silver → Gold → Platinum → Diamond → Master → Grandmaster → Legend.'],
+ [['#lobbyBoard','#topNav [data-tab=rank]'],'📊 LEADERBOARD','The best players this week. The top 3 win crystals every Monday!'],
+ [['#topNav [data-tab=daily]','#dailyBtn'],'📋 DAILY','Collect a free reward every day and finish missions for more crystals. Don\'t miss a day — day 7 is the big one.'],
+ [['#topNav [data-tab=shop]','#shopBtn'],'🛒 SHOP','Card skins and avatars to show off.'],
+ [['#topNav [data-tab=theme]'],'🎨 THEME','Change the look of the menus. Two looks are free, more are in the theme shop.'],
+ [['#topNav [data-tab=account]','#accountToggle'],'🔑 ACCOUNT','Log in or register to keep your crystals, levels, rank and friends on every device. Guests can play, but nothing is saved.'],
+ [['#playBig'],'▶ PLAY','Press PLAY, choose ONLINE or OFFLINE, and you are in!'],
+ [[],'⚔ HOW A MATCH WORKS','Each round you pick a card — 🪨, 📄 or ✂️ — before the timer runs out (too slow = a random card).<br>Lose a round = lose a health bar. 3 bars = one fight. Win 2 fights to win the match!<br>Online, both players press ✓ READY and the match starts by itself.']];
+const tour=document.createElement('div');tour.id='tour';tour.innerHTML='<div class="tHole none"></div><div class="tBub" role="dialog" aria-live="polite"><small></small><h4></h4><p></p><div class="tRow"><button type="button" class="tSkip">SKIP TOUR</button><button type="button" class="tBack">‹ BACK</button><button type="button" class="tNext">NEXT ›</button></div></div>';document.body.appendChild(tour);
+const hole=tour.querySelector('.tHole'),bub=tour.querySelector('.tBub');let list=[],i=0,onEnd=null;
+function place(){const st=list[i];if(!st)return;const el=st.el&&vis(st.el)?st.el:null;const W=innerWidth,H=innerHeight,pad=6;
+ if(el){const r=el.getBoundingClientRect();hole.classList.remove('none');Object.assign(hole.style,{left:(r.left-pad)+'px',top:(r.top-pad)+'px',width:(r.width+pad*2)+'px',height:(r.height+pad*2)+'px'});
+  const bw=bub.offsetWidth,bh=bub.offsetHeight;let x=r.left+r.width/2-bw/2,y=r.bottom+14;if(y+bh>H-10)y=r.top-bh-14;if(y<10){y=Math.min(H-bh-10,Math.max(10,r.top+r.height/2-bh/2));x=r.right+14;if(x+bw>W-10)x=r.left-bw-14}
+  x=Math.max(10,Math.min(W-bw-10,x));y=Math.max(10,Math.min(H-bh-10,y));bub.style.left=x+'px';bub.style.top=y+'px'}
+ else{hole.classList.add('none');bub.style.left=Math.max(10,(W-bub.offsetWidth)/2)+'px';bub.style.top=Math.max(10,(H-bub.offsetHeight)/2)+'px'}}
+function show(){const st=list[i];bub.querySelector('small').textContent='STEP '+(i+1)+' OF '+list.length;bub.querySelector('h4').textContent=st.t;bub.querySelector('p').innerHTML=st.x;
+ tour.querySelector('.tBack').style.visibility=i?'visible':'hidden';const last=i===list.length-1;tour.querySelector('.tNext').textContent=last?'▶ LET\'S PLAY!':'NEXT ›';tour.querySelector('.tSkip').style.display=last?'none':'';
+ requestAnimationFrame(place);setTimeout(place,60)}
+function start(cb){onEnd=cb||null;try{window.sdNavDrop&&window.sdNavDrop.close()}catch(e){}document.querySelectorAll('dialog.sdPage[open],dialog[open]').forEach(d=>{try{d.close()}catch(e){}});try{window.sdWizard&&window.sdWizard.close()}catch(e){}
+ if(stage.dataset.mode&&stage.dataset.mode!=='gate')document.querySelector('#modeBack button')?.click();
+ setTimeout(()=>{list=STEPS.map(([q,t,x])=>({el:q.length?pick(q):null,t,x,need:q.length})).filter(s=>!s.need||s.el);i=0;tour.classList.add('show');show()},q0());}
+const q0=()=>stage.dataset.mode==='gate'?50:450;
+function end(play){tour.classList.remove('show');setDone();const cb=onEnd;onEnd=null;if(play){try{window.sdWizard&&window.sdWizard.open()}catch(e){}}else if(cb)cb()}
+tour.querySelector('.tNext').onclick=()=>{beepS();if(i<list.length-1){i++;show()}else end(true)};
+tour.querySelector('.tBack').onclick=()=>{beepS();if(i>0){i--;show()}};
+tour.querySelector('.tSkip').onclick=()=>{beepS();end(false)};
+document.addEventListener('keydown',e=>{if(!tour.classList.contains('show'))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();end(false)}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();tour.querySelector('.tNext').click()}else if(e.key==='ArrowLeft'){e.preventDefault();tour.querySelector('.tBack').click()}},true);
+addEventListener('resize',()=>{if(tour.classList.contains('show'))place()});
+/* WELCOME card on the very first visit */
+const wel=document.createElement('div');wel.id='tutWel';wel.innerHTML='<div class="twBox" role="dialog" aria-label="Welcome"><h2>WELCOME TO RPS RIVALS!</h2><p>First time here? Take a 1-minute tour of the game, or jump straight in.</p><div class="twBtns"><button type="button" class="twTut">🎓 SHOW ME HOW<small>a quick guided tour — recommended for new players</small></button><button type="button" class="twPlay">▶ JUST PLAY<small>you can open the tutorial any time from 🎓 or the ? button</small></button></div></div>';document.body.appendChild(wel);
+let afterWel=null;
+wel.querySelector('.twTut').onclick=()=>{beepS();wel.classList.remove('show');start(afterWel)};
+wel.querySelector('.twPlay').onclick=()=>{beepS();wel.classList.remove('show');setDone();const cb=afterWel;afterWel=null;cb&&cb()};
+window.sdWelcome=cb=>{if(done()){cb&&cb();return}afterWel=cb||null;wel.classList.add('show')};
+window.sdTutorial=()=>start(null);
+/* 🎓 TUTORIAL pill on the lobby until the tour has been done or skipped */
+const pill=document.createElement('button');pill.type='button';pill.id='tutPill';pill.textContent='🎓 NEW? TAKE THE TOUR';pill.onclick=()=>{beepS();start(null)};stage.appendChild(pill);if(!done())pill.classList.add('need');
+/* 🎓 in the ? rules window, always */
+const addRules=()=>{const d=document.getElementById('rulesDialog');if(!d||d.querySelector('.rTut'))return;const b=document.createElement('button');b.type='button';b.className='rTut';b.textContent='🎓 START THE TUTORIAL';b.onclick=()=>{try{d.close()}catch(e){}start(null)};d.insertBefore(b,d.firstChild.nextSibling||null)};
+setInterval(addRules,1500);addRules();
 })();
 </script>
 </html>
