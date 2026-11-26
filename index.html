@@ -3865,7 +3865,7 @@ const DESK=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:
 const isSide=k=>DESK.matches&&SIDE.has(k);
 function area(side){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
  let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}
- if(side){const gap=Math.round(s.height*.016),W=Math.round(s.width*.25),pad=Math.round(s.width*.016);return {left:s.right-pad-W,top:top+gap,width:W,height:Math.max(100,bot-top-2*gap),s}}
+ if(side){const gap=Math.round(s.height*.016),W=Math.round(s.width*.25),pad=Math.round(s.width*.016),sb=stage.dataset.mode==='gate'?parseFloat(getComputedStyle(stage).getPropertyValue('--sideBotPx'))||0:0;if(sb)bot=s.bottom-sb+gap;return {left:s.right-pad-W,top:top+gap,width:W,height:Math.max(100,bot-top-2*gap),s}}
  return {left:s.left,top,width:s.width,height:Math.max(100,bot-top),s}}
 function place(d){const side=isSide(PAGE_DLG[d.id]);d.classList.toggle('sdSide',side);const a=area(side);Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',maxWidth:'none',maxHeight:'none'})}
 function paint(){paint0();clearTimeout(paint._t);paint._t=setTimeout(paint0,40)}
@@ -3896,6 +3896,7 @@ setT('daily',()=>document.getElementById('dailyBtn')?.click());
 ['online','cpu'].forEach(k=>{const b=tab(k);if(b)b.addEventListener('click',()=>{if(page){closePages();page=null;paint()}},true)});
 const br=nav.querySelector('.tnBrand');if(br)br.addEventListener('click',()=>{closePages();page=null;paint()},true);
 new MutationObserver(()=>{if(!stage.classList.contains('selecting')){closePages();page=null}setTimeout(paint,0)}).observe(stage,{attributes:true,attributeFilter:['class','data-mode']});
+window.sdPlacePages=()=>{document.querySelectorAll('dialog.sdPage[open]').forEach(place);heroArea()};
 /* ARENAS tab: the arena cards in the right column (a copy of the CHOOSE ARENA buttons; tapping one presses the real one) */
 const arTab=document.createElement('button');arTab.type='button';arTab.dataset.tab='arenas';arTab.innerHTML='<i>🗺️</i>ARENAS<span class="ndDot"></span>';
 const as=document.createElement('div');as.id='arenaSide';as.innerHTML='<div class="asT"><b>🗺️ ARENAS</b><small>Pick where you fight (OFFLINE). Online the room picks.</small></div><div class="asGrid"></div>';stage.appendChild(as);
@@ -3909,29 +3910,51 @@ setTimeout(paint,1200);
 })();
 </script>
 <style>/* ===== EVEN COLUMNS (Nov 2026): on wide screens the left and right columns of the start screen are laid out by sdColumns(): same width (25 %), the same gaps, from under the top menu to the bottom, the last panel stretches to fill — no empty holes ===== */
+
+#howMini{display:none;justify-content:space-between;gap:4px;padding:7px 10px;box-sizing:border-box;font:900 clamp(9px,.8vw,11px)/1.2 Arial,sans-serif;letter-spacing:.04em;color:var(--mu,#aaa);text-transform:uppercase;white-space:nowrap}
+#howMini span{display:flex;align-items:center;gap:3px}
 @media (min-width:701px) and (orientation:landscape),(min-width:821px){
  #stage.selecting[data-mode=online]:has(#hub[data-v=menu]) :is(#rankCard,#howCard){display:flex!important;position:absolute}
  #stage.selecting #howCard{justify-content:space-evenly}
+
+
+ #stage.selecting #rankCard{padding:8px 12px!important;gap:5px!important}
+ #stage.selecting #rankCard .rcTop .rkB{font-size:clamp(15px,1.5vw,22px)!important}
+ #stage.selecting #rankCard .rcName b{font-size:clamp(14px,1.35vw,19px)!important}
+ #stage.selecting #rankCard .rcLogin{padding:.45em!important;font-size:11px!important}
+ #stage.selecting #lobbyBoard{padding:10px!important;gap:6px!important}
+ #stage.selecting #lobbyBoard .lbFoot,#stage.selecting #lobbyBoard .lbMsg{display:none!important}
+ #stage.selecting #lobbyBoard .lbR{padding:4px 8px!important}
+ #stage.selecting #howCard{display:none!important}
+ #stage.selecting:is([data-mode=gate],[data-mode=cpu]) #howMini,#stage.selecting[data-mode=online]:has(#hub[data-v=menu]) #howMini{display:flex}
+ #stage.selecting:is([data-mode=cpu]) #lobbyBoard,#stage.selecting[data-mode=online]:has(#hub[data-v=menu]) #lobbyBoard{display:flex!important;position:absolute}
+ #stage.selecting #lobbyBoard .lbList{overflow-y:auto;min-height:0;flex:1}
  #stage.selecting #playerCard{width:100%;box-sizing:border-box}
  #stage.selecting #onLeft #hub{flex:1;min-height:0}
 }
 </style>
 <script>/* ===== EVEN COLUMNS — see the style block above ===== */
+const hm=document.createElement('div');hm.id='howMini';hm.className='lbPanel';hm.title='How to win';hm.innerHTML='<span>🪨 beats ✂️</span><span>✂️ beats 📄</span><span>📄 beats 🪨</span>';$('select')?.appendChild(hm);
+/* lobby on wide screens: the right column shows the heroes until you open something else there */
+const DESK0=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');
+function lobbyDefault(){if(!DESK0.matches||stage.dataset.mode!=='gate'||!stage.classList.contains('selecting')||stage.classList.contains('playPick'))return;if(document.querySelector('dialog.sdPage[open]')||document.getElementById('heroPick')?.classList.contains('show')||document.getElementById('arenaSide')?.classList.contains('show'))return;window.sdOpenHeroPick&&window.sdOpenHeroPick()}
+new MutationObserver(()=>setTimeout(lobbyDefault,350)).observe(stage,{attributes:true,attributeFilter:['data-mode']});setTimeout(lobbyDefault,1500);window.sdLobbyDefault=lobbyDefault;window.addEventListener('sd-fav',()=>setTimeout(lobbyDefault,250));{const _rr=renderRoster;renderRoster=function(){const r=_rr.apply(this,arguments);const hp=document.getElementById('heroPick');if(hp&&hp.classList.contains('show')&&window.sdOpenHeroPick)setTimeout(()=>window.sdOpenHeroPick(),0);return r}}
 (()=>{const stage=$('stage'),nav=document.getElementById('topNav');if(!stage)return;const MQ=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');
 const PROPS=['position','left','top','width','height','right','bottom','max-height','margin','transform'];const touched=new Set();
 const vis=e=>e&&e.offsetParent!==null&&getComputedStyle(e).display!=='none';
 function cols(){const m=stage.dataset.mode,hubMenu=document.getElementById('hub')?.dataset.v==='menu',onL=document.getElementById('onLeft');
- const L=m==='online'&&vis(onL)&&!hubMenu?['#accountBar','*#onLeft']:['#accountBar','#rankCard','*#howCard'];
- const R=m==='gate'?['*#lobbyBoard','#eventCard']:m==='online'?['#podium','*#online .onBox','#eventCard']:m==='cpu'?['*#selectionBottom','#readyPlayer']:[];
+ const L=m==='online'&&vis(onL)&&!hubMenu?['#accountBar','*#onLeft']:['#accountBar','#rankCard','#howMini','*#lobbyBoard'];
+ const R=m==='online'?['#podium','*#online .onBox','#eventCard']:m==='cpu'?['*#selectionBottom','#readyPlayer']:m==='gate'?['*','#eventCard']:[];
  return [[L,'l'],[R,'r']]}
 function clear(){touched.forEach(e=>PROPS.forEach(p=>e.style.removeProperty(p)));touched.clear()}
 function set(e,o){for(const k in o)e.style.setProperty(k,o[k],'important');touched.add(e)}
-function layout(){if(!MQ.matches||!stage.classList.contains('selecting')||stage.classList.contains('playPick')){if(touched.size)clear();return}
+let lastSB='';function layout(){layout0();const v=getComputedStyle(stage).getPropertyValue('--sideBotPx');if(v!==lastSB){lastSB=v;window.sdPlacePages&&window.sdPlacePages()}}
+function layout0(){stage.style.setProperty('--sideBotPx','0px');if(!MQ.matches||!stage.classList.contains('selecting')||stage.classList.contains('playPick')){if(touched.size)clear();return}
  const S=stage.getBoundingClientRect();if(!S.width)return;const n=nav&&nav.getBoundingClientRect(),gap=Math.round(S.height*.016),top0=(n&&n.height?n.bottom:S.top)+gap,bot0=S.bottom-gap,W=Math.round(S.width*.25),pad=Math.round(S.width*.016);
- for(const [list,side] of cols()){const items=list.map(q=>({stretch:q[0]==='*',e:document.querySelector(q.replace('*',''))})).filter(x=>vis(x.e));if(!items.length)continue;
+ for(const [list,side] of cols()){const items=list.map(q=>q==='*'?{stretch:true,ghost:true,e:null}:({stretch:q[0]==='*',e:document.querySelector(q.replace('*',''))})).filter(x=>x.ghost||vis(x.e));if(!items.length)continue;
   const absX=side==='l'?S.left+pad:S.right-pad-W;
-  const hs=items.map(x=>x.stretch?0:x.e.offsetHeight);const fixed=hs.reduce((a,b)=>a+b,0)+gap*(items.length-1);const sh=Math.max(80,bot0-top0-fixed);
-  let y=top0;items.forEach((x,i)=>{const op=x.e.offsetParent;const P=op?op.getBoundingClientRect():S;const h=x.stretch?sh:hs[i];
+  const hs=items.map(x=>x.stretch?0:x.e.offsetHeight);if(items.every(x=>x.ghost))continue;const fixed=hs.reduce((a,b)=>a+b,0)+gap*(items.length-1);const sh=Math.max(80,bot0-top0-fixed);
+  let y=top0;items.forEach((x,i)=>{if(x.ghost){y+=sh+gap;if(side==='r')stage.style.setProperty('--sideBotPx',(S.bottom-(y-gap))+'px');return}const op=x.e.offsetParent;const P=op?op.getBoundingClientRect():S;const h=x.stretch?sh:hs[i];
    const o={position:'absolute',left:Math.round(absX-P.left)+'px',top:Math.round(y-P.top)+'px',width:W+'px',right:'auto',bottom:'auto',margin:'0',transform:'none'};
    if(x.stretch){o.height=h+'px';o['max-height']='none'}set(x.e,o);y+=h+gap})}}
 let raf=0;const req=()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;layout()})};
