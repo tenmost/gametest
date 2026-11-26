@@ -3712,8 +3712,113 @@ const dlg=document.createElement('dialog');dlg.id='themeDlg';dlg.innerHTML='<h3>
 const grid=dlg.querySelector('.tdGrid');T.forEach(([k,n,d])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.innerHTML='<img alt="" src="'+pic(k)+'">'+n+'<small>'+d+'</small>';b.onclick=()=>{try{beep(700,.06,'triangle',.04)}catch(e){}setTheme(k)};grid.appendChild(b)});
 function paint(){grid.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur()))}
 dlg.querySelector('.tdX').onclick=()=>dlg.close();dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
-window.sdOpenThemes=()=>{paint();try{dlg.showModal()}catch(e){dlg.setAttribute('open','')}};
+window.sdSetTheme=setTheme;window.SD_THEME_LIST=T;window.sdThemePic=pic;window.sdTheme=cur;window.sdOpenThemes=()=>{paint();try{dlg.showModal()}catch(e){dlg.setAttribute('open','')}};
 if(nav){const tabs=nav.querySelector('.tnTabs');if(tabs){const b=document.createElement('button');b.type='button';b.dataset.tab='theme';b.innerHTML='<i>🎨</i>THEME';b.onclick=()=>{try{beep(620,.05,'triangle',.035)}catch(e){}window.sdOpenThemes()};tabs.appendChild(b)}}
+})();
+</script>
+<style>/* ===== NAV DROPDOWNS (Nov 2026): ONLINE / HEROES / THEME / ACCOUNT open a strip that drops down under the top menu (no big windows); DAILY + ACCOUNT moved from the player card into the top menu; the online room panel only shows once a choice is made ===== */
+#navDrop{display:none;position:absolute;z-index:45;left:50%;transform:translateX(-50%);width:min(940px,74%);max-height:62%;box-sizing:border-box;padding:12px 14px 14px;background:var(--pnl2,#1c2029);border:1px solid var(--ln2,#555);border-top:0;border-radius:0 0 8px 8px;box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 22px 50px rgba(0,0,0,.7);color:var(--tx,#fff);font-family:Arial,sans-serif;flex-direction:column;gap:10px;animation:ndIn .18s ease-out}
+#navDrop.show{display:flex}
+@keyframes ndIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%)}}
+#navDrop .ndT{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#navDrop .ndT b{font:900 clamp(13px,1.3vw,17px)/1 Cinzel,'Lilita One',serif;letter-spacing:.1em;color:var(--gd,#ffb627)}
+#navDrop .ndX{cursor:pointer;border-radius:999px;border:1px solid var(--ln2,#666);background:var(--th0,#111);color:var(--tx,#fff);font:900 11px/1 Arial,sans-serif;letter-spacing:.08em;padding:.7em 1.1em}
+#navDrop .ndRow{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px;scroll-snap-type:x mandatory}
+#navDrop .ndRow>button{flex:0 0 auto;scroll-snap-align:start;position:relative;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;width:clamp(96px,10vw,138px);padding:7px;border-radius:6px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 clamp(10px,.95vw,13px)/1.15 Arial,sans-serif;letter-spacing:.04em;transition:transform .12s,border-color .12s}
+#navDrop .ndRow>button:hover{transform:translateY(-3px);border-color:var(--gd,#ffb627)}
+#navDrop .ndRow>button.on{border:2px solid var(--gd,#ffb627);box-shadow:0 0 16px var(--thGlow,rgba(255,182,39,.45))}
+#navDrop .ndRow>button img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;display:block;background:#0006}
+#navDrop .ndRow>button .ndPh{width:100%;aspect-ratio:1;display:grid;place-items:center;font-size:40px;border-radius:4px;background:#0006}
+#navDrop .ndRow.th>button{width:clamp(150px,15vw,200px)}#navDrop .ndRow.th>button img{aspect-ratio:16/9}
+#navDrop .ndRow>button small{font:700 10px/1.25 Arial,sans-serif;color:var(--mu,#aaa);letter-spacing:0}
+#navDrop .ndRow>button .lvB{top:10px;left:10px}
+#navDrop .ndGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#navDrop .ndGrid>button{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;padding:10px;border-radius:6px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 clamp(11px,1.05vw,14px)/1.15 Arial,sans-serif;letter-spacing:.05em;text-align:center;transition:transform .12s,border-color .12s}
+#navDrop .ndGrid>button i{font-style:normal;font-size:clamp(24px,2.6vw,36px);line-height:1}
+#navDrop .ndGrid>button small{font:700 10px/1.25 Arial,sans-serif;color:var(--mu,#aaa);letter-spacing:0}
+#navDrop .ndGrid>button:hover,#navDrop .ndGrid>button.on{transform:translateY(-3px);border-color:var(--gd,#ffb627);box-shadow:0 0 16px var(--thGlow,rgba(255,182,39,.4))}
+#navDrop .ndList{display:flex;flex-direction:column;gap:6px;min-width:220px;align-self:flex-end}
+#navDrop .ndList>button{cursor:pointer;text-align:left;padding:.85em 1.1em;border-radius:6px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 13px/1 Arial,sans-serif;letter-spacing:.06em}
+#navDrop .ndList>button:hover{border-color:var(--gd,#ffb627)}
+#navDrop.acc{left:auto;right:1.6%;transform:none;width:auto;animation:none}
+#topNav .tnTabs button.drop{color:#fff!important;background:linear-gradient(180deg,transparent,var(--thGlow,rgba(255,182,39,.25)))!important}
+#topNav .tnTabs button .ndDot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--cr,#ff6b5b);box-shadow:0 0 8px var(--cr,#ff6b5b);display:none}
+#topNav .tnTabs button.has .ndDot{display:block}
+/* the room panel on the ONLINE page only shows once a choice is made */
+#stage.selecting[data-mode=online] #onLeft:has(#hub[data-v=menu]){display:none!important}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){
+ #navDrop{top:var(--navH,8%)}
+ #topNav .tnTabs button{white-space:nowrap}
+ #topNav .tnTabs{margin-left:auto!important;gap:0!important}
+ #topNav .tnTabs button i{display:none}
+ #topNav .tnTabs button{padding:.85em clamp(5px,.75vw,12px)!important}
+ #topNav .tnBrand{font-size:clamp(14px,1.6vw,24px)!important}
+ #stage.selecting #playerCard #accountToggle,#stage.selecting #playerCard .pcBtns,#stage.selecting #playerCard #shopBtn,#stage.selecting #playerCard .pcDaily{display:none!important}
+ #stage.selecting[data-mode=online] #onLeft{top:auto!important;bottom:2%!important;max-height:calc(100% - var(--cardBot,30%) - 2%)}
+}
+@media (orientation:portrait) and (max-width:820px){
+ #navDrop{left:2%;right:2%;width:auto;transform:none;bottom:calc(env(safe-area-inset-bottom) + 66px);max-height:60%;border-top:1px solid var(--ln2,#555);border-radius:8px;animation:none}
+ #navDrop .ndGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #topNav .tnTabs button[data-tab=daily],#topNav .tnTabs button[data-tab=account]{display:none!important}
+ #navDrop.acc{right:2%}
+}
+</style>
+<script>/* ===== NAV DROPDOWNS — see the style block above ===== */
+(()=>{const stage=$('stage'),nav=document.getElementById('topNav');if(!stage||!nav)return;const tabs=nav.querySelector('.tnTabs');const hub=document.getElementById('hub');
+const drop=document.createElement('div');drop.id='navDrop';stage.appendChild(drop);let openK=null;
+const click=id=>{const e=document.getElementById(id);if(e)e.click()};
+const tab=k=>tabs.querySelector('[data-tab="'+k+'"]');
+function close(){openK=null;drop.classList.remove('show','acc');tabs.querySelectorAll('button.drop').forEach(b=>b.classList.remove('drop'))}
+function open(k,html,setup){if(openK===k){close();return}close();openK=k;drop.innerHTML=html;drop.classList.add('show');drop.classList.toggle('acc',k==='account');const t=tab(k);if(t)t.classList.add('drop');setup&&setup(drop);drop.querySelector('.ndX')?.addEventListener('click',close)}
+const head=t=>'<div class="ndT"><b>'+t+'</b><button type="button" class="ndX">⬅ BACK</button></div>';
+document.addEventListener('pointerdown',e=>{if(!openK)return;if(drop.contains(e.target)||nav.contains(e.target))return;close()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openK)close()});
+new MutationObserver(()=>{if(!stage.classList.contains('selecting'))close()}).observe(stage,{attributes:true,attributeFilter:['class']});
+const beepS=()=>{try{beep(620,.05,'triangle',.035)}catch(e){}};
+/* ---- HEROES: a row of heroes drops down; tap one → it stands in the middle ---- */
+function heroesDrop(){const list=[...document.querySelectorAll('#selBtns button[data-character-key]')].map(b=>({k:b.dataset.characterKey,n:(b.querySelector('span,b,small')?.textContent||b.textContent||'').trim()}));
+ const cur=window.sdFavHero&&window.sdFavHero(),LV=window.sdLV?window.sdLV():{},signed=!!window.sdAccount?.profile;
+ const html=head('🦸 TAP YOUR HERO')+'<div class="ndRow">'+(list.length?list.map(h=>{const pic=window.sdHeroPic?window.sdHeroPic(h.k):'';const nm=window.sdHeroName?window.sdHeroName(h.k):h.n;return '<button type="button" data-k="'+esc(h.k)+'" class="'+(h.k===cur?'on':'')+'">'+(pic?'<img alt="" src="'+pic+'">':'<span class="ndPh">🦸</span>')+esc(nm)+(signed?'<span class="lvB">Lv '+((LV[h.k]&&LV[h.k].level)||1)+'</span>':'')+'</button>'}).join(''):'<small>Heroes are still loading…</small>')+'</div>';
+ open('heroes',html,d=>d.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{beepS();window.sdSetFav&&window.sdSetFav(b.dataset.k);close()}))}
+/* ---- THEME ---- */
+function themeDrop(){const T=window.SD_THEME_LIST||[],cur=window.sdTheme?window.sdTheme():'';
+ open('theme',head('🎨 CHOOSE YOUR LOOK')+'<div class="ndRow th">'+T.map(([k,n,d])=>'<button type="button" data-t="'+k+'" class="'+(k===cur?'on':'')+'"><img alt="" src="'+(window.sdThemePic?window.sdThemePic(k):'')+'">'+n+'<small>'+d+'</small></button>').join('')+'</div>',
+ d=>d.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{beepS();window.sdSetTheme&&window.sdSetTheme(b.dataset.t);d.querySelectorAll('[data-t]').forEach(x=>x.classList.toggle('on',x===b))}))}
+/* ---- ONLINE: 4 choices; picking one opens the online page with that panel, and the tab shows what you picked ---- */
+const OPT=[['friends','👥','PLAY WITH FRIENDS','private room, invite friends'],['host','🏠','HOST A ROOM','your own room with rules'],['rooms','🚪','JOIN A ROOM','open rooms of other players'],['quick','⚡','RANDOM PLAYER','quick match, random arena']];
+let lastGo=null;
+function goOnline(g){lastGo=g;const v=hub&&hub.dataset.v;
+ const run=()=>{window.sdHubGo&&window.sdHubGo(g);setTimeout(paintOnline,150)};
+ if(stage.dataset.mode==='online'){if(v&&v!=='menu'&&v!==g){const b=hub.querySelector('.hv[data-v="'+v+'"] .hBack');if(b)b.click()}setTimeout(run,60);return}
+ if(stage.dataset.mode!=='gate')document.querySelector('#modeBack button')?.click();
+ setTimeout(()=>{document.querySelector('#modeGate button[data-go=online]')?.click();setTimeout(run,140)},60)}
+function onlineDrop(){const v=hub?hub.dataset.v:'menu';
+ open('online',head('🌐 PLAY ONLINE')+'<div class="ndGrid">'+OPT.map(([g,i,n,d])=>'<button type="button" data-g="'+g+'" class="'+(stage.dataset.mode==='online'&&lastGo===g&&v!=='menu'?'on':'')+'"><i>'+i+'</i>'+n+'<small>'+d+'</small></button>').join('')+'</div>',
+ d=>d.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{beepS();close();goOnline(b.dataset.g)}))}
+const LBL={friends:['👥','FRIENDS ROOM'],host:['🏠','HOST A ROOM'],rooms:['🚪','JOIN A ROOM'],quick:['⚡','RANDOM PLAYER']};
+function paintOnline(){const t=tab('online');if(!t)return;const v=hub?hub.dataset.v:'menu';let L=['🌐','ONLINE'];
+ if(stage.dataset.mode==='online'&&v&&v!=='menu'){if(v==='room')L=lastGo==='friends'?LBL.friends:['🏠','MY ROOM'];else if(v==='search')L=LBL.quick;else if(LBL[v])L=LBL[v]}
+ t.innerHTML='<i>'+L[0]+'</i>'+L[1]}
+if(hub)new MutationObserver(paintOnline).observe(hub,{attributes:true,attributeFilter:['data-v']});
+new MutationObserver(()=>setTimeout(()=>{paintOnline();if(stage.dataset.mode==='online'&&hub&&hub.dataset.v==='menu'&&stage.classList.contains('selecting')&&openK!=='online')onlineDrop()},250)).observe(stage,{attributes:true,attributeFilter:['data-mode']});
+/* ---- DAILY + ACCOUNT in the top menu ---- */
+const mk=(k,html)=>{const b=document.createElement('button');b.type='button';b.dataset.tab=k;b.innerHTML=html+'<span class="ndDot"></span>';return b};
+const dB=mk('daily','<i>📋</i>DAILY'),aB=mk('account','<i>👤</i>ACCOUNT');
+const th=tab('theme');if(th)tabs.insertBefore(dB,th);else tabs.appendChild(dB);tabs.appendChild(aB);
+dB.onclick=e=>{e.stopPropagation();beepS();close();click('dailyBtn')};
+const db=document.getElementById('dailyBtn');const dotD=()=>{if(db)dB.classList.toggle('has',db.classList.contains('has'))};if(db)new MutationObserver(dotD).observe(db,{attributes:true,childList:true,subtree:true});dotD();
+function accDrop(){const ids=[['accountOpen','👤 PROFILE'],['accountLoginMenu','🔑 LOG IN'],['demoRegister','✍ REGISTER'],['accountGuestMenu','▶ PLAY AS GUEST'],['accountLogoutMenu','🚪 LOG OUT']];
+ const vis=ids.filter(([id])=>{const e=document.getElementById(id);return e&&!e.hidden});
+ open('account',head(window.sdAccount?.profile?esc(window.sdAccount.profile.username):'👤 ACCOUNT')+'<div class="ndList">'+vis.map(([id,l])=>'<button type="button" data-id="'+id+'">'+l+'</button>').join('')+'</div>',
+ d=>d.querySelectorAll('[data-id]').forEach(b=>b.onclick=e=>{e.stopPropagation();close();click(b.dataset.id)}))}
+aB.onclick=e=>{e.stopPropagation();beepS();accDrop()};
+/* the top-menu tabs that now drop down instead of opening a window */
+const ho=tab('heroes');if(ho)ho.onclick=e=>{e.stopPropagation();beepS();heroesDrop()};
+if(th)th.onclick=e=>{e.stopPropagation();beepS();themeDrop()};
+const on=tab('online');if(on)on.onclick=e=>{e.stopPropagation();beepS();onlineDrop()};
+['offline','cpu','rank','shop'].forEach(k=>{const b=tab(k);if(b)b.addEventListener('click',close)});
+window.sdNavDrop={close,heroes:heroesDrop,online:onlineDrop,theme:themeDrop};
+setTimeout(paintOnline,1000);
 })();
 </script>
 </html>
