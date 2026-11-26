@@ -3821,4 +3821,54 @@ window.sdNavDrop={close,heroes:heroesDrop,online:onlineDrop,theme:themeDrop};
 setTimeout(paintOnline,1000);
 })();
 </script>
+<style>/* ===== BROWSER-STYLE TABS (Nov 2026): the top menu is always visible; RANK / SHOP / DAILY / THEME / ACCOUNT(profile) / HEROES open as a PAGE under the menu (no pop-up windows), the open tab is lit; clicking the tab again or the brand goes back ===== */
+dialog.sdPage{position:fixed!important;margin:0!important;max-width:none!important;max-height:none!important;border-radius:0!important;box-sizing:border-box!important;overflow:auto!important;z-index:40;inset:auto;transform:none!important;animation:sdPageIn .16s ease-out}
+dialog.sdPage::backdrop{display:none}
+dialog.sdPage{background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#111)),var(--th0,#111)!important}
+@keyframes sdPageIn{from{opacity:0}to{opacity:1}}
+#heroPick.sdPageHero{top:var(--sdPgTop,0)!important;bottom:var(--sdPgBot,0)!important;z-index:30!important}
+#heroPick.sdPageHero{background:radial-gradient(ellipse at 50% 0,var(--pnl2,#1c2029),transparent 70%),var(--th0,#111)!important}
+#heroPick.sdPageHero .hpClose{display:none!important}
+#heroPick.sdPageHero h3{margin-top:4px!important}
+#topNav .tnTabs button.on{color:#fff!important}
+</style>
+<script>/* ===== BROWSER-STYLE TABS — see the style block above ===== */
+(()=>{const stage=$('stage'),nav=document.getElementById('topNav');if(!stage||!nav)return;const tabs=nav.querySelector('.tnTabs');
+const tab=k=>tabs.querySelector('[data-tab="'+k+'"]');
+const PAGE_DLG={rankDialog:'rank',shopDialog:'shop',dailyDialog:'daily',themeDlg:'theme',accountDialog:'account'};
+let page=null;
+function area(){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
+ let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}return {left:s.left,top,width:s.width,height:Math.max(100,bot-top),s}}
+function place(d){const a=area();Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',maxWidth:'none',maxHeight:'none'})}
+function paint(){paint0();clearTimeout(paint._t);paint._t=setTimeout(paint0,40)}
+function paint0(){const m=stage.dataset.mode;tabs.querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab;b.classList.toggle('on',page?t===page:t===m)})}
+function closePages(except){document.querySelectorAll('dialog.sdPage[open]').forEach(d=>{if(d!==except)d.close()});const hp=document.getElementById('heroPick');if(hp&&except!==hp&&hp.classList.contains('show')){hp.classList.remove('show')}}
+/* any of these windows opened on the start screen becomes a page under the menu */
+new MutationObserver(ms=>ms.forEach(m=>{const d=m.target;if(d.tagName!=='DIALOG')return;const k=PAGE_DLG[d.id];if(!k)return;
+ if(d.open){if(!stage.classList.contains('selecting'))return;if(!d.classList.contains('sdPage')){let modal=false;try{modal=d.matches(':modal')}catch(e){}
+   if(modal){d.close();d.classList.add('sdPage');closePages(d);page=k;d.show();place(d);setTimeout(()=>place(d),30);paint();window.sdNavDrop?.close?.();return}}
+  else{place(d);setTimeout(()=>place(d),30)}}
+ else if(d.classList.contains('sdPage')){if(!d._reopen){d.classList.remove('sdPage');if(page===k){page=null;paint()}}}
+})).observe(document.body,{attributes:true,attributeFilter:['open'],subtree:true});
+/* closing a page with its own ✕ / Esc */
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const d=document.querySelector('dialog.sdPage[open]');if(d&&!document.querySelector('dialog:modal'))d.close()}});
+addEventListener('resize',()=>{document.querySelectorAll('dialog.sdPage[open]').forEach(place);heroArea()});
+/* HEROES page = the hero screen under the menu */
+const hp=document.getElementById('heroPick');
+function heroArea(){if(!hp)return;const a=area();stage.style.setProperty('--sdPgTop',(a.top-a.s.top)+'px');stage.style.setProperty('--sdPgBot',(a.s.bottom-a.top-a.height)+'px')}
+if(hp)new MutationObserver(()=>{const on=hp.classList.contains('show'),pg=hp.classList.contains('sdPageHero');if(on&&!pg){hp.classList.add('sdPageHero');heroArea();closePages(hp);page='heroes';paint()}else if(!on&&pg){hp.classList.remove('sdPageHero');if(page==='heroes')page=null;paint()}}).observe(hp,{attributes:true,attributeFilter:['class']});
+/* tab clicks: same tab again = back to where you were */
+function toggle(k,openFn){return e=>{e.stopPropagation();try{beep(620,.05,'triangle',.035)}catch(x){}window.sdNavDrop?.close?.();if(page===k){closePages();page=null;paint();return}closePages();openFn()}}
+const setT=(k,fn)=>{const b=tab(k);if(b)b.onclick=toggle(k,fn)};
+setT('heroes',()=>window.sdOpenHeroPick&&window.sdOpenHeroPick());
+setT('theme',()=>window.sdOpenThemes&&window.sdOpenThemes());
+setT('rank',()=>document.getElementById('podium')?.click());
+setT('shop',()=>window.sdOpenShop&&window.sdOpenShop());
+setT('daily',()=>document.getElementById('dailyBtn')?.click());
+['online','cpu'].forEach(k=>{const b=tab(k);if(b)b.addEventListener('click',()=>{if(page){closePages();page=null;paint()}},true)});
+const br=nav.querySelector('.tnBrand');if(br)br.addEventListener('click',()=>{closePages();page=null;paint()},true);
+new MutationObserver(()=>{if(!stage.classList.contains('selecting')){closePages();page=null}setTimeout(paint,0)}).observe(stage,{attributes:true,attributeFilter:['class','data-mode']});
+setTimeout(paint,1200);
+})();
+</script>
 </html>
