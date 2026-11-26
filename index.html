@@ -3832,7 +3832,25 @@ dialog.sdPage{position:fixed!important;margin:0!important;max-width:none!importa
 dialog.sdPage::backdrop{display:none}
 dialog.sdPage{background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#111)),var(--th0,#111)!important}
 @keyframes sdPageIn{from{opacity:0}to{opacity:1}}
-#heroPick.sdPageHero{top:var(--sdPgTop,0)!important;bottom:var(--sdPgBot,0)!important;z-index:30!important}
+#arenaSide{display:none;position:absolute;z-index:31;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#111)),var(--th0,#111);border:1px solid var(--ln2,#555);border-radius:3px;box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 14px 34px rgba(0,0,0,.6);color:var(--tx,#fff);font-family:Arial,sans-serif;animation:sdPageIn .16s ease-out}
+#arenaSide.show{display:flex}
+#arenaSide .asT{display:flex;flex-direction:column;gap:3px}#arenaSide .asT b{font:900 16px/1 Cinzel,serif;letter-spacing:.08em;color:var(--gd,#ffb627)}#arenaSide .asT small{font:700 10px/1.3 Arial,sans-serif;color:var(--mu,#aaa)}
+#arenaSide .asGrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start;padding:2px}
+#arenaSide .asGrid>button{position:relative;display:flex;flex-direction:column;gap:2px;padding:3px;cursor:pointer;border-radius:3px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 11px/1.2 Arial,sans-serif;text-align:center;overflow:hidden}
+#arenaSide .asGrid>button.chosen{border:2px solid var(--gd,#ffb627);box-shadow:0 0 14px var(--thGlow,rgba(255,182,39,.4))}
+#arenaSide .asGrid>button img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:2px}
+dialog.sdPage.sdSide{border-radius:3px!important;box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 14px 34px rgba(0,0,0,.6)!important;padding:12px!important;font-size:13px}
+#heroPick.sdSide{border:1px solid var(--ln2,#555);box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 14px 34px rgba(0,0,0,.6)}
+#heroPick.sdSide .hpBox{padding:10px!important}
+dialog.sdSide h3{font-size:17px!important;line-height:1.2!important}dialog.sdSide>p{font-size:11px!important}#themeDlg.sdSide .tdGrid{grid-template-columns:1fr!important}
+#heroPick.sdSide h3{font-size:16px!important;margin:2px 0 10px!important}
+#heroPick.sdSide .hpGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+#heroPick.sdSide .hpGrid button span:not(.lvB){font-size:13px!important}
+#topNav .tnTabs button.tnSep{margin-left:clamp(4px,.8vw,14px)!important}
+#topNav .tnTabs button.tnSep::before{content:'';position:absolute;left:calc(clamp(4px,.8vw,14px) / -2 - 1px);top:30%;bottom:30%;width:1px;background:var(--ln2,#555);opacity:.6}
+@media (orientation:portrait) and (max-width:820px){#topNav .tnTabs button[data-tab=arenas],#topNav .tnTabs button.tnSep::before{display:none!important}#topNav .tnTabs button.tnSep{margin-left:0!important}}
+
+#heroPick.sdPageHero{top:var(--sdPgTop,0)!important;bottom:var(--sdPgBot,0)!important;left:var(--sdPgL,0)!important;right:var(--sdPgR,0)!important;z-index:30!important}
 #heroPick.sdPageHero{background:radial-gradient(ellipse at 50% 0,var(--pnl2,#1c2029),transparent 70%),var(--th0,#111)!important}
 #heroPick.sdPageHero .hpClose{display:none!important}
 #heroPick.sdPageHero h3{margin-top:4px!important}
@@ -3843,12 +3861,16 @@ dialog.sdPage{background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#1
 const tab=k=>tabs.querySelector('[data-tab="'+k+'"]');
 const PAGE_DLG={rankDialog:'rank',shopDialog:'shop',dailyDialog:'daily',themeDlg:'theme',accountDialog:'account'};
 let page=null;
-function area(){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
- let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}return {left:s.left,top,width:s.width,height:Math.max(100,bot-top),s}}
-function place(d){const a=area();Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',maxWidth:'none',maxHeight:'none'})}
+const DESK=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');const SIDE=new Set(['heroes','arenas','rank','daily','theme']);
+const isSide=k=>DESK.matches&&SIDE.has(k);
+function area(side){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
+ let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}
+ if(side){const gap=Math.round(s.height*.016),W=Math.round(s.width*.25),pad=Math.round(s.width*.016);return {left:s.right-pad-W,top:top+gap,width:W,height:Math.max(100,bot-top-2*gap),s}}
+ return {left:s.left,top,width:s.width,height:Math.max(100,bot-top),s}}
+function place(d){const side=isSide(PAGE_DLG[d.id]);d.classList.toggle('sdSide',side);const a=area(side);Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',maxWidth:'none',maxHeight:'none'})}
 function paint(){paint0();clearTimeout(paint._t);paint._t=setTimeout(paint0,40)}
 function paint0(){const m=stage.dataset.mode;tabs.querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab;b.classList.toggle('on',page?t===page:t===m)})}
-function closePages(except){document.querySelectorAll('dialog.sdPage[open]').forEach(d=>{if(d!==except)d.close()});const hp=document.getElementById('heroPick');if(hp&&except!==hp&&hp.classList.contains('show')){hp.classList.remove('show')}}
+function closePages(except){const as=document.getElementById('arenaSide');if(as&&except!==as)as.classList.remove('show');document.querySelectorAll('dialog.sdPage[open]').forEach(d=>{if(d!==except)d.close()});const hp=document.getElementById('heroPick');if(hp&&except!==hp&&hp.classList.contains('show')){hp.classList.remove('show')}}
 /* any of these windows opened on the start screen becomes a page under the menu */
 new MutationObserver(ms=>ms.forEach(m=>{const d=m.target;if(d.tagName!=='DIALOG')return;const k=PAGE_DLG[d.id];if(!k)return;
  if(d.open){if(!stage.classList.contains('selecting'))return;if(!d.classList.contains('sdPage')){let modal=false;try{modal=d.matches(':modal')}catch(e){}
@@ -3861,7 +3883,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const d=document.qu
 addEventListener('resize',()=>{document.querySelectorAll('dialog.sdPage[open]').forEach(place);heroArea()});
 /* HEROES page = the hero screen under the menu */
 const hp=document.getElementById('heroPick');
-function heroArea(){if(!hp)return;const a=area();stage.style.setProperty('--sdPgTop',(a.top-a.s.top)+'px');stage.style.setProperty('--sdPgBot',(a.s.bottom-a.top-a.height)+'px')}
+function heroArea(){if(!hp)return;const side=isSide('heroes');hp.classList.toggle('sdSide',side);const a=area(side);stage.style.setProperty('--sdPgTop',(a.top-a.s.top)+'px');stage.style.setProperty('--sdPgBot',(a.s.bottom-a.top-a.height)+'px');stage.style.setProperty('--sdPgL',(a.left-a.s.left)+'px');stage.style.setProperty('--sdPgR',(a.s.right-a.left-a.width)+'px');const as=document.getElementById('arenaSide');if(as){const b=area(true);Object.assign(as.style,{left:(b.left-b.s.left)+'px',top:(b.top-b.s.top)+'px',width:b.width+'px',height:b.height+'px'})}}
 if(hp)new MutationObserver(()=>{const on=hp.classList.contains('show'),pg=hp.classList.contains('sdPageHero');if(on&&!pg){hp.classList.add('sdPageHero');heroArea();closePages(hp);page='heroes';paint()}else if(!on&&pg){hp.classList.remove('sdPageHero');if(page==='heroes')page=null;paint()}}).observe(hp,{attributes:true,attributeFilter:['class']});
 /* tab clicks: same tab again = back to where you were */
 function toggle(k,openFn){return e=>{e.stopPropagation();try{beep(620,.05,'triangle',.035)}catch(x){}window.sdNavDrop?.close?.();if(page===k){closePages();page=null;paint();return}closePages();openFn()}}
@@ -3874,6 +3896,15 @@ setT('daily',()=>document.getElementById('dailyBtn')?.click());
 ['online','cpu'].forEach(k=>{const b=tab(k);if(b)b.addEventListener('click',()=>{if(page){closePages();page=null;paint()}},true)});
 const br=nav.querySelector('.tnBrand');if(br)br.addEventListener('click',()=>{closePages();page=null;paint()},true);
 new MutationObserver(()=>{if(!stage.classList.contains('selecting')){closePages();page=null}setTimeout(paint,0)}).observe(stage,{attributes:true,attributeFilter:['class','data-mode']});
+/* ARENAS tab: the arena cards in the right column (a copy of the CHOOSE ARENA buttons; tapping one presses the real one) */
+const arTab=document.createElement('button');arTab.type='button';arTab.dataset.tab='arenas';arTab.innerHTML='<i>🗺️</i>ARENAS<span class="ndDot"></span>';
+const as=document.createElement('div');as.id='arenaSide';as.innerHTML='<div class="asT"><b>🗺️ ARENAS</b><small>Pick where you fight (OFFLINE). Online the room picks.</small></div><div class="asGrid"></div>';stage.appendChild(as);
+function fillArenas(){const g=as.querySelector('.asGrid');g.replaceChildren();document.querySelectorAll('#mapPick .mapButtons>button').forEach(o=>{const c=o.cloneNode(true);c.removeAttribute('id');c.classList.toggle('chosen',o.classList.contains('chosen'));c.onclick=e=>{e.stopPropagation();o.click();setTimeout(()=>g.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('chosen',document.querySelectorAll('#mapPick .mapButtons>button')[i]?.classList.contains('chosen'))),80)};g.appendChild(c)})}
+function openArenas(){if(!DESK.matches){document.querySelector('#topNav [data-tab=cpu]')?.click();return}fillArenas();heroArea();as.classList.add('show');page='arenas';paint()}
+arTab.onclick=toggle('arenas',openArenas);
+/* menu order: play · collection · progress · store · settings */
+const order=['play','online','cpu','heroes','arenas','rank','daily','shop','theme','account'];const hb=tab('heroes');if(hb)tabs.insertBefore(arTab,hb.nextSibling);
+order.forEach(k=>{const b=k==='arenas'?arTab:tab(k);if(b)tabs.appendChild(b)});['heroes','rank','shop','account'].forEach(k=>{const b=k==='arenas'?arTab:tab(k);if(b)b.classList.add('tnSep')});
 setTimeout(paint,1200);
 })();
 </script>
