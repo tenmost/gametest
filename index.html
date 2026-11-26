@@ -3938,7 +3938,8 @@ setTimeout(paint,1200);
 #howMini{display:none;justify-content:space-between;gap:4px;padding:7px 10px;box-sizing:border-box;font:900 clamp(9px,.8vw,11px)/1.2 Arial,sans-serif;letter-spacing:.04em;color:var(--mu,#aaa);text-transform:uppercase;white-space:nowrap}
 #howMini span{display:flex;align-items:center;gap:3px}
 @media (min-width:701px) and (orientation:landscape),(min-width:821px){
- #stage.selecting[data-mode=online]:has(#hub[data-v=menu]) :is(#rankCard,#howCard){display:flex!important;position:absolute}
+ #stage.selecting[data-mode=online]:has(#hub[data-v=menu]) #rankCard{display:flex!important;position:absolute}
+ #stage.selecting #howCard{display:none!important}
  #stage.selecting #howCard{justify-content:space-evenly}
 
 
