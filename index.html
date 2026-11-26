@@ -209,7 +209,7 @@ footer{text-align:center;color:#c7d6ef;font-size:13px;margin-top:8px}
 .avDiv{grid-column:1/-1;margin:10px 0 2px;font-size:12px;font-weight:900;letter-spacing:.08em;color:#ffd38a}
 /* avatar effects: epic = glowing, legendary = glowing + moving */
 .avE{display:inline-block;line-height:1}
-[data-av=phoenix]{--g:#ff6ad5}[data-tier=mythic]{border-color:var(--g)!important;animation:avGlow 1.3s ease-in-out infinite}.pinkGem{display:inline-block;filter:hue-rotate(95deg) saturate(1.6) brightness(1.1)}.avPrice.pink{background:#4a1040;border-color:#ff6ad5;color:#ffd6f4}[data-av=flame]{--g:#ff7a1a}[data-av=bolt]{--g:#ffe14a}[data-av=galaxy]{--g:#b06cff}[data-av=crystal_ball]{--g:#ff6ad5}[data-av=vortex]{--g:#5ad8ff}[data-av=crown]{--g:#ffd54a}[data-av=dragon_king]{--g:#ff4a2a}
+[data-av=phoenix]{--g:#ff6ad5}[data-av=santa]{--g:#ff4a4a}[data-tier=mythic]{border-color:var(--g)!important;animation:avGlow 1.3s ease-in-out infinite}.pinkGem{display:inline-block;filter:hue-rotate(95deg) saturate(1.6) brightness(1.1)}.avPrice.pink{background:#4a1040;border-color:#ff6ad5;color:#ffd6f4}[data-av=flame]{--g:#ff7a1a}[data-av=bolt]{--g:#ffe14a}[data-av=galaxy]{--g:#b06cff}[data-av=crystal_ball]{--g:#ff6ad5}[data-av=vortex]{--g:#5ad8ff}[data-av=crown]{--g:#ffd54a}[data-av=dragon_king]{--g:#ff4a2a}
 [data-tier=epic],[data-tier=legend]{border-color:var(--g)!important;animation:avGlow 2s ease-in-out infinite}
 [data-tier=epic] .avE,[data-tier=legend] .avE{filter:drop-shadow(0 0 6px var(--g))}
 [data-tier=legend]{animation-duration:1.1s}
@@ -312,12 +312,12 @@ html.xmas #brandLogo .l1::before{content:'';position:absolute;left:-.2em;top:-.5
 const q=id=>document.getElementById(id);
 const AV={astronaut:'🧑‍🚀',astronaut_f:'👩‍🚀',astronaut_m:'👨‍🚀',robot:'🤖',alien:'👽',invader:'👾',ufo:'🛸',rocket:'🚀',planet:'🪐',comet:'☄️',star:'🌟',dragon:'🐉',fox:'🦊',wolf:'🐺',lion:'🦁',skull:'💀',
  /* premium (unlock with blue crystals) — keys + prices must match sd_avatar_price() in supabase/premium_avatars.sql */
- moon:'🌙',satellite:'🛰️',octopus:'🐙',ghost:'👻',unicorn:'🦄',shark:'🦈',ninja:'🥷',vampire:'🧛',flame:'🔥',bolt:'⚡',galaxy:'🌌',crystal_ball:'🔮',vortex:'🌀',crown:'👑',dragon_king:'🐲',phoenix:'🐦‍🔥'};
-const AV_PRICE={moon:25,satellite:25,octopus:25,ghost:25,unicorn:100,shark:100,ninja:100,vampire:100,flame:300,bolt:300,galaxy:300,crystal_ball:300,vortex:750,crown:750,dragon_king:750,phoenix:100};
-const AV_CUR={phoenix:'pink'};/* paid in PINK crystals */
+ moon:'🌙',satellite:'🛰️',octopus:'🐙',ghost:'👻',unicorn:'🦄',shark:'🦈',ninja:'🥷',vampire:'🧛',flame:'🔥',bolt:'⚡',galaxy:'🌌',crystal_ball:'🔮',vortex:'🌀',crown:'👑',dragon_king:'🐲',phoenix:'🐦‍🔥',santa:'🎅'};
+const AV_PRICE={moon:25,satellite:25,octopus:25,ghost:25,unicorn:100,shark:100,ninja:100,vampire:100,flame:300,bolt:300,galaxy:300,crystal_ball:300,vortex:750,crown:750,dragon_king:750,phoenix:100,santa:1};
+const AV_CUR={phoenix:'pink',santa:'event'};/* paid in PINK crystals */
 const PINK='<span class="pinkGem">💎</span>';
-const AV_NAME={moon:'Moon',satellite:'Satellite',octopus:'Space Octopus',ghost:'Ghost',unicorn:'Unicorn',shark:'Shark',ninja:'Ninja',vampire:'Vampire',flame:'Flame',bolt:'Lightning',galaxy:'Galaxy',crystal_ball:'Crystal Ball',vortex:'Black Vortex',crown:'Royal Crown',dragon_king:'Dragon King',phoenix:'Cosmic Phoenix'};
-const AV_TIER=k=>{const p=AV_PRICE[k]||0;if(AV_CUR[k]==='pink')return 'mythic';return p>=750?'legend':p>=300?'epic':p>=100?'rare':p?'cheap':''};
+const AV_NAME={moon:'Moon',satellite:'Satellite',octopus:'Space Octopus',ghost:'Ghost',unicorn:'Unicorn',shark:'Shark',ninja:'Ninja',vampire:'Vampire',flame:'Flame',bolt:'Lightning',galaxy:'Galaxy',crystal_ball:'Crystal Ball',vortex:'Black Vortex',crown:'Royal Crown',dragon_king:'Dragon King',phoenix:'Cosmic Phoenix',santa:'Santa (Christmas event)'};
+const AV_TIER=k=>{const p=AV_PRICE[k]||0;if(AV_CUR[k]==='pink'||AV_CUR[k]==='event')return 'mythic';return p>=750?'legend':p>=300?'epic':p>=100?'rare':p?'cheap':''};
 /* fill any avatar box: emoji in an inner span + data-av / data-tier for the glow / moving CSS effects */
 function avatarFill(el,k,fallback){if(!el)return;el.dataset.av=k||'';const t=AV_TIER(k);if(t)el.dataset.tier=t;else delete el.dataset.tier;for(const n of [...el.childNodes])if(n.nodeType===3)n.remove();
  const art=!!AV_PRICE[k],tag=art?'IMG':'SPAN';let e=el.querySelector(':scope>.avE');if(e&&e.tagName!==tag){e.remove();e=null}if(!e){e=document.createElement(tag);e.className='avE';if(art){e.alt='';e.draggable=false;e.decoding='async'}el.prepend(e)}
@@ -335,10 +335,10 @@ function paint(){const s=q('accountSummary');if(!lastSession){s.textContent='Gue
  const av=AV[profile.avatar]||AV.astronaut,inc=friends.filter(f=>f.status==='pending'&&f.incoming).length;s.textContent=av+' '+profile.username+(inc?' 🔔'+inc:'');avatarFill(q('acAvatar'),profile.avatar);q('acName').textContent=profile.username;q('acEmail').textContent=lastSession.user.email||'';
  q('acStCrystals').textContent=profile.crystals;q('acStWins').textContent=profile.wins;q('acStLosses').textContent=profile.losses;q('acStMaps').textContent=profile.unlocked_maps.length+'/'+ARENAS;const games=profile.wins+profile.losses;q('acStGames').textContent=games;q('acStRate').textContent=games?Math.round(profile.wins*100/games)+'%':'–';q('acStStreak').textContent=profile.current_streak||0;q('acStBest').textContent=profile.best_streak||0;
  if(document.activeElement!==q('acRename'))q('acRename').value=profile.username;
- const prem=ownedAv!==null;for(const b of q('acAvatars').children){if(b.classList.contains('avDiv')){b.hidden=!prem;continue}const k=b.dataset.av,price=AV_PRICE[k]||0,locked=price>0&&!(ownedAv||[]).includes(k),on=k===profile.avatar;b.hidden=price>0&&!prem||AV_CUR[k]==='pink'&&profile.pink_crystals==null;b.classList.toggle('chosen',on);b.classList.toggle('locked',locked);b.classList.toggle('armed',avArm===k);b.setAttribute('aria-checked',String(on));const tag=b.querySelector('.avPrice');if(tag)tag.hidden=!locked;b.title=locked?'Unlock for '+price+(AV_CUR[k]==='pink'?' pink':' blue')+' crystals':'';}view();}
+ const prem=ownedAv!==null;for(const b of q('acAvatars').children){if(b.classList.contains('avDiv')){b.hidden=!prem;continue}const k=b.dataset.av,price=AV_PRICE[k]||0,locked=price>0&&!(ownedAv||[]).includes(k),on=k===profile.avatar;b.hidden=price>0&&!prem||AV_CUR[k]==='pink'&&profile.pink_crystals==null;b.classList.toggle('chosen',on);b.classList.toggle('locked',locked);b.classList.toggle('armed',avArm===k);b.setAttribute('aria-checked',String(on));const tag=b.querySelector('.avPrice');if(tag)tag.hidden=!locked;b.title=locked?(AV_CUR[k]==='event'?'Christmas event reward — collect 30 🎁 in EVENTS':'Unlock for '+price+(AV_CUR[k]==='pink'?' pink':' blue')+' crystals'):'';}view();}
 var ownedAv=null,avArm=null;
 /* popup to buy a premium avatar: big preview, price, balance, Unlock / Cancel (or how to earn more) */
-function avBuy(k){const price=AV_PRICE[k],tier=AV_TIER(k),pink=AV_CUR[k]==='pink',have=pink?(profile.pink_crystals||0):profile.crystals,enough=have>=price,G=pink?PINK:'💎';let d=document.getElementById('avBuyDialog');
+function avBuy(k){if(AV_CUR[k]==='event'){if(window.sdOpenEvents)window.sdOpenEvents();return}const price=AV_PRICE[k],tier=AV_TIER(k),pink=AV_CUR[k]==='pink',have=pink?(profile.pink_crystals||0):profile.crystals,enough=have>=price,G=pink?PINK:'💎';let d=document.getElementById('avBuyDialog');
  if(!d){d=document.createElement('dialog');d.id='avBuyDialog';d.innerHTML='<div class="abPrev"></div><h3></h3><p class="abTier"></p><p class="abPrice"></p><p class="abMsg"></p><div class="mapNoticeActions"><button type="button" data-cancel>Cancel</button><button type="button" data-ok></button></div>';(document.querySelector('.stage')||document.body).appendChild(d);d.querySelector('[data-cancel]').onclick=()=>d.close();d.addEventListener('click',ev=>{if(ev.target===d)d.close()})}
  avatarFill(d.querySelector('.abPrev'),k);d.querySelector('h3').textContent=AV_NAME[k]||k;d.querySelector('.abTier').textContent={cheap:'COMMON',rare:'RARE',epic:'EPIC · GLOWING',legend:'LEGENDARY · GLOWING + MOVING',mythic:'MYTHIC · PINK CRYSTALS · MOVING'}[tier]||'';d.querySelector('.abTier').dataset.t=tier;
  d.querySelector('.abPrice').innerHTML=price+' '+G+'  ·  you have '+have+' '+G;const m=d.querySelector('.abMsg');m.textContent=enough?'':'You need '+(price-have)+' more '+(pink?'pink':'blue')+' crystals.';
@@ -392,7 +392,7 @@ async function loadFriends(){if(!client||!lastSession||!profile){friends=[];pain
 q('acFrAdd').onclick=async()=>{const n=q('acFrName').value.trim();if(!profile||n.length<3){frMsg('Type your friend’s player name.');return;}q('acFrAdd').disabled=true;const r=await client.rpc('sd_friend_request',{p_username:n});q('acFrAdd').disabled=false;if(r.error){frMsg(frNice(r.error));return;}q('acFrName').value='';frMsg(r.data==='accepted'?'You are now friends with '+n+'!':'Friend request sent to '+n+'!');await loadFriends();};
 q('acFrName').addEventListener('keydown',e=>{if(e.key==='Enter')q('acFrAdd').click();});
 {const div=document.createElement('div');div.className='avDiv';div.hidden=true;div.textContent='✨ PREMIUM AVATARS — unlock with 💎 blue crystals';
-for(const [k,e] of Object.entries(AV)){const price=AV_PRICE[k]||0;if(price&&!div.isConnected)q('acAvatars').appendChild(div);const b=document.createElement('button');b.type='button';avatarFill(b,k);if(price){b.hidden=true;const t=document.createElement('span');t.className='avPrice'+(AV_CUR[k]==='pink'?' pink':'');t.innerHTML=price+(AV_CUR[k]==='pink'?PINK:'💎');b.appendChild(t);}b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' ')+(price?' ('+price+' blue crystals)':''));
+for(const [k,e] of Object.entries(AV)){const price=AV_PRICE[k]||0;if(price&&!div.isConnected)q('acAvatars').appendChild(div);const b=document.createElement('button');b.type='button';avatarFill(b,k);if(price){b.hidden=true;const t=document.createElement('span');t.className='avPrice'+(AV_CUR[k]==='pink'?' pink':'');t.innerHTML=AV_CUR[k]==='event'?'🎄 EVENT':price+(AV_CUR[k]==='pink'?PINK:'💎');b.appendChild(t);}b.setAttribute('role','radio');b.setAttribute('aria-label','Avatar '+k.replace('_',' ')+(price?' ('+price+' blue crystals)':''));
  b.onclick=async()=>{if(!profile)return;const locked=price>0&&!(ownedAv||[]).includes(k);
   if(locked){avBuy(k);return}
   avArm=null;if(profile.avatar===k){paint();return}const prev=profile.avatar;profile.avatar=k;paint();const r=await client.rpc('sd_set_avatar',{p_avatar:k});if(r.error){profile.avatar=prev;paint();msg(nice(r.error));}else{msg('Avatar saved!');window.dispatchEvent(new CustomEvent('sd-profile',{detail:profile}))}};
@@ -2592,10 +2592,11 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
      else{btn.innerHTML='BUY · '+priceTxt(s.price,s.cur);btn.className='shBtn buy'+(enough?'':' poor');btn.onclick=()=>{if(!enough){msg('You need '+(s.price-have)+' more '+(s.cur==='pink'?'pink':'blue')+' crystals.');return}sure=k;msg('');paint()}}}
     it.appendChild(btn);if(on)it.classList.add('on');g.appendChild(it)}}
   else{const P=window.SD_AV_PRICE||{},N=window.SD_AV_NAME||{},own=window.sdAvOwned?window.sdAvOwned():null,cur=acc&&acc.profile.avatar;note.textContent='Premium avatars for your player card, the leaderboard and the match screen.';
-   const tierOf=k=>{const p=P[k];return k==='phoenix'?'mythic':p>=750?'legend':p>=300?'epic':p>=100?'rare':'cheap'};
+   const tierOf=k=>{const p=P[k];return k==='phoenix'||k==='santa'?'mythic':p>=750?'legend':p>=300?'epic':p>=100?'rare':'cheap'};
    for(const k of Object.keys(P)){if(k==='phoenix'&&!('sdPink' in window))continue;const it=el('div','shItem');it.dataset.tier=tierOf(k);const av=el('div','shAv');av.dataset.av=k;av.dataset.tier=tierOf(k);if(window.sdAvatarFill)window.sdAvatarFill(av,k);
     it.append(av,el('div','shName',N[k]||k),el('span','shTier',TIERS[tierOf(k)]));const btn=el('button','shBtn');btn.type='button';const owned=own&&own.includes(k),on=cur===k;
-    if(!acc){btn.innerHTML=priceTxt(P[k],k==='phoenix'?'pink':'blue')+' · LOG IN';btn.onclick=()=>{dlg.close();document.getElementById('accountLoginMenu')?.click()}}
+    if(k==='santa'&&!owned){btn.textContent='🎄 EVENT REWARD';btn.className='shBtn buy';btn.onclick=()=>{dlg.close();window.sdOpenEvents&&window.sdOpenEvents()}}
+    else if(!acc){btn.innerHTML=priceTxt(P[k],k==='phoenix'?'pink':'blue')+' · LOG IN';btn.onclick=()=>{dlg.close();document.getElementById('accountLoginMenu')?.click()}}
     else if(own===null){btn.textContent='COMING SOON';btn.disabled=true}
     else if(on){btn.textContent='✓ IN USE';btn.className='shBtn inuse'}
     else if(owned){btn.textContent='USE';btn.onclick=async()=>{btn.disabled=true;const r=await window.sdAvUse(k);msg(r.error||'Avatar changed.');paint()}}
@@ -2964,6 +2965,26 @@ html body #stage#stage[data-mode=cpu] :is(#online,#podium){display:none!importan
 #specBar .sbEm{display:flex;gap:3px}#specBar .sbEm button{margin:0;padding:.2em .4em;font-size:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:9px;color:#fff;cursor:pointer}
 #specBar #specBack{margin:0;padding:.5em 1em;font:900 11px/1 Arial,sans-serif;white-space:nowrap;border:0;border-radius:999px;background:linear-gradient(180deg,#7de7ff,#3a8bff);color:#04122e;cursor:pointer}
 #stage.spectating .controls,#stage.spectating #matchExit,#stage.spectating #readyCount{display:none!important}
+#eventCard{display:none;font-family:Arial,sans-serif;text-align:left;letter-spacing:0;text-transform:none;cursor:pointer;padding:8px 10px;box-sizing:border-box;flex-direction:column;gap:4px;background:linear-gradient(160deg,rgba(200,30,50,.32),rgba(20,120,60,.28))!important;border:1px solid rgba(255,120,120,.55)!important}
+#eventCard[hidden]{display:none!important}#eventCard .evTop{display:flex;justify-content:space-between;align-items:center;gap:6px}#eventCard b{font:900 clamp(10px,1vw,13px)/1.1 Arial,sans-serif;letter-spacing:.06em;color:#fff}
+#eventCard .evEnds{font:800 clamp(8px,.8vw,10px)/1 Arial,sans-serif;color:#ffd6d6}#eventCard .evLine{display:flex;justify-content:space-between;gap:6px;font:800 clamp(9px,.85vw,11px)/1.2 Arial,sans-serif;color:#fff}
+#eventCard .evNext{color:#ffe9a8;text-align:right}#eventCard button{position:absolute;right:8px;top:-9px;margin:0;padding:.2em .6em;font-size:9px;display:none}
+#eventCard.ready{animation:stepGlow 1.3s ease-in-out infinite}
+.evBar{height:6px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden}.evBar i{display:block;height:100%;background:linear-gradient(90deg,#ff5a5a,#ffd54a,#3fe08f)}
+#eventDlg{position:absolute;inset:0;z-index:58;display:none;align-items:center;justify-content:center;background:rgba(4,8,24,.65);font-family:Arial,sans-serif}#eventDlg.show{display:flex}
+#eventDlg .evBox{width:min(560px,92%);max-height:88%;overflow:auto;padding:18px;border-radius:22px;border:2px solid #ff7a7a;background:linear-gradient(180deg,#3a0f1cf2,#0d1638f2);color:#fff;text-align:left;box-shadow:0 0 40px #ff4a4a55}
+#eventDlg h3{margin:0 0 6px;font:900 clamp(18px,2.4vw,28px)/1.1 'Lilita One',Arial,sans-serif;letter-spacing:.05em;color:#fff;text-shadow:0 0 14px #ff4a4a}
+#eventDlg .evInfo,#eventDlg .evMine{margin:.3em 0;font-size:clamp(11px,1.1vw,14px);color:#ffe3e3;line-height:1.4}
+#eventDlg .evTiers{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+#eventDlg .evT{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18)}
+#eventDlg .evT.ok{border-color:#ffd54a;box-shadow:0 0 12px #ffd54a55}#eventDlg .evT.done{opacity:.6}
+#eventDlg .evI{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:rgba(0,0,0,.25);flex:none;overflow:hidden}#eventDlg .evI img{width:100%;height:100%}
+#eventDlg .evD{flex:1;display:flex;flex-direction:column;gap:3px}#eventDlg .evD b{font-size:13px}#eventDlg .evD small{font-size:11px;color:#ffd6d6}
+#eventDlg button{cursor:pointer;border:0;border-radius:999px;font:900 12px/1 Arial,sans-serif;letter-spacing:.05em;padding:.6em 1.2em;margin:0;background:linear-gradient(180deg,#ffd54a,#f29e2e);color:#3a2600;box-shadow:0 0 12px #ffd54a66}#eventDlg button:disabled{background:rgba(255,255,255,.15);color:#c9d3e6;box-shadow:none;cursor:default}#eventDlg .evClose{display:block;margin:6px auto 0;background:rgba(255,255,255,.9);color:#16306a;box-shadow:none}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){
+ #stage.selecting[data-mode=online] #eventCard{display:flex;position:absolute;z-index:5;right:1.6%;width:25%;bottom:2%}
+ #stage.selecting[data-mode=online] #online .onBox{bottom:calc(2% + 78px)!important}
+}
 #hub .spin{width:46px;height:46px;margin:10px auto;border-radius:50%;border:5px solid rgba(125,231,255,.25);border-top-color:#7de7ff;animation:hubSpin 1s linear infinite}
 @keyframes hubSpin{to{transform:rotate(360deg)}}
 #hub .hv[data-v=search]{align-items:center;text-align:center;justify-content:center}
@@ -3236,6 +3257,24 @@ function specNext(S){if(window.SD_SPEC!==S||busy||awaitingMatchReady)return;cons
 function specEnd(S,won){if(window.SD_SPEC!==S)return;const A=S.P[S.a]||{},B=S.P[S.b]||{};statusEl.textContent='🏆 '+String((won?A:B).name||'?').toUpperCase()+' WINS THE MATCH!';statusEl.className='win';try{announce('Victory!')}catch(e){}setTimeout(()=>specExit(S),5000)}
 function specExit(S,quiet){if(SPEC!==S)return;SPEC=null;window.SD_SPEC=null;try{S.ch.unsubscribe()}catch(e){}stage.classList.remove('spectating');if(S.started)openSelect()}
 $('specBack').onclick=()=>{if(SPEC)specExit(SPEC)};
+
+/* ---------- EVENTS: small card under FRIENDS & PLAYERS + EVENTS window (server: supabase/xmas_event.sql) ---------- */
+const evCard=document.createElement('div');evCard.id='eventCard';evCard.className='glass';evCard.innerHTML='<div class="evTop"><b>🎄 CHRISTMAS EVENT</b><span class="evEnds"></span></div><div class="evLine"><span class="evPts">🎁 –</span><span class="evNext"></span></div><div class="evBar"><i></i></div><button type="button">OPEN</button>';sel.appendChild(evCard);
+const evDlg=document.createElement('div');evDlg.id='eventDlg';evDlg.innerHTML='<div class="evBox"><h3>🎄 CHRISTMAS EVENT</h3><p class="evInfo">Collect 🎁 presents until 6 January: <b>win vs computer = 1 🎁</b>, <b>win online = 3 🎁</b>. Claim the rewards below — the 🎅 Santa avatar is only available in this event!</p><p class="evMine"></p><div class="evTiers"></div><p class="msg evMsg"></p><button type="button" class="ghost evClose">CLOSE</button></div>';stage.appendChild(evDlg);
+let EV=null;const EV_ICON=t=>t.avatar?'<img alt="" src="assets/avatars/'+t.avatar+'.svg">':(t.pink&&t.blue?'💎✨':t.pink?'<span class="pinkGem">💎</span>':'💎');
+const EV_TXT=t=>t.avatar==='santa'?'🎅 SANTA avatar':[t.blue?'+'+t.blue+' 💎':'',t.pink?'+'+t.pink+' pink 💎':''].filter(Boolean).join(' ');
+async function loadEvent(){try{const cl=window.sdAccount?.client||await sbClient();const r=await cl.rpc('sd_event_state',{p_event:'xmas2026'});if(!r.error&&r.data){EV=r.data;paintEvent()}else{evCard.hidden=true}}catch(e){evCard.hidden=true}}
+function paintEvent(){if(!EV){evCard.hidden=true;return}const end=new Date(EV.ends).getTime(),left=end-Date.now();if(Date.now()>new Date(EV.claim_until).getTime()){evCard.hidden=true;return}evCard.hidden=false;
+ const d=Math.max(0,Math.ceil(left/864e5));evCard.querySelector('.evEnds').textContent=left>0?'ends in '+d+'d':'claim until 13 Jan';
+ const pts=EV.points||0,next=(EV.tiers||[]).find(t=>!t.claimed&&pts<t.need),claimable=(EV.tiers||[]).filter(t=>!t.claimed&&pts>=t.need).length;
+ evCard.querySelector('.evPts').textContent=EV.signed_in?'🎁 '+pts:'🎁 log in to join';evCard.querySelector('.evNext').textContent=claimable?'🎉 '+claimable+' reward'+(claimable>1?'s':'')+' ready!':next?'next: '+EV_TXT(next)+' at '+next.need:'all rewards collected!';
+ const prev=[...(EV.tiers||[])].reverse().find(t=>pts>=t.need);const lo=prev?prev.need:0,hi=next?next.need:lo||1;evCard.querySelector('.evBar i').style.width=(next?Math.min(100,Math.round((pts-lo)*100/Math.max(1,hi-lo))):100)+'%';evCard.classList.toggle('ready',claimable>0);
+ evDlg.querySelector('.evMine').innerHTML=EV.signed_in?'You have <b>🎁 '+pts+'</b> presents.':'<b>Log in</b> (☰ menu) to collect presents and rewards.';
+ evDlg.querySelector('.evTiers').innerHTML=(EV.tiers||[]).map(t=>{const ok=pts>=t.need;return '<div class="evT'+(t.claimed?' done':ok?' ok':'')+'"><div class="evI">'+EV_ICON(t)+'</div><div class="evD"><b>'+EV_TXT(t)+'</b><small>'+(t.claimed?'✓ claimed':'🎁 '+Math.min(pts,t.need)+' / '+t.need)+'</small><div class="evBar"><i style="width:'+Math.min(100,Math.round(pts*100/t.need))+'%"></i></div></div><button type="button" data-t="'+t.tier+'" '+(t.claimed||!ok||!EV.signed_in?'disabled':'')+'>'+(t.claimed?'✓':'CLAIM')+'</button></div>'}).join('');
+ evDlg.querySelectorAll('.evTiers button[data-t]').forEach(b=>b.onclick=async()=>{b.disabled=true;const m=evDlg.querySelector('.evMsg');m.textContent='Claiming…';try{const r=await window.sdAccount.client.rpc('sd_event_claim',{p_event:'xmas2026',p_tier:+b.dataset.t});if(r.error){m.textContent=r.error.message;b.disabled=false;return}EV=r.data;const t=EV.tiers.find(x=>x.tier===+b.dataset.t);m.textContent='🎉 '+EV_TXT(t)+(t.avatar?' unlocked — pick it in your profile!':' added!');toast('🎄 '+EV_TXT(t)+(t.avatar?' unlocked!':''));try{await window.sdAccount.refresh()}catch(e){}paintEvent()}catch(e){m.textContent='Could not claim — try again.';b.disabled=false}})}
+window.sdOpenEvents=()=>{paintEvent();evDlg.classList.add('show');loadEvent()};
+evCard.onclick=window.sdOpenEvents;evDlg.querySelector('.evClose').onclick=()=>evDlg.classList.remove('show');evDlg.onclick=e=>{if(e.target===evDlg)evDlg.classList.remove('show')};
+window.addEventListener('sd-profile',()=>setTimeout(loadEvent,500));window.addEventListener('sd-match-end',()=>setTimeout(loadEvent,4000));setInterval(()=>{if(selecting)loadEvent()},90000);setTimeout(loadEvent,1500);
 if(isOnlinePage())setTimeout(enterOnline,300);loadLevels();setTimeout(paintHeroCard,1500);
 })();
 </script>
