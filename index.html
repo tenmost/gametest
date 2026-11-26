@@ -3866,7 +3866,7 @@ const dB=mk('daily','<i>📋</i>DAILY'),aB=mk('account','<i>👤</i>ACCOUNT');
 const th=tab('theme');if(th)tabs.insertBefore(dB,th);else tabs.appendChild(dB);tabs.appendChild(aB);
 dB.onclick=e=>{e.stopPropagation();beepS();close();click('dailyBtn')};
 const db=document.getElementById('dailyBtn');const dotD=()=>{if(db)dB.classList.toggle('has',db.classList.contains('has'))};if(db)new MutationObserver(dotD).observe(db,{attributes:true,childList:true,subtree:true});dotD();
-function accDrop(){const ids=[['accountOpen','👤 PROFILE'],['accountLoginMenu','🔑 LOG IN'],['demoRegister','✍ REGISTER'],['accountGuestMenu','▶ PLAY AS GUEST'],['accountLogoutMenu','🚪 LOG OUT']];
+function accDrop(){const ids=[['accountOpen','👤 PROFILE'],['bugOpen','🐞 REPORT A BUG'],['accountLoginMenu','🔑 LOG IN'],['demoRegister','✍ REGISTER'],['accountGuestMenu','▶ PLAY AS GUEST'],['accountLogoutMenu','🚪 LOG OUT']];
  const vis=ids.filter(([id])=>{const e=document.getElementById(id);return e&&!e.hidden});
  open('account',head(window.sdAccount?.profile?esc(window.sdAccount.profile.username):'👤 ACCOUNT')+'<div class="ndList">'+vis.map(([id,l])=>'<button type="button" data-id="'+id+'">'+l+'</button>').join('')+'</div>',
  d=>d.querySelectorAll('[data-id]').forEach(b=>b.onclick=e=>{e.stopPropagation();close();click(b.dataset.id)}))}
@@ -4437,7 +4437,7 @@ const STEPS=[
  [['#dailyCardBtn','#topNav [data-tab=daily]','#dailyBtn'],'📋 DAILY','Collect a free reward every day and finish missions for more crystals. Don\'t miss a day — day 7 is the big one.'],
  [['#topNav [data-tab=shop]','#shopBtn'],'🛒 SHOP','Card skins and avatars to show off.'],
  [['#topNav [data-tab=theme]'],'🎨 THEME','Change the look of the menus. Two looks are free, more are in the theme shop.'],
- [['#topNav [data-tab=account]','#accountToggle'],'🔑 ACCOUNT','Log in or register to keep your crystals, levels, rank and friends on every device. Guests can play, but nothing is saved.'],
+ [['#topNav [data-tab=account]','#accountToggle'],'🔑 ACCOUNT','Log in or register to keep your crystals, levels, rank and friends on every device. Guests can play, but nothing is saved. Found a bug? 🐞 REPORT A BUG is in this menu too.'],
  [['#playBig'],'▶ PLAY','Press PLAY, choose ONLINE or OFFLINE, and you are in!'],
  [[],'⚔ HOW A MATCH WORKS','Each round you pick a card — 🪨, 📄 or ✂️ — before the timer runs out (too slow = a random card).<br>Lose a round = lose a health bar. 3 bars = one fight. Win 2 fights to win the match!<br>Online, both players press ✓ READY and the match starts by itself.']];
 const tour=document.createElement('div');tour.id='tour';tour.innerHTML='<div class="tHole none"></div><div class="tBub" role="dialog" aria-live="polite"><small></small><h4></h4><p></p><div class="tRow"><button type="button" class="tSkip">SKIP TOUR</button><button type="button" class="tBack">‹ BACK</button><button type="button" class="tNext">NEXT ›</button></div></div>';document.body.appendChild(tour);
@@ -4511,7 +4511,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.1.3';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.2.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4571,4 +4571,81 @@ setInterval(()=>{const d=document.getElementById('rulesDialog');if(!d||d.querySe
  html #stage.selecting[data-mode=gate] #playBig small{font-size:clamp(8px,.7vw,10px)!important;letter-spacing:.14em!important}
 }
 </style>
+<!-- ===== BUG REPORTS (v1.2.0): 🐞 REPORT A BUG for logged-in players → sd_bug_report; admins read them in admin.html ===== -->
+<style>
+#bugDlg{width:min(520px,92vw);max-height:88vh;padding:0;border:1px solid var(--ln2,#785a28);border-radius:14px;background:var(--pnl,#14161c);color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+#bugDlg::backdrop{background:rgba(0,0,0,.6)}
+#bugDlg .bgHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln,#3a2f1a)}
+#bugDlg .bgHead h3{margin:0;flex:1;font:700 20px/1.1 Cinzel,serif;color:var(--gd,#ffb627);letter-spacing:.04em}
+#bugDlg .bgX{background:none;border:1px solid var(--ln2,#785a28);color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px}
+#bugDlg .bgBody{padding:12px 16px 16px;overflow:auto;max-height:calc(88vh - 64px);font:14px/1.4 system-ui}
+#bugDlg .bgKinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 10px}
+#bugDlg .bgKinds button{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:10px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:#ddd;font:800 11px/1.15 system-ui;letter-spacing:.04em;text-align:center}
+#bugDlg .bgKinds button i{font-style:normal;font-size:22px}
+#bugDlg .bgKinds button.on{border-color:var(--gd,#ffb627);color:#fff;box-shadow:0 0 14px rgba(255,182,39,.3);background:linear-gradient(180deg,rgba(255,182,39,.14),var(--th0,#111))}
+#bugDlg textarea{width:100%;box-sizing:border-box;min-height:120px;resize:vertical;padding:10px;border-radius:10px;border:1px solid var(--ln2,#555);background:rgba(0,0,0,.35);color:#fff;font:14px/1.4 system-ui;caret-color:auto;user-select:text}
+#bugDlg .bgRow{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:#aab}
+#bugDlg .bgRow .sp{flex:1}
+#bugDlg .bgSend{border:0;border-radius:10px;padding:10px 18px;font:900 14px system-ui;letter-spacing:.06em;cursor:pointer;background:var(--gd,#ffb627);color:#1a1305}
+#bugDlg .bgSend:disabled{opacity:.5;cursor:default}
+#bugDlg .bgMsg{min-height:18px;margin-top:8px;font-weight:700}
+#bugDlg .bgMsg.ok{color:#4fe3c4}#bugDlg .bgMsg.bad{color:#ff8a7a}
+#bugDlg .bgInfo{font-size:11px;color:#889;margin-top:6px}
+#bugDlg h4{margin:16px 0 6px;font:800 12px system-ui;letter-spacing:.12em;color:var(--gd,#ffb627)}
+#bugDlg .bgMine{display:flex;flex-direction:column;gap:6px}
+#bugDlg .bgItem{padding:8px 10px;border:1px solid var(--ln,#3a2f1a);border-radius:8px;background:rgba(255,255,255,.03);font-size:13px}
+#bugDlg .bgItem .st{float:right;font:800 10px system-ui;padding:2px 7px;border-radius:20px;letter-spacing:.08em}
+#bugDlg .st.new{background:#3a3f4c;color:#cfd6e4}#bugDlg .st.seen{background:#2b3f5c;color:#9cc4ff}#bugDlg .st.fixed{background:#14483c;color:#4fe3c4}#bugDlg .st.wontfix{background:#4a2a24;color:#ffb39f}
+#bugDlg .bgItem .nt{margin-top:5px;color:#ffd76a;font-size:12px}
+#bugDlg .bgGuest{text-align:center;padding:18px 6px}
+#rulesDialog .rBug{display:block;margin:6px auto 0;background:none;border:1px solid var(--ln2,#785a28);color:#ff9f8a;border-radius:8px;padding:6px 14px;font:700 12px system-ui;cursor:pointer}
+@media (max-width:480px){#bugDlg .bgKinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<script>
+(()=>{
+const stage=document.getElementById('stage')||document.querySelector('.stage');
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const signed=()=>!!(window.sdAccount&&window.sdAccount.profile);
+const KINDS=[['bug','🐞','BUG','something looks or acts wrong'],['broken','⚠️','DOESN\'T WORK','a button, room or match is stuck'],['idea','💡','IDEA','something you want in the game'],['player','🚩','REPORT PLAYER','cheating, bad name or chat']];
+const ST={new:'SENT',seen:'SEEN',fixed:'FIXED ✓',wontfix:'NOT PLANNED'};
+let kind='bug',busy=false;
+/* menu button inside the ☰ account menu (the top-menu ACCOUNT strip copies it) — logged-in players only */
+const mb=document.createElement('button');mb.type='button';mb.id='bugOpen';mb.hidden=true;mb.textContent='🐞 REPORT A BUG';mb.onclick=e=>{e.stopPropagation();openBug()};
+function placeMb(){const m=document.getElementById('accountMenu');if(m&&mb.parentNode!==m){const lo=document.getElementById('accountLogoutMenu');lo&&lo.parentNode===m?m.insertBefore(mb,lo):m.appendChild(mb)}mb.hidden=!signed()}
+setInterval(placeMb,1000);placeMb();window.addEventListener('sd-profile',placeMb);
+/* dialog */
+const d=document.createElement('dialog');d.id='bugDlg';document.body.appendChild(d);
+d.addEventListener('click',e=>{if(e.target===d)d.close()});
+function device(){const u=navigator.userAgent||'';const os=/iPhone|iPad/.test(u)?'iOS':/Android/.test(u)?'Android':/Mac OS/.test(u)?'Mac':/Windows/.test(u)?'Windows':/Linux/.test(u)?'Linux':'?';
+ const br=/Edg\//.test(u)?'Edge':/OPR\//.test(u)?'Opera':/SamsungBrowser/.test(u)?'Samsung':/Firefox\//.test(u)?'Firefox':/Chrome\//.test(u)?'Chrome':/Safari\//.test(u)?'Safari':'?';
+ return os+' · '+br+(matchMedia('(hover:none)').matches?' · touch':'')+' | '+u}
+function page(){if(!stage)return '?';if(stage.classList.contains('match-active'))return 'match';const m=stage.dataset.mode||'?';const h=document.getElementById('hub');return m==='online'&&h&&h.dataset.v&&h.dataset.v!=='menu'?'online:'+h.dataset.v:m}
+function screenTxt(){return innerWidth+'x'+innerHeight+(devicePixelRatio>1?' @'+Math.round(devicePixelRatio*10)/10:'')}
+async function loadMine(){const box=d.querySelector('.bgMine');if(!box)return;try{const r=await window.sdAccount.client.rpc('sd_my_bug_reports');if(r.error)throw r.error;const L=r.data||[];
+ box.innerHTML=L.length?L.map(x=>{const k=KINDS.find(k=>k[0]===x.kind)||KINDS[0];return '<div class="bgItem"><span class="st '+esc(x.status)+'">'+(ST[x.status]||x.status)+'</span>'+k[1]+' <b>'+new Date(x.created_at).toLocaleDateString()+'</b> — '+esc(x.body.length>140?x.body.slice(0,140)+'…':x.body)+(x.admin_note?'<div class="nt">💬 From the game team: '+esc(x.admin_note)+'</div>':'')+'</div>'}).join(''):'<div class="bgInfo">No reports yet.</div>'}catch(e){box.innerHTML='<div class="bgInfo">Could not load your reports.</div>'}}
+function render(){
+ if(!signed()){d.innerHTML='<div class="bgHead"><h3>🐞 REPORT A BUG</h3><button class="bgX" type="button" aria-label="Close">✕</button></div><div class="bgBody bgGuest"><p>Please <b>log in</b> to send a report — this keeps out spam, and we can tell you when it is fixed.</p><button type="button" class="bgSend bgLogin">🔑 LOG IN</button></div>';
+  d.querySelector('.bgX').onclick=()=>d.close();d.querySelector('.bgLogin').onclick=()=>{d.close();document.getElementById('accountLoginMenu')?.click()};return}
+ d.innerHTML='<div class="bgHead"><h3>🐞 REPORT A BUG</h3><button class="bgX" type="button" aria-label="Close">✕</button></div><div class="bgBody">'+
+  '<div>What is it about?</div><div class="bgKinds">'+KINDS.map(([k,i,n,t])=>'<button type="button" data-k="'+k+'" title="'+esc(t)+'" class="'+(k===kind?'on':'')+'"><i>'+i+'</i>'+n+'</button>').join('')+'</div>'+
+  '<textarea maxlength="1000" placeholder="What happened? What did you press, and what did you expect? (at least 15 letters)"></textarea>'+
+  '<div class="bgRow"><span class="bgCnt">0 / 1000</span><span class="sp"></span><button type="button" class="bgSend" disabled>SEND REPORT</button></div>'+
+  '<div class="bgMsg"></div><div class="bgInfo">We also send the game version (v'+esc(window.SD_VERSION||'?')+'), your device and browser, screen size and the page you were on — nothing else. Max 5 reports a day.</div>'+
+  '<h4>YOUR REPORTS</h4><div class="bgMine"><div class="bgInfo">Loading…</div></div></div>';
+ const ta=d.querySelector('textarea'),send=d.querySelector('.bgSend'),cnt=d.querySelector('.bgCnt'),msg=d.querySelector('.bgMsg');
+ d.querySelector('.bgX').onclick=()=>d.close();
+ d.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{kind=b.dataset.k;d.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));ta.placeholder=kind==='player'?'Which player (name) and what did they do? (at least 15 letters)':kind==='idea'?'What would you like in the game? (at least 15 letters)':'What happened? What did you press, and what did you expect? (at least 15 letters)'});
+ ta.oninput=()=>{const n=ta.value.trim().length;cnt.textContent=ta.value.length+' / 1000';send.disabled=busy||n<15};
+ send.onclick=async()=>{if(busy)return;busy=true;send.disabled=true;msg.className='bgMsg';msg.textContent='Sending…';
+  try{const r=await window.sdAccount.client.rpc('sd_bug_report',{p_kind:kind,p_body:ta.value,p_page:page(),p_version:String(window.SD_VERSION||''),p_device:device().slice(0,300),p_screen:screenTxt()});
+   if(r.error)throw r.error;msg.className='bgMsg ok';msg.textContent='✓ Thank you! Your report was sent to the game team.';ta.value='';cnt.textContent='0 / 1000';loadMine()}
+  catch(e){msg.className='bgMsg bad';msg.textContent=String(e&&e.message||e)||'Could not send — try again later.'}
+  busy=false;send.disabled=ta.value.trim().length<15};
+ loadMine()}
+function openBug(){try{document.getElementById('accountMenu').hidden=true}catch(e){}try{window.sdNavDrop&&window.sdNavDrop.close()}catch(e){}busy=false;render();try{d.showModal()}catch(e){d.show()}setTimeout(()=>d.querySelector('textarea')?.focus(),60)}
+window.sdOpenBug=openBug;
+/* also in the ? window */
+setInterval(()=>{const r=document.getElementById('rulesDialog');if(!r||r.querySelector('.rBug'))return;const b=document.createElement('button');b.type='button';b.className='rBug';b.textContent='🐞 REPORT A BUG';b.onclick=()=>{try{r.close()}catch(e){}openBug()};const u=r.querySelector('.rUpd')||r.querySelector('.rTut');if(u)u.after(b);else r.insertBefore(b,r.firstChild.nextSibling||null)},1500);
+})();
+</script>
 </html>

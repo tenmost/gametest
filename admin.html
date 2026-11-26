@@ -95,12 +95,23 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d1d42;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:40;display:none}
 .toast.show{display:block}
 .hidden{display:none!important}
+.bugN{display:none;margin-left:4px;min-width:18px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:18px}
+.bugN.on{display:inline-block}
+.bug{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.bug.new{border-color:var(--warn)}
+.bug .bh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.bug .bh .k{font-weight:800}.bug .bh .t{color:var(--mut);font-size:12px}
+.bug .bb{margin:8px 0;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.45}
+.bug .bm{color:var(--mut);font-size:11px;word-break:break-all}
+.bug .ba{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.bug .ba input{flex:1;min-width:200px}
+.bug .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;background:#24244a}
 </style>
 </head>
 <body>
 <header>
   <h1>RPS RIVALS <span>ADMIN</span></h1>
-  <nav id="tabs" class="hidden"><button data-t="chars" class="on">🧑‍🚀 Characters</button><button data-t="stats">📊 Statistics</button><button data-t="admins" id="tabAdmins" class="hidden">🔑 Admins</button></nav>
+  <nav id="tabs" class="hidden"><button data-t="chars" class="on">🧑‍🚀 Characters</button><button data-t="stats">📊 Statistics</button><button data-t="bugs">🐞 Bug reports <b id="bugN" class="bugN"></b></button><button data-t="admins" id="tabAdmins" class="hidden">🔑 Admins</button></nav>
   <div class="sp"></div>
   <span id="who"></span>
   <a href="./" target="_blank"><button class="ghost">▶ Game</button></a>
@@ -139,6 +150,13 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div class="card" style="margin-top:14px"><h2>Most used characters</h2><div id="charStats"></div></div>
     <div class="card" style="margin-top:14px"><h2>Rounds per day</h2><div id="daily"></div></div>
+  </section>
+  <section id="pBugs" class="hidden">
+    <div class="row"><h2 style="margin:0">Bug reports</h2><span class="muted" id="bugSum" style="font-size:13px"></span><div class="sp"></div>
+      <select id="bugF" style="width:auto"><option value="new">🆕 New</option><option value="seen">👀 Seen</option><option value="fixed">✅ Fixed</option><option value="wontfix">🚫 Not planned</option><option value="">All</option></select>
+      <button class="ghost" id="reloadBugs">↻ Refresh</button></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Sent by logged-in players from the game (☰ / ACCOUNT → 🐞 REPORT A BUG, or the ? window). Max 5 per player per day. A note you save is shown to the player under "YOUR REPORTS".</p>
+    <div id="bugs" style="margin-top:12px;display:flex;flex-direction:column;gap:10px"></div>
   </section>
   <section id="pAdmins" class="hidden">
     <div class="row"><h2 style="margin:0">Game admins</h2><span class="muted" style="font-size:12px">They can manage characters and see statistics — not tenmost.com admin.</span></div>
@@ -202,9 +220,9 @@ async function checkAdmin(){
   $('who').textContent=session.user.email;
   $('login').classList.add('hidden');$('tabs').classList.remove('hidden');$('logout').classList.remove('hidden');
   const {data:owner}=await SB.rpc('sd_is_owner');IS_OWNER=!!owner;$('tabAdmins').classList.toggle('hidden',!IS_OWNER);
-  const h=location.hash.slice(1);showTab(h==='stats'||(h==='admins'&&IS_OWNER)?h:'chars');
+  const h=location.hash.slice(1);showTab(h==='stats'||h==='bugs'||(h==='admins'&&IS_OWNER)?h:'chars');bugCount();setInterval(bugCount,60000);
 }
-function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('pAdmins').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
+function showLogin(msg){$('login').classList.remove('hidden');$('tabs').classList.add('hidden');$('logout').classList.add('hidden');$('pChars').classList.add('hidden');$('pStats').classList.add('hidden');$('pBugs').classList.add('hidden');$('pAdmins').classList.add('hidden');$('who').textContent='';$('loginMsg').textContent=msg||'';$('loginMsg').style.color='var(--bad)'}
 $('doLogin').onclick=async()=>{const b=$('doLogin');b.disabled=true;$('loginMsg').textContent='';
   const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});b.disabled=false;
   if(error){$('loginMsg').style.color='var(--bad)';$('loginMsg').textContent=/invalid login/i.test(error.message)?'Wrong email or password. New admin? Ask the owner to set your password in the Admins tab.':/not confirmed/i.test(error.message)?'Please open the confirmation email first, then sign in.':error.message;return}checkAdmin()};
@@ -227,9 +245,9 @@ SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){const p=prompt('New 
 /* ---------------- tabs ---------------- */
 let statsTimer=null,IS_OWNER=false;
 function showTab(t){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  $('pChars').classList.toggle('hidden',t!=='chars');$('pStats').classList.toggle('hidden',t!=='stats');$('pAdmins').classList.toggle('hidden',t!=='admins');history.replaceState(null,'','#'+t);
+  $('pChars').classList.toggle('hidden',t!=='chars');$('pStats').classList.toggle('hidden',t!=='stats');$('pAdmins').classList.toggle('hidden',t!=='admins');$('pBugs').classList.toggle('hidden',t!=='bugs');history.replaceState(null,'','#'+t);
   clearInterval(statsTimer);
-  if(t==='chars')loadChars();else if(t==='admins')loadAdmins();else{loadStats();statsTimer=setInterval(loadStats,30000)}}
+  if(t==='chars')loadChars();else if(t==='admins')loadAdmins();else if(t==='bugs'){loadBugs();statsTimer=setInterval(loadBugs,60000)}else{loadStats();statsTimer=setInterval(loadStats,30000)}}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 
 /* ---------------- 3D helpers ---------------- */
@@ -435,6 +453,25 @@ $('addAdmin').onclick=async()=>{const e=$('newAdmin').value.trim();if(!e)return;
   if(error){admMsg(error.message);return}$('newAdmin').value='';admMsg(`${e} added — now set a password for them below.`,true);loadAdmins()};
 
 checkAdmin();
+
+/* ---------------- bug reports ---------------- */
+const BUG_K={bug:'🐞 Bug',broken:"⚠️ Doesn't work",idea:'💡 Idea',player:'🚩 Player report'};
+const BUG_S={new:'🆕 New',seen:'👀 Seen',fixed:'✅ Fixed',wontfix:'🚫 Not planned'};
+const escB=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+async function bugCount(){const {data,error}=await SB.rpc('sd_admin_bug_counts');if(error)return;const c=data||{};const n=c.new||0;const b=$('bugN');b.textContent=n;b.classList.toggle('on',n>0);
+  $('bugSum').textContent=['new','seen','fixed','wontfix'].map(k=>BUG_S[k]+' '+(c[k]||0)).join(' · ')}
+async function loadBugs(){bugCount();const f=$('bugF').value||null;const box=$('bugs');
+  const {data,error}=await SB.rpc('sd_admin_bug_reports',{p_status:f,p_limit:200});
+  if(error){box.innerHTML='<div class="card" style="color:var(--bad)">'+escB(error.message)+'</div>';return}
+  if(!data||!data.length){box.innerHTML='<div class="card muted">No reports here.</div>';return}
+  box.innerHTML=data.map(r=>'<div class="bug '+escB(r.status)+'" data-id="'+r.id+'"><div class="bh"><span class="k">'+(BUG_K[r.kind]||escB(r.kind))+'</span><span class="pill">'+(BUG_S[r.status]||escB(r.status))+'</span><b>'+escB(r.username||'?')+'</b><span class="t">'+r.user_reports+' report(s) from this player</span><div class="sp" style="flex:1"></div><span class="t">#'+r.id+' · '+new Date(r.created_at).toLocaleString()+'</span></div>'+
+   '<div class="bb">'+escB(r.body)+'</div><div class="bm">v'+escB(r.version||'?')+' · page: '+escB(r.page||'?')+' · screen: '+escB(r.screen||'?')+' · '+escB(r.device||'')+'</div>'+
+   '<div class="ba"><input class="bn" maxlength="500" placeholder="Note for the player (optional, they see it)" value="'+escB(r.admin_note||'')+'">'+
+   ['seen','fixed','wontfix','new'].filter(s=>s!==r.status).map(s=>'<button class="'+(s==='fixed'?'':'ghost')+'" data-s="'+s+'">'+BUG_S[s]+'</button>').join('')+'<button class="ghost" data-s="'+r.status+'">💾 Save note</button></div></div>').join('');
+  box.querySelectorAll('.bug [data-s]').forEach(b=>b.onclick=async()=>{const el=b.closest('.bug');b.disabled=true;
+    const {error}=await SB.rpc('sd_admin_bug_set',{p_id:+el.dataset.id,p_status:b.dataset.s,p_note:el.querySelector('.bn').value});
+    b.disabled=false;if(error){toast(error.message);return}toast('Saved');loadBugs()})}
+$('reloadBugs').onclick=loadBugs;$('bugF').onchange=loadBugs;
 </script>
 </body>
 </html>
