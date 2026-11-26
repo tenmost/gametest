@@ -2923,7 +2923,7 @@ html body #stage#stage[data-mode=cpu] :is(#online,#podium){display:none!importan
 #hub label small{font-weight:600;color:#8fa9cc}
 #hub input{font:700 clamp(11px,1vw,13px)/1.2 Arial,sans-serif;padding:.45em .6em;border-radius:9px;border:1px solid rgba(125,231,255,.45);background:rgba(5,10,30,.6);color:#fff;text-transform:none;text-align:left;width:100%;box-sizing:border-box}
 #hub .hRow{display:flex;align-items:center;justify-content:space-between;gap:6px;font:800 clamp(9px,.85vw,11px)/1.2 Arial,sans-serif;color:#c7e9ff}
-#hub .seg{display:flex;gap:4px}#hub .seg button{margin:0;padding:.3em .65em;font-size:12px;opacity:.6}#hub .seg button.on{opacity:1;box-shadow:0 0 10px #7de7ff88}
+#hub .seg{display:flex;gap:4px}#hub .seg button{margin:0;padding:.3em .65em;font-size:12px;opacity:.6;white-space:nowrap}#hub label[hidden]{display:none}#hub .seg button.on{opacity:1;box-shadow:0 0 10px #7de7ff88}
 #hub .mapsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 #hub .mapsGrid button{margin:0;padding:3px;border-radius:8px;font:800 8px/1.15 Arial,sans-serif;opacity:.45;display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;letter-spacing:0;text-transform:none}
 #hub .mapsGrid button img{width:100%;aspect-ratio:1.5;object-fit:cover;border-radius:5px;background:#1d2b52}
@@ -3012,7 +3012,9 @@ left.innerHTML='<div id="myHero" class="glass" title="Change your hero"><div cla
   '<label>Description<input id="hDesc" maxlength="60" placeholder="e.g. chill games — winner stays on" autocomplete="off"></label>'+
   '<div class="hRow"><span>Players</span><div class="seg" id="hMax"><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button><button type="button" data-n="5">5</button></div></div>'+
   '<div class="hRow"><span>Arenas <small id="hMapsN"></small></span><button type="button" class="ghost" id="hMapsAll" style="margin:0;padding:.2em .5em;font-size:10px">ALL</button></div><div class="mapsGrid" id="hMaps"></div>'+
-  '<label>🔒 Password <small>optional — with a password only people who know it can join</small><input id="hPw" maxlength="20" autocomplete="off"></label>'+
+  '<div class="hRow"><span>Who can join</span><div class="seg" id="hAccess"><button type="button" data-a="open" class="on">🌍 OPEN</button><button type="button" data-a="pw">🔒 PASSWORD</button></div></div>'+
+  '<p class="small" id="hAccessTxt" style="margin:0;font-size:10px;color:#9fd8ff">Anyone can see your room in JOIN A ROOM and walk in.</p>'+
+  '<label id="hPwBox" hidden>🔒 Password <small>only people who know it can join</small><input id="hPw" maxlength="20" autocomplete="off"></label>'+
   '<button type="button" class="big" id="hGo">🏠 OPEN ROOM</button><p class="msg" id="hostMsg"></p></div>'+
  '<div class="hv" data-v="room"><div class="hvHead"><button type="button" class="hBack ghost" title="Leave the room">‹</button><h4 id="rmName">ROOM</h4></div>'+
   '<p class="small" id="rmDesc" style="margin:0;font-size:11px;color:#c7e9ff"></p><div class="hRow" id="rmInfo"></div>'+
@@ -3128,10 +3130,12 @@ function openHost(){view('host');$('hName').value=$('hName').value||(dispName()+
  $('hMaps').querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(hostSel.has(k))hostSel.delete(k);else hostSel.add(k);b.classList.toggle('on',hostSel.has(k));hostCount()});hostCount()}
 function hostCount(){const own=ownedMaps();const n=[...hostSel].filter(k=>own.includes(k)).length;$('hMapsN').textContent=n?'('+n+' picked — one at random each match)':'(pick at least one)'}
 $('hMax').querySelectorAll('button').forEach(b=>b.onclick=()=>{hostMax=+b.dataset.n;$('hMax').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))});
+let hostAccess='open';$('hAccess').querySelectorAll('button').forEach(b=>b.onclick=()=>{hostAccess=b.dataset.a;$('hAccess').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('hPwBox').hidden=hostAccess!=='pw';$('hAccessTxt').textContent=hostAccess==='pw'?'Everyone sees the room with a 🔒 — only people with the password get in.':'Anyone can see your room in JOIN A ROOM and walk in.';if(hostAccess==='pw')$('hPw').focus()});
 $('hMapsAll').onclick=()=>{const own=ownedMaps();const all=own.every(k=>hostSel.has(k));hostSel.clear();if(!all)own.forEach(k=>hostSel.add(k));openHost()};
 ['hName','hDesc','hPw'].forEach(id=>$(id).onkeydown=e=>e.stopPropagation());
 $('hGo').onclick=()=>{const own=ownedMaps(),pool=[...hostSel].filter(k=>own.includes(k));if(!pool.length){$('hostMsg').textContent='Pick at least one arena.';return}
- openRoom({name:$('hName').value.trim()||dispName()+"'s room",desc:$('hDesc').value.trim(),max:hostMax,maps:pool,pw:$('hPw').value,listed:true})};
+ const pw=hostAccess==='pw'?$('hPw').value.trim():'';if(hostAccess==='pw'&&!pw){$('hostMsg').textContent='Type a password, or choose 🌍 OPEN.';return}
+ openRoom({name:$('hName').value.trim()||dispName()+"'s room",desc:$('hDesc').value.trim(),max:hostMax,maps:pool,pw,listed:true})};
 /* ---------- QUICK MATCH (random player, random arena) ---------- */
 function startSearch(){leaveRoomR(true);QM={t:Date.now(),pairing:null};view('search');lobbyTrack();qmTick()}
 function stopSearch(){if(!QM)return;QM=null;lobbyTrack();if(hub.dataset.v==='search')view('menu')}
