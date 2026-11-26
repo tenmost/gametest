@@ -3901,9 +3901,9 @@ dialog.sdSide h3{font-size:17px!important;line-height:1.2!important}dialog.sdSid
 <script>/* ===== BROWSER-STYLE TABS — see the style block above ===== */
 (()=>{const stage=$('stage'),nav=document.getElementById('topNav');if(!stage||!nav)return;const tabs=nav.querySelector('.tnTabs');
 const tab=k=>tabs.querySelector('[data-tab="'+k+'"]');
-const PAGE_DLG={rankDialog:'rank',shopDialog:'shop',dailyDialog:'daily',themeDlg:'theme',accountDialog:'account'};
+const PAGE_DLG={rankDialog:'rank',shopDialog:'shop',dailyDialog:'daily',themeDlg:'theme',accountDialog:'account',inboxDlg:'inbox'};
 let page=null;
-const DESK=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');const SIDE=new Set(['heroes','arenas','rank','daily','theme']);
+const DESK=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');const SIDE=new Set(['heroes','arenas','rank','daily','theme','inbox']);
 const isSide=k=>DESK.matches&&SIDE.has(k);
 function area(side){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
  let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}
@@ -4107,7 +4107,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout
 (()=>{const hub=document.getElementById('hub');if(!hub)return;
 const ADS={};let adHooked=null;
 function hookAds(){try{if(!LOBBY||!LOBBY.ch||adHooked===LOBBY.ch)return;adHooked=LOBBY.ch;LOBBY.ch.on('broadcast',{event:'roomad'},({payload:p})=>{if(!p||!p.id||p.id===myId)return;if(p.room)ADS[p.id]={room:p.room,name:p.name,t:Date.now()};else delete ADS[p.id];if(hub.dataset.v==='rooms')try{renderLobby()}catch(e){}})}catch(e){}}
-setInterval(()=>{hookAds();try{const r=window.sdRoomAd&&window.sdRoomAd();if(r&&LOBBY&&LOBBY.joined)LOBBY.ch.send({type:'broadcast',event:'roomad',payload:{id:myId,name:dispName(),room:r}})}catch(e){}},4000);
+setInterval(()=>{hookAds();try{const r=window.sdRoomAd&&window.sdRoomAd();if(r&&LOBBY&&LOBBY.joined)LOBBY.ch.send({type:'broadcast',event:'roomad',payload:{id:myId,name:dispName(),room:r}})}catch(e){}},2500);
 {const _rl=renderLobby;renderLobby=function(){const now=Date.now();for(const id in ADS){if(now-ADS[id].t>13000){delete ADS[id];continue}const u=lobbyUsers.find(x=>x.id===id);if(u){if(!u.room)u.room=ADS[id].room}else lobbyUsers.push({id,name:ADS[id].name,room:ADS[id].room,status:'free',fromAd:true})}return _rl.apply(this,arguments)}}
 function reread(){try{if(LOBBY&&LOBBY.ch&&LOBBY.ch.presenceState){const ps=LOBBY.ch.presenceState();lobbyUsers=Object.keys(ps).filter(k=>k!==myId).map(k=>({id:k,...ps[k][ps[k].length-1]}))}}catch(e){}try{renderLobby()}catch(e){}}
 setInterval(()=>{if(hub.dataset.v==='rooms'&&!document.hidden)reread()},3000);
@@ -4266,4 +4266,94 @@ setInterval(()=>{if(W.open&&!stage.classList.contains('selecting'))close()},500)
 })();
 </script>
 
+
+<style>/* ===== INBOX (Nov 2026): 🔔 on the player card + a red number when you have friend requests or unread private messages (also a dot on ACCOUNT); the INBOX panel lists requests (✓ / ✕), your friends (online dot, unread count) and a chat with each friend. Server: supabase/messages.sql (sd_inbox, sd_msg_send — accepted friends only, 200 chars, links removed, 8/min — sd_msg_list). ===== */
+#inboxBtn{position:absolute;top:6px;right:6px;z-index:3;width:34px;height:34px;padding:0!important;display:grid;place-items:center;border-radius:50%!important;border:1px solid var(--ln2,#555)!important;background:var(--th0,#111)!important;color:var(--gd,#ffb627)!important;font-size:16px!important;cursor:pointer}
+#inboxBtn[hidden]{display:none!important}
+#inboxBtn.inl{position:relative;top:auto;right:auto;width:auto;height:auto;min-width:32px;padding:5px 8px!important;border-radius:8px!important;flex:0 0 auto}
+#inboxBtn .ibN{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#ff3b4f;color:#fff;font:900 11px/18px Arial,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--th0,#111),0 0 12px #ff3b4f;display:none}
+#inboxBtn.has .ibN{display:block}
+#inboxBtn.has{animation:ibRing 1.6s ease-in-out infinite}
+@keyframes ibRing{0%,100%{box-shadow:0 0 0 0 rgba(255,59,79,.0)}50%{box-shadow:0 0 0 6px rgba(255,59,79,.35)}}
+#playerCard{position:relative}
+#inboxDlg{width:min(420px,94vw);padding:12px 12px 10px;color:var(--tx,#fff);font-family:Arial,sans-serif;display:none;flex-direction:column;gap:8px}
+#inboxDlg[open]{display:flex}
+#inboxDlg h3{margin:0;font:900 16px/1.2 Cinzel,'Lilita One',serif;letter-spacing:.08em;color:var(--gd,#ffb627);display:flex;align-items:center;gap:8px}
+#inboxDlg h3 span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#inboxDlg .ibX,#inboxDlg .ibBack{cursor:pointer;border-radius:999px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 11px/1 Arial,sans-serif;padding:.6em .9em}
+#inboxDlg .ibSec{font:900 10px/1 Arial,sans-serif;letter-spacing:.12em;color:var(--mu,#aaa);margin:6px 0 0}
+#inboxDlg .ibList{display:flex;flex-direction:column;gap:5px;overflow-y:auto;min-height:0}
+#inboxDlg .ibRow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--ln,#333)}
+#inboxDlg .ibAv{width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:18px;background:var(--th0,#111);overflow:hidden}
+#inboxDlg .ibName{flex:1;min-width:0;font:900 13px/1.2 Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#inboxDlg .ibName small{display:block;font:700 10px/1.2 Arial,sans-serif;color:var(--mu,#aaa)}
+#inboxDlg .ibOn{width:8px;height:8px;border-radius:50%;background:#555;flex:0 0 auto}#inboxDlg .ibOn.on{background:#3ee07a;box-shadow:0 0 8px #3ee07a}
+#inboxDlg .ibRow button{cursor:pointer;border-radius:5px;border:0;padding:.55em .75em;font:900 11px/1 Arial,sans-serif;background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600)}
+#inboxDlg .ibRow button.no{background:rgba(255,255,255,.1);color:var(--tx,#fff)}
+#inboxDlg .ibU{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#ff3b4f;color:#fff;font:900 11px/18px Arial,sans-serif;text-align:center}
+#inboxDlg .ibAdd{display:flex;gap:6px}#inboxDlg .ibAdd input,#inboxDlg .ibSend input{flex:1;min-width:0;padding:.6em .7em;border-radius:6px;border:1px solid var(--ln2,#555);background:rgba(0,0,0,.35);color:#fff;font:700 13px/1 Arial,sans-serif;caret-color:auto;user-select:text}
+#inboxDlg .ibAdd button,#inboxDlg .ibSend button{cursor:pointer;border:0;border-radius:6px;padding:.6em .9em;font:900 12px/1 Arial,sans-serif;background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600)}
+#inboxDlg .ibMsgs{flex:1;min-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px 2px}
+#inboxDlg .ibM{max-width:80%;padding:6px 9px;border-radius:12px;font:700 13px/1.3 Arial,sans-serif;overflow-wrap:anywhere;background:rgba(255,255,255,.08);align-self:flex-start;border-bottom-left-radius:3px}
+#inboxDlg .ibM.me{align-self:flex-end;background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e));color:var(--thBtnTx,#2a1600);border-bottom-left-radius:12px;border-bottom-right-radius:3px}
+#inboxDlg .ibM small{display:block;font:700 9px/1.2 Arial,sans-serif;opacity:.6;margin-top:2px}
+#inboxDlg .ibInfo{font:700 11px/1.35 Arial,sans-serif;color:var(--mu,#aaa);text-align:center;margin:4px 0}
+#inboxDlg .ibMsg{min-height:1.1em;font:700 11px/1.3 Arial,sans-serif;color:var(--gd,#ffb627);text-align:center}
+#topNav .tnTabs button[data-tab=account].has .ndDot{display:block!important}
+</style>
+<script>/* ===== INBOX — see the style block above ===== */
+(()=>{const ACC=()=>window.sdAccount,signed=()=>!!ACC()?.profile;const E=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+let IN={requests:0,unread:{}},FR=[],chat=null,lastTotal=0;
+const dlg=document.createElement('dialog');dlg.id='inboxDlg';document.body.appendChild(dlg);
+const btn=document.createElement('button');btn.type='button';btn.id='inboxBtn';btn.hidden=true;btn.title='Inbox: friend requests and messages';btn.setAttribute('aria-label','Inbox');btn.innerHTML='🔔<span class="ibN"></span>';
+function placeBtn(){const c=document.getElementById('playerCard');if(!c)return;const sh=document.getElementById('shopBtn');const inl=sh&&c.contains(sh)&&sh.offsetParent!==null;btn.classList.toggle('inl',!!inl);if(inl){if(btn.nextSibling!==sh)sh.parentNode.insertBefore(btn,sh)}else if(btn.parentNode!==c)c.appendChild(btn)}
+addEventListener('resize',()=>setTimeout(placeBtn,200));
+setInterval(placeBtn,1500);placeBtn();
+const total=()=>(IN.requests||0)+Object.values(IN.unread||{}).reduce((a,b)=>a+b,0);
+function paintBadge(){const n=signed()?total():0;btn.hidden=!signed();btn.classList.toggle('has',n>0);btn.querySelector('.ibN').textContent=n>9?'9+':String(n);
+ const at=document.querySelector('#topNav [data-tab=account]');if(at)at.classList.toggle('has',n>0)}
+async function rpc(f,a){const r=await ACC().client.rpc(f,a||{});if(r.error)throw r.error;return r.data}
+async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('sdm:'+s));return [...new Uint8Array(b)].slice(0,6).map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return ''}}
+let myH='';
+async function loadInbox(){if(!signed()){IN={requests:0,unread:{}};paintBadge();return}try{const d=await rpc('sd_inbox');if(d){const before=total();IN={requests:+d.requests||0,unread:d.unread||{}};const now=total();if(now>before&&now>lastTotal&&!dlg.open){await loadFriends();const fid=Object.keys(IN.unread).find(k=>IN.unread[k]>0);const f=FR.find(x=>x.id===fid);try{toast(f?'💬 New message from <b>'+E(f.username)+'</b>':'🔔 New friend request')}catch(e){}}lastTotal=now}}catch(e){}paintBadge();if(dlg.open&&!chat)paintList()}
+async function loadFriends(){if(!signed()){FR=[];return}try{FR=(await rpc('sd_friends_list'))||[]}catch(e){}}
+const online=n=>{try{return lobbyUsers.some(u=>String(u.name).toLowerCase()===String(n).toLowerCase())}catch(e){return false}};
+const avHTML=k=>{const sp=document.createElement('span');sp.className='ibAv';try{window.sdAvatarFill?window.sdAvatarFill(sp,k):sp.textContent='🙂'}catch(e){sp.textContent='🙂'}return sp.outerHTML};
+function msg(t){const m=dlg.querySelector('.ibMsg');if(m)m.textContent=t||''}
+function paintList(){chat=null;const req=FR.filter(f=>f.status==='pending'&&f.incoming),sent=FR.filter(f=>f.status==='pending'&&!f.incoming),fr=FR.filter(f=>f.status==='accepted').sort((a,b)=>(IN.unread[b.id]||0)-(IN.unread[a.id]||0)||online(b.username)-online(a.username)||String(a.username).localeCompare(String(b.username)));
+ dlg.innerHTML='<h3>🔔 <span>INBOX</span><button type="button" class="ibX">✕</button></h3>'+
+  (req.length?'<p class="ibSec">FRIEND REQUESTS</p><div class="ibList">'+req.map(f=>'<div class="ibRow">'+avHTML(f.avatar)+'<span class="ibName">'+E(f.username)+'<small>wants to be your friend</small></span><button type="button" data-ok="'+f.id+'">✓ YES</button><button type="button" class="no" data-no="'+f.id+'">✕</button></div>').join('')+'</div>':'')+
+  '<p class="ibSec">FRIENDS · MESSAGES</p><div class="ibList">'+(fr.length?fr.map(f=>{const u=IN.unread[f.id]||0;return '<div class="ibRow"><span class="ibOn'+(online(f.username)?' on':'')+'"></span>'+avHTML(f.avatar)+'<span class="ibName">'+E(f.username)+'<small>'+(online(f.username)?'online now':'offline')+'</small></span>'+(u?'<span class="ibU">'+u+'</span>':'')+'<button type="button" data-chat="'+f.id+'">💬 CHAT</button></div>'}).join(''):'<p class="ibInfo">No friends yet — add one below, or press ➕ next to a player online.</p>')+'</div>'+
+  (sent.length?'<p class="ibSec">WAITING FOR AN ANSWER</p><div class="ibList">'+sent.map(f=>'<div class="ibRow">'+avHTML(f.avatar)+'<span class="ibName">'+E(f.username)+'<small>request sent</small></span></div>').join('')+'</div>':'')+
+  '<p class="ibSec">ADD A FRIEND</p><div class="ibAdd"><input maxlength="20" placeholder="player name" autocomplete="off"><button type="button" class="ibAddB">➕ ADD</button></div><p class="ibMsg"></p>';
+ dlg.querySelector('.ibX').onclick=()=>dlg.close();
+ dlg.querySelectorAll('[data-ok],[data-no]').forEach(b=>b.onclick=async()=>{const id=b.dataset.ok||b.dataset.no;b.disabled=true;try{await rpc('sd_friend_respond',{p_id:id,p_accept:!!b.dataset.ok});}catch(e){msg('Could not answer — try again.')}await loadFriends();await loadInbox();paintList()});
+ dlg.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>openChat(b.dataset.chat));
+ const inp=dlg.querySelector('.ibAdd input');dlg.querySelector('.ibAddB').onclick=async()=>{const n=inp.value.trim();if(!n)return;msg('Sending…');try{await rpc('sd_friend_request',{p_username:n});inp.value='';msg('✓ Friend request sent to '+n);await loadFriends();paintList();msg('✓ Friend request sent to '+n)}catch(e){msg(/not found|no such|unknown/i.test(e.message||'')?'No player with that name.':(e.message||'Could not send.'))}}}
+async function openChat(fid){const f=FR.find(x=>x.id===fid);if(!f)return;chat={id:fid,name:f.username,n:-1};
+ dlg.innerHTML='<h3><button type="button" class="ibBack">‹</button>💬 <span>'+E(f.username)+'</span><button type="button" class="ibX">✕</button></h3><div class="ibMsgs"><p class="ibInfo">Loading…</p></div><div class="ibSend"><input maxlength="200" placeholder="Write a message…" autocomplete="off"><button type="button">SEND</button></div><p class="ibInfo">Only friends can message you. Be kind! Links are removed.</p><p class="ibMsg"></p>';
+ dlg.querySelector('.ibBack').onclick=async()=>{await loadInbox();paintList()};dlg.querySelector('.ibX').onclick=()=>dlg.close();
+ const inp=dlg.querySelector('.ibSend input'),sb=dlg.querySelector('.ibSend button');
+ const send=async()=>{const t=inp.value.trim();if(!t)return;sb.disabled=true;try{const r=await rpc('sd_msg_send',{p_friendship:fid,p_body:t});inp.value='';msg('');ping(r&&r.to);await loadChat(true)}catch(e){msg(/slow/i.test(e.message||'')?'Slow down a little 🙂':'Could not send — try again.')}sb.disabled=false;inp.focus()};
+ sb.onclick=send;inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send()}});
+ await loadChat(true);delete IN.unread[fid];paintBadge();setTimeout(()=>inp.focus(),50)}
+async function loadChat(scroll){if(!chat||!dlg.open)return;let rows=[];try{rows=(await rpc('sd_msg_list',{p_friendship:chat.id}))||[]}catch(e){return}
+ if(!chat)return;const box=dlg.querySelector('.ibMsgs');if(!box)return;if(rows.length===chat.n&&!scroll)return;chat.n=rows.length;
+ const atEnd=box.scrollTop+box.clientHeight>=box.scrollHeight-30;
+ box.innerHTML=rows.length?rows.map(m=>'<div class="ibM'+(m.mine?' me':'')+'">'+E(m.body)+'<small>'+new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</small></div>').join(''):'<p class="ibInfo">No messages yet — say hi! 👋</p>';
+ if(scroll||atEnd)box.scrollTop=box.scrollHeight}
+/* tell the other browser right away (it also checks every 25 s) */
+async function ping(to){try{if(!to||!LOBBY||!LOBBY.ch)return;const h=await hash(to);LOBBY.ch.send({type:'broadcast',event:'dmping',payload:{h}})}catch(e){}}
+let hooked=null;function hook(){try{if(LOBBY&&LOBBY.ch&&hooked!==LOBBY.ch){hooked=LOBBY.ch;LOBBY.ch.on('broadcast',{event:'dmping'},({payload})=>{if(payload&&myH&&payload.h===myH){loadInbox();if(chat)loadChat()}})}}catch(e){}}
+setInterval(hook,2000);
+async function openInbox(){if(!signed())return;await loadFriends();try{dlg.showModal()}catch(e){dlg.setAttribute('open','')}await loadInbox();paintList()}
+btn.onclick=e=>{e.stopPropagation();try{beep(660,.06,'triangle',.04)}catch(x){}openInbox()};
+window.sdOpenInbox=openInbox;
+setInterval(()=>{if(!document.hidden){if(chat&&dlg.open)loadChat();}},4000);
+setInterval(()=>{if(!document.hidden)loadInbox()},25000);
+window.addEventListener('sd-profile',async()=>{myH=signed()?await hash(ACC().userId):'';loadInbox()});
+setTimeout(async()=>{if(signed())myH=await hash(ACC().userId);loadInbox()},2500);
+dlg.addEventListener('close',()=>{chat=null});
+})();
+</script>
 </html>
