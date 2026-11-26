@@ -3063,7 +3063,7 @@ left.innerHTML='<div id="myHero" class="glass" title="Change your hero"><div cla
   '<button type="button" data-go="rooms"><i>🚪</i><b>JOIN A ROOM</b><small><span class="roomsN">no</span> open rooms</small></button>'+
   '<button type="button" data-go="quick"><i>⚡</i><b>RANDOM PLAYER</b><small>quick match · random arena</small></button>'+
   '<p class="msg" id="hubMsg"></p></div>'+
- '<div class="hv" data-v="rooms"><div class="hvHead"><button type="button" class="hBack ghost">‹</button><h4>🚪 OPEN ROOMS</h4></div><div id="roomList"></div><p class="msg" id="roomsMsg"></p></div>'+
+ '<div class="hv" data-v="rooms"><div class="hvHead"><button type="button" class="hBack ghost">‹</button><h4>🚪 OPEN ROOMS</h4><button type="button" id="roomsRefresh" class="ghost" title="Refresh the list">⟳ REFRESH</button></div><div id="roomList"></div><p class="msg" id="roomsMsg"></p></div>'+
  '<div class="hv" data-v="host"><div class="hvHead"><button type="button" class="hBack ghost">‹</button><h4>🏠 HOST A ROOM</h4></div>'+
   '<label>Room name<input id="hName" maxlength="24" autocomplete="off"></label>'+
   '<label>Description<input id="hDesc" maxlength="60" placeholder="e.g. chill games — winner stays on" autocomplete="off"></label>'+
@@ -3104,8 +3104,9 @@ async function duel(code,host,map,hero,kind){onChar=hero;await joinRoom(code,hos
 /* ---------- ROOMS ---------- */
 let ROOM=null;window.sdRoom=()=>ROOM;
 const roomPayload=R=>R&&R.host&&R.set&&R.set.listed?{chan:R.set.locked?R.set.code:R.chan,name:R.set.name,desc:R.set.desc,max:R.set.max,n:Math.max(1,Math.min(R.members.length,R.set.max)),locked:!!R.set.locked,maps:R.set.maps.length,map1:R.set.maps[0],playing:!!(R.st&&R.st.playing),host:dispName()}:null;
+window.sdRoomAd=()=>roomPayload(ROOM);
 let QM=null;
-{const _lt=lobbyTrack;lobbyTrack=function(){if(!(LOBBY&&LOBBY.joined))return;LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:signed(),lvl:lvOf(onChar),room:roomPayload(ROOM),q:QM?QM.t:0}).catch(()=>{})}}
+{const _lt=lobbyTrack;lobbyTrack=function(){if(!(LOBBY&&LOBBY.joined))return;LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:signed(),lvl:lvOf(onChar),q:QM?QM.t:0}).catch(()=>{})}}
 function roomTrack(){const R=ROOM;if(!R||!R.subscribed)return;const hero=onChar||favHero();const me={name:dispName(),av:myAvKey(),hero,lvl:lvOf(hero),acc:signed(),ready:R.ready,t:R.t};
  if(R.host)Object.assign(me,{host:true,set:R.set,st:R.st,order:R.order,wins:R.wins});return R.ch.track(me).catch(()=>{})}
 function addLog(t){if(!ROOM)return;ROOM.log.push(t);ROOM.log=ROOM.log.slice(-12);const el=$('rmLog');if(el){el.innerHTML=ROOM.log.map(x=>'<div>'+esc(x)+'</div>').join('');el.scrollTop=el.scrollHeight}}
@@ -3165,7 +3166,7 @@ function renderRoom(){const R=ROOM;if(!R||!$('rmName'))return;const s=R.set||{};
 $('rmReady').onclick=()=>{if(!ROOM)return;ROOM.ready=!ROOM.ready;roomTrack();renderRoom();if(ROOM.host)hostTick()};
 $('rmInvite').onclick=()=>{stage.classList.add('showFriends');stage.dataset.step='invite';$('rmMsg').textContent='Pick a friend or player on the right and press ✉ INVITE.';setTimeout(()=>{if(stage.dataset.step==='invite')stage.dataset.step='done'},6000)};
 const roomLink=()=>ROOM?location.origin+location.pathname+'?room='+ROOM.chan:'';
-async function copyLink(){if(!ROOM)await openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:false});if(!ROOM)return;const link=roomLink();
+async function copyLink(){if(!ROOM)await openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:true});if(!ROOM)return;const link=roomLink();
  if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'RPS Rivals',text:'Join my RPS Rivals room!',url:link}).catch(()=>{});return}
  (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>{$('rmMsg').textContent='Link copied — send it to your friends.';$('lobStatus').textContent='Room link copied.'},()=>{$('rmMsg').textContent=link})}
 $('rmLink').onclick=copyLink;$('onLinkBtn').onclick=copyLink;
@@ -3214,7 +3215,7 @@ function hookLobby(){if(!LOBBY||!LOBBY.ch||LOBBY.ch.__qm)return;LOBBY.ch.__qm=1;
 {const w=setInterval(()=>{if(LOBBY&&LOBBY.ch){clearInterval(w);hookLobby()}},100)}
 /* ---------- invites now bring friends into your ROOM ---------- */
 sendInvite=async function(id){const u=lobbyUsers.find(x=>x.id===id);if(!u||!LOBBY||pendingInvite)return;if(!isOnlinePage())goOnline();
- if(!ROOM)await openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:false});if(!ROOM)return;const code=ROOM.chan;
+ if(!ROOM)await openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:true});if(!ROOM)return;const code=ROOM.chan;
  pendingInvite={to:id,code,name:u.name,t:setTimeout(()=>{if(pendingInvite&&pendingInvite.code===code&&pendingInvite.to===id){LOBBY.ch.send({type:'broadcast',event:'cancel',payload:{to:id,code}});pendingInvite=null;$('lobStatus').textContent=u.name+" didn't answer.";renderLobby()}},20000)};
  LOBBY.ch.send({type:'broadcast',event:'invite',payload:{to:id,from:myId,name:dispName(),av:myAvKey(),char:onChar,code,room:ROOM.set&&ROOM.set.name}});$('lobStatus').textContent='Invite sent to '+u.name+'…';addLog('✉ Invited '+u.name);renderLobby()};
 answerInvite=function(ok){const p=incoming;if(!p)return;closeInvite();LOBBY.ch.send({type:'broadcast',event:'answer',payload:{to:p.from,ok,code:p.code}});if(!ok)return;
@@ -3231,7 +3232,7 @@ function goOnline(){if(!selecting&&!(NET&&NET.live)){try{stopPick();hush();token
 {const _os=openSelect;openSelect=function(){_os.apply(this,arguments);$('again').hidden=false;if(isOnlinePage())enterOnline()}}
 function enterOnline(){const k=favHero();if(k){onChar=k;selectedKey=k;Scene3D.selectHeroPreview?.(k)}view(ROOM?'room':QM?'search':(hub.dataset.v==='room'||hub.dataset.v==='search'?'menu':hub.dataset.v||'menu'));paintHeroCard();loadLevels();if(ROOM&&ROOM.host)hostTick();else checkMyMatch()}
 hub.querySelectorAll('.hv[data-v=menu]>button[data-go]').forEach(b=>b.onclick=()=>{hubMsg('');try{beep(660,.07,'triangle',.04)}catch(e){}const g=b.dataset.go;
- if(g==='friends'){openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:false}).then(()=>{if(ROOM){addLog('Invite friends with ✉ INVITE on the right, or share the 🔗 link.');$('rmInvite').click()}})}
+ if(g==='friends'){openRoom({name:dispName()+"'s room",desc:'Friends room',max:5,listed:true}).then(()=>{if(ROOM){addLog('Invite friends with ✉ INVITE on the right, or share the 🔗 link.');$('rmInvite').click()}})}
  else if(g==='host')openHost();else if(g==='rooms')view('rooms');else if(g==='quick')startSearch()});
 new MutationObserver(()=>{if(isOnlinePage()){if(selecting)enterOnline()}else{stopSearch();leaveRoomR(true);view('menu')}}).observe(stage,{attributes:true,attributeFilter:['data-mode']});
 /* OFFLINE page: the arena list sits under the info card on the right */
@@ -4067,18 +4068,34 @@ html.xhat #topNav .tnBrand::before{content:'';position:absolute;left:-.2em;top:-
 #dailyDialog.sdSide .dMsg{font-size:11px!important;min-height:0!important;margin:2px 0!important}
 #dailyDialog.sdSide .dClose{margin-top:4px!important;padding:6px 18px!important;font-size:12px!important}
 </style>
-<script>/* ===== PRESENCE THROTTLE (Nov 2026): Supabase Realtime drops a browser's presence for a while when it sends too many presence updates (ClientPresenceRateLimitReached in the realtime logs) — then other players can't see you, your room or your quick-match search. Every channel's track() is limited to one update per 1.2 s (the newest data is sent last), and the lobby/room presence is refreshed every 30 s and when the page becomes visible again. ===== */
-(()=>{const GAP=1200;let done=false;
-function patch(ch){if(done||!ch)return;const proto=Object.getPrototypeOf(ch);if(!proto||!proto.track||proto.track.__thr){done=true;return}const orig=proto.track;
- const t=function(payload,opts){const st=this.__thr||(this.__thr={last:0,timer:null,pend:null,res:[]});const now=Date.now();
-  if(!st.timer&&now-st.last>=GAP){st.last=now;return orig.call(this,payload,opts)}
-  st.pend=[payload,opts];return new Promise(r=>{st.res.push(r);if(!st.timer)st.timer=setTimeout(()=>{st.timer=null;st.last=Date.now();const [p,o]=st.pend;st.pend=null;const rs=st.res;st.res=[];Promise.resolve(orig.call(this,p,o)).then(v=>rs.forEach(f=>f(v)),()=>rs.forEach(f=>f('error')))},Math.max(50,GAP-(now-st.last)))})};
- t.__thr=true;proto.track=t;done=true}
-const w=setInterval(()=>{try{if(typeof LOBBY!=='undefined'&&LOBBY&&LOBBY.ch){patch(LOBBY.ch);clearInterval(w)}}catch(e){}},200);
-const refresh=()=>{try{lobbyTrack()}catch(e){}};
-setInterval(refresh,30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,800)});
-addEventListener('online',()=>setTimeout(refresh,1500));
+<script>/* ===== PRESENCE LIMITER (Nov 2026): Supabase Realtime allows each browser connection only 5 presence updates (track/untrack) per 30 s; more and it logs ClientPresenceRateLimitReached and SHUTS THE CHANNEL — then nobody sees you, your room or your quick-match search. So every channel's track() goes through one shared budget (max 4 per 30 s for the whole page): identical data is never re-sent, extra calls wait and only the newest data per channel is sent, the duel channel goes first. ===== */
+(()=>{let done=false;const WIN=30000,MAX=5,sent=[],queue=new Map();let timer=null,force=false;
+const prio=ch=>/spaceduel-lobby/.test(String(ch.topic||''))?1:0;
+function budget(){const now=Date.now();while(sent.length&&now-sent[0]>WIN)sent.shift();return MAX-sent.length}
+function patch(ch){if(done||!ch)return;const proto=Object.getPrototypeOf(ch);if(!proto||!proto.track||proto.track.__lim){done=true;return}const orig=proto.track;
+ function flush(){timer=null;const now=Date.now();const order=[...queue.keys()].sort((a,b)=>prio(a)-prio(b));for(const c of order){const q=queue.get(c);const pr=prio(c);if(budget()<=(pr?1:0))continue;if(now<q.at)continue;queue.delete(c);const key=JSON.stringify(q.p);c.__lastSent=key;c.__lastRef=c.joinPush&&c.joinPush.ref;sent.push(Date.now());Promise.resolve(orig.call(c,q.p,q.o)).then(v=>q.r.forEach(f=>f(v)),()=>q.r.forEach(f=>f('error')))}
+  if(queue.size&&!timer){let wait=1e9;for(const [c,q] of queue){const pr=prio(c);const needFree=budget()<=(pr?1:0);const w=needFree?(WIN-(Date.now()-sent[pr?Math.max(0,sent.length-(MAX-1)):0])+150):q.at-Date.now();wait=Math.min(wait,Math.max(60,w))}timer=setTimeout(flush,wait)}}
+ const t=function(payload,opts){const key=JSON.stringify(payload);const q=queue.get(this);
+  const ref=this.joinPush&&this.joinPush.ref;if(!q&&!force&&this.__lastSent===key&&this.__lastRef===ref)return Promise.resolve('ok');
+  return new Promise(r=>{const e=q||{r:[],at:Date.now()+(prio(this)?2500:120)};e.p=payload;e.o=opts;e.r.push(r);queue.set(this,e);if(!prio(this)){clearTimeout(timer);timer=null;flush()}else if(!timer)flush()})};
+ t.__lim=true;proto.track=t;
+ /* a channel that (re)joins must send its presence again */
+ const os=proto.subscribe;if(os&&!os.__lim){const s2=function(cb,...rest){const self=this;return os.call(this,(st,...a)=>{if(st==='SUBSCRIBED')self.__lastSent=null;return cb&&cb(st,...a)},...rest)};s2.__lim=true;proto.subscribe=s2}
+ done=true;window.sdPresenceBudget=()=>({left:budget(),queued:queue.size})}
+const w=setInterval(()=>{try{if(typeof LOBBY!=='undefined'&&LOBBY&&LOBBY.ch){patch(LOBBY.ch);clearInterval(w)}}catch(e){}},100);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>{try{if(LOBBY&&LOBBY.ch)LOBBY.ch.__lastSent=null;lobbyTrack()}catch(e){}},800)});
 })();
 </script>
+<script>/* ===== ROOM LIST REFRESH (Nov 2026): ⟳ REFRESH button in OPEN ROOMS + the list re-reads the lobby every 3 s while it is open + ROOM ADS: a listed room's host also BROADCASTS its room on the lobby channel every 4 s (broadcast has no presence limit), so the room shows up even when the host's presence is held back ===== */
+(()=>{const hub=document.getElementById('hub');if(!hub)return;
+const ADS={};let adHooked=null;
+function hookAds(){try{if(!LOBBY||!LOBBY.ch||adHooked===LOBBY.ch)return;adHooked=LOBBY.ch;LOBBY.ch.on('broadcast',{event:'roomad'},({payload:p})=>{if(!p||!p.id||p.id===myId)return;if(p.room)ADS[p.id]={room:p.room,name:p.name,t:Date.now()};else delete ADS[p.id];if(hub.dataset.v==='rooms')try{renderLobby()}catch(e){}})}catch(e){}}
+setInterval(()=>{hookAds();try{const r=window.sdRoomAd&&window.sdRoomAd();if(r&&LOBBY&&LOBBY.joined)LOBBY.ch.send({type:'broadcast',event:'roomad',payload:{id:myId,name:dispName(),room:r}})}catch(e){}},4000);
+{const _rl=renderLobby;renderLobby=function(){const now=Date.now();for(const id in ADS){if(now-ADS[id].t>13000){delete ADS[id];continue}const u=lobbyUsers.find(x=>x.id===id);if(u){if(!u.room)u.room=ADS[id].room}else lobbyUsers.push({id,name:ADS[id].name,room:ADS[id].room,status:'free',fromAd:true})}return _rl.apply(this,arguments)}}
+function reread(){try{if(LOBBY&&LOBBY.ch&&LOBBY.ch.presenceState){const ps=LOBBY.ch.presenceState();lobbyUsers=Object.keys(ps).filter(k=>k!==myId).map(k=>({id:k,...ps[k][ps[k].length-1]}))}}catch(e){}try{renderLobby()}catch(e){}}
+setInterval(()=>{if(hub.dataset.v==='rooms'&&!document.hidden)reread()},3000);
+document.addEventListener('click',e=>{const b=e.target.closest('#roomsRefresh');if(!b)return;b.disabled=true;b.textContent='⟳ …';try{if(LOBBY&&LOBBY.ch)LOBBY.ch.__lastSent=null;lobbyTrack()}catch(x){}reread();setTimeout(()=>{reread();b.disabled=false;b.textContent='⟳ REFRESH'},900)});
+})();
+</script>
+<style>#roomsRefresh{margin-left:auto!important;width:auto!important;padding:.5em .8em!important;font:900 11px/1 Arial,sans-serif!important;letter-spacing:.06em;border-radius:999px!important}</style>
 </html>
