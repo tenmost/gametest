@@ -1,6 +1,17 @@
 {
-  "current": "1.0.0",
+  "current": "1.1.0",
   "releases": [
+    {
+      "v": "1.1.0",
+      "date": "2026-11-26",
+      "title": "One GAME MODE button",
+      "new": [
+        "ONLINE and OFFLINE are now one GAME MODE button in the top menu: pick friends, host, join, random player or VS COMPUTER in one place",
+        "The button shows the mode you are playing (for example VS COMPUTER or RANDOM PLAYER)",
+        "More room in the top menu, so nothing sits under the round buttons any more"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.0.0",
       "date": "2026-11-26",
