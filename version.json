@@ -1,6 +1,17 @@
 {
-  "current": "1.2.0",
+  "current": "1.2.1",
   "releases": [
+    {
+      "v": "1.2.1",
+      "date": "2026-11-26",
+      "title": "Clearer rewards at the end of a match",
+      "new": [],
+      "fixed": [
+        "At the end of a match the reward messages (💎 crystals, ⭐ hero XP, 🎁 presents) now show one under another, so you can read every one",
+        "The emote buttons (👋 😂 🔥 GG) in a room match no longer cover the sound and full-screen buttons, or your cards on a phone",
+        "The WHAT'S NEW and REPORT A BUG windows close by themselves when a match starts"
+      ]
+    },
     {
       "v": "1.2.0",
       "date": "2026-11-26",

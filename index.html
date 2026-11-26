@@ -4511,7 +4511,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.2.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.2.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4646,6 +4646,32 @@ function openBug(){try{document.getElementById('accountMenu').hidden=true}catch(
 window.sdOpenBug=openBug;
 /* also in the ? window */
 setInterval(()=>{const r=document.getElementById('rulesDialog');if(!r||r.querySelector('.rBug'))return;const b=document.createElement('button');b.type='button';b.className='rBug';b.textContent='🐞 REPORT A BUG';b.onclick=()=>{try{r.close()}catch(e){}openBug()};const u=r.querySelector('.rUpd')||r.querySelector('.rTut');if(u)u.after(b);else r.insertBefore(b,r.firstChild.nextSibling||null)},1500);
+})();
+</script>
+<!-- ===== STACKED TOASTS + EMOTE BAR PLACE (v1.2.1) ===== -->
+<style>
+.sdToast{transition:top .25s ease,opacity .7s!important;max-width:min(420px,86%);box-sizing:border-box}
+</style>
+<script>
+(()=>{const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
+/* reward / XP / present messages used to open in the same spot and cover each other: stack them, newest at the bottom */
+function stack(){const L=[...document.querySelectorAll('.sdToast')];if(!L.length)return;
+ const S=stage.getBoundingClientRect();let y=Math.round(S.height*.14);
+ for(const t of L){const par=t.offsetParent||stage;const off=par===stage?0:S.top-par.getBoundingClientRect().top;t.style.top=(y+off)+'px';y+=t.offsetHeight+8}}
+new MutationObserver(m=>{if(m.some(r=>[...r.addedNodes,...r.removedNodes].some(n=>n.classList&&n.classList.contains('sdToast'))))requestAnimationFrame(stack)}).observe(stage,{childList:true});
+new MutationObserver(m=>{if(m.some(r=>[...r.addedNodes].some(n=>n.classList&&n.classList.contains('sdToast'))))requestAnimationFrame(stack)}).observe(document.body,{childList:true});
+/* the room emote bar (👋 😂 🔥 GG) sat on top of the 🔊 sound button during a match: move it to the right of the button */
+function placeSpec(){const sb=document.getElementById('specBar');if(!sb)return;
+ if(sb.offsetParent===null){['left','bottom','top'].forEach(k=>sb.style.removeProperty(k));return}
+ /* the room emote bar (👋 😂 🔥 GG) covered the 🔊 / ⛶ buttons (computer) and the rock/paper cards (phone):
+    keep it in the bottom-left corner, but lift it above every button or card that would be under it */
+ const S=stage.getBoundingClientRect(),A=sb.getBoundingClientRect(),L=Math.round(S.width*.015),R=L+A.width;let top=S.bottom-Math.round(S.height*.015);
+ [...['mute','fsBtn','rulesBtn'].map(id=>document.getElementById(id)),...document.querySelectorAll('button[data-m]')].forEach(e=>{if(!e||getComputedStyle(e).display==='none'||e.offsetParent===null)return;const B=e.getBoundingClientRect();
+  if(B.width&&B.height&&Math.min(R,B.right-S.left)-Math.max(L,B.left-S.left)>0&&B.bottom>S.top+S.height*.5)top=Math.min(top,B.top-8)});
+ sb.style.setProperty('left',L+'px','important');sb.style.setProperty('top','auto','important');sb.style.setProperty('bottom',Math.round(S.bottom-top)+'px','important')}
+setInterval(placeSpec,500);
+/* a match starting (e.g. a room host pressed start) closes windows opened in the lobby, so they never cover the game */
+setInterval(()=>{if(stage.classList.contains('selecting'))return;['updDlg','bugDlg'].forEach(id=>{const d=document.getElementById(id);if(d&&d.open)try{d.close()}catch(e){}})},400);addEventListener('resize',()=>{const sb=document.getElementById('specBar');if(sb)sb.style.removeProperty('left');setTimeout(placeSpec,60)});
 })();
 </script>
 </html>
