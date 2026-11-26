@@ -3891,7 +3891,7 @@ function area(side){const s=stage.getBoundingClientRect(),n=nav.getBoundingClien
  let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}
  if(side){const gap=Math.round(s.height*.016),W=Math.round(s.width*.25),pad=Math.round(s.width*.016),sb=stage.dataset.mode==='gate'?parseFloat(getComputedStyle(stage).getPropertyValue('--sideBotPx'))||0:0;if(sb)bot=s.bottom-sb+gap;return {left:s.right-pad-W,top:top+gap,width:W,height:Math.max(100,bot-top-2*gap),s}}
  return {left:s.left,top,width:s.width,height:Math.max(100,bot-top),s}}
-function place(d){const side=isSide(PAGE_DLG[d.id]);d.classList.toggle('sdSide',side);const a=area(side);Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',maxWidth:'none',maxHeight:'none'})}
+function place(d){const side=isSide(PAGE_DLG[d.id]);d.classList.toggle('sdSide',side);const a=area(side);const fit=side&&d.id==='dailyDialog';Object.assign(d.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:fit?'auto':a.height+'px',maxWidth:'none'});d.style.setProperty('max-height',fit?a.height+'px':'none','important')}
 function paint(){paint0();clearTimeout(paint._t);paint._t=setTimeout(paint0,40)}
 function paint0(){const m=stage.dataset.mode;tabs.querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab;b.classList.toggle('on',page?t===page:t===m)})}
 function closePages(except){const as=document.getElementById('arenaSide');if(as&&except!==as)as.classList.remove('show');document.querySelectorAll('dialog.sdPage[open]').forEach(d=>{if(d!==except)d.close()});const hp=document.getElementById('heroPick');if(hp&&except!==hp&&hp.classList.contains('show')){hp.classList.remove('show')}}
@@ -4047,5 +4047,23 @@ html.xhat #topNav .tnBrand::before{content:'';position:absolute;left:-.2em;top:-
 #heroPlate{max-width:var(--midW,44%)!important;box-sizing:border-box}
 #heroPlate .hpInfo{max-width:100%!important}
 #heroPlate b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+
+/* DAILY in the side column: compact (fits its content, no stretched boxes) */
+#dailyDialog.sdSide{padding:10px 10px 8px!important}
+#dailyDialog.sdSide h3{font-size:14px!important;margin:0 0 2px!important}
+#dailyDialog.sdSide .dReset{font-size:10px!important;margin:0 0 8px!important}
+#dailyDialog.sdSide .wkBox{margin:0 0 8px!important;padding:7px!important}
+#dailyDialog.sdSide .wkSub{font-size:10px!important;margin:0 0 6px!important;line-height:1.3}
+#dailyDialog.sdSide .wkDays{grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:3px!important}
+#dailyDialog.sdSide .wkDay{padding:3px 0!important;font-size:8.5px!important;line-height:1.2!important;border-radius:5px!important}
+#dailyDialog.sdSide .wkDay b{font-size:7.5px!important;letter-spacing:0!important}
+#dailyDialog.sdSide .wkClaim{margin-top:6px!important;padding:6px 14px!important;font-size:12px!important}
+#dailyDialog.sdSide .dItem{padding:6px 8px!important;margin-bottom:5px!important;gap:4px 8px!important}
+#dailyDialog.sdSide .dTitle{font-size:11.5px!important;line-height:1.25}
+#dailyDialog.sdSide .dNum{font-size:10px!important}
+#dailyDialog.sdSide .dBar{height:6px!important}
+#dailyDialog.sdSide .dItem button{padding:5px 8px!important;font-size:10.5px!important}
+#dailyDialog.sdSide .dMsg{font-size:11px!important;min-height:0!important;margin:2px 0!important}
+#dailyDialog.sdSide .dClose{margin-top:4px!important;padding:6px 18px!important;font-size:12px!important}
 </style>
 </html>
