@@ -3910,4 +3910,15 @@ const hub=document.getElementById('hub');if(hub)new MutationObserver(req).observ
 setInterval(req,900);setTimeout(req,600);window.sdColumns=layout;
 })();
 </script>
+<style>/* ===== PHONE FIXES (Nov 2026): arena row scrolls sideways again, no big leaderboard over the lobby ===== */
+@media (orientation:portrait) and (max-width:820px){
+ #stage.selecting #select #selectionBottom{overflow:hidden!important}
+ #stage.selecting #select #mapPick{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;left:auto!important;transform:none!important;margin:0!important}
+ #stage.selecting #select #mapPick .mapButtons{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;justify-content:flex-start!important;-webkit-overflow-scrolling:touch;touch-action:pan-x;scroll-snap-type:x proximity}
+ #stage.selecting #select #mapPick .mapButtons>button{flex:0 0 auto!important;scroll-snap-align:start}
+ #stage.selecting #select #heroCollection #selBtns{justify-content:flex-start!important;overflow-x:auto!important;touch-action:pan-x}
+ #stage.selecting[data-mode=gate] #lobbyBoard{display:none!important}
+ #stage.selecting[data-mode=gate] #brandLogo{visibility:visible!important}
+}
+</style>
 </html>
