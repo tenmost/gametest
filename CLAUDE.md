@@ -4,8 +4,8 @@ Two brothers build this game together: Dainis (owner) and his brother (GitHub: k
 Answer them in Latvian unless they write in another language.
 
 ## What the game is
-RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Name chosen Nov 2026; planned domain rpsrivals.com (not bought/connected yet). Internal ids keep the old prefix on purpose: `sd_*` tables/functions, `sd-models` bucket, Realtime channels `spaceduel-*` (renaming them would break saved data and online play between versions).
-- Live: https://tenmost.github.io/gametest/ (GitHub Pages, deploys from `main` about a minute after a push)
+RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Name chosen Nov 2026. Domain: joyjoy.gg (bought Nov 2026 at GoDaddy, meant as the main domain for all of Dainis's future games; DNS = 4 GitHub Pages A records on @ + CNAME www → tenmost.github.io; `CNAME` file in the repo — don't delete it). Internal ids keep the old prefix on purpose: `sd_*` tables/functions, `sd-models` bucket, Realtime channels `spaceduel-*` (renaming them would break saved data and online play between versions).
+- Live: https://joyjoy.gg/ (GitHub Pages custom domain; the old https://tenmost.github.io/gametest/ redirects there; deploys from `main` about a minute after a push). localStorage and the login session are per address, so players had to log in again once after the move. Supabase Auth → Redirect URLs must include https://joyjoy.gg/ for password reset links.
 - Three.js 0.170 from jsDelivr, no build step, no npm. Everything runs as plain HTML + JS.
 - Goal: earn money with it later, so every asset and library must be licensed for commercial use.
 
