@@ -4067,4 +4067,18 @@ html.xhat #topNav .tnBrand::before{content:'';position:absolute;left:-.2em;top:-
 #dailyDialog.sdSide .dMsg{font-size:11px!important;min-height:0!important;margin:2px 0!important}
 #dailyDialog.sdSide .dClose{margin-top:4px!important;padding:6px 18px!important;font-size:12px!important}
 </style>
+<script>/* ===== PRESENCE THROTTLE (Nov 2026): Supabase Realtime drops a browser's presence for a while when it sends too many presence updates (ClientPresenceRateLimitReached in the realtime logs) — then other players can't see you, your room or your quick-match search. Every channel's track() is limited to one update per 1.2 s (the newest data is sent last), and the lobby/room presence is refreshed every 30 s and when the page becomes visible again. ===== */
+(()=>{const GAP=1200;let done=false;
+function patch(ch){if(done||!ch)return;const proto=Object.getPrototypeOf(ch);if(!proto||!proto.track||proto.track.__thr){done=true;return}const orig=proto.track;
+ const t=function(payload,opts){const st=this.__thr||(this.__thr={last:0,timer:null,pend:null,res:[]});const now=Date.now();
+  if(!st.timer&&now-st.last>=GAP){st.last=now;return orig.call(this,payload,opts)}
+  st.pend=[payload,opts];return new Promise(r=>{st.res.push(r);if(!st.timer)st.timer=setTimeout(()=>{st.timer=null;st.last=Date.now();const [p,o]=st.pend;st.pend=null;const rs=st.res;st.res=[];Promise.resolve(orig.call(this,p,o)).then(v=>rs.forEach(f=>f(v)),()=>rs.forEach(f=>f('error')))},Math.max(50,GAP-(now-st.last)))})};
+ t.__thr=true;proto.track=t;done=true}
+const w=setInterval(()=>{try{if(typeof LOBBY!=='undefined'&&LOBBY&&LOBBY.ch){patch(LOBBY.ch);clearInterval(w)}}catch(e){}},200);
+const refresh=()=>{try{lobbyTrack()}catch(e){}};
+setInterval(refresh,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,800)});
+addEventListener('online',()=>setTimeout(refresh,1500));
+})();
+</script>
 </html>
