@@ -3702,7 +3702,7 @@ html[data-theme]:not([data-theme=classic]) #brandLogo{font-family:Cinzel,serif!i
 html[data-theme]:not([data-theme=classic]):not(.xhat) #brandLogo .l1::before{display:none!important}
 html[data-theme]:not([data-theme=classic]) #brandLogo :is(.l1,b){color:var(--gd)!important;text-shadow:0 2px 12px rgba(0,0,0,.7)!important}
 /* PLAY + main buttons */
-html[data-theme]:not([data-theme=classic]) #stage.selecting #playBig{background:var(--thPlay)!important;color:var(--thPlayTx)!important;font-family:Cinzel,serif!important;font-weight:900!important;letter-spacing:.2em!important;border:2px solid var(--thPlayRing)!important;border-radius:4px!important;box-shadow:inset 0 0 0 4px rgba(0,0,0,.35),0 0 36px var(--thGlow)!important;text-shadow:0 0 14px var(--thGlow)!important;clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,18px 100%,0 50%)}
+html[data-theme]:not([data-theme=classic]) #stage.selecting #playBig{background:var(--thPlay)!important;color:var(--thPlayTx)!important;font-family:Cinzel,serif!important;font-weight:900!important;letter-spacing:.2em!important;border:2px solid var(--thPlayRing)!important;border-radius:14px!important;box-shadow:inset 0 0 0 4px rgba(0,0,0,.35),0 0 36px var(--thGlow)!important;text-shadow:0 0 14px var(--thGlow)!important}
 html[data-theme]:not([data-theme=classic]) #stage.selecting #playBig small{color:inherit!important;opacity:.75;font-family:Inter,Arial,sans-serif}
 html[data-theme]:not([data-theme=classic]) :is(#stage.selecting #online .lobRow button[data-id],#hub #hGo,#hub #rmReady,#hub #roomList button[data-chan],#stage.selecting #readyPlayer,#rmLive .lvWatch,#over #again){background:var(--thBtn)!important;color:var(--thBtnTx)!important;border-radius:3px!important;box-shadow:0 0 18px var(--thGlow)!important}
 html[data-theme]:not([data-theme=classic]) #stage.selecting #readyPlayer{font-family:Cinzel,serif!important;font-weight:900!important}
@@ -4511,7 +4511,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.2.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.2.3';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
