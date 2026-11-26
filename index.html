@@ -3531,4 +3531,95 @@ window.addEventListener('sd-match-end',()=>setTimeout(loadBoard,5000));setInterv
 setTimeout(()=>{onMode();loadBoard();paintRank()},800);setTimeout(()=>{paintHero();paintRank()},2500);
 })();
 </script>
+<style>/* ===== LOBBY v3.2 (simpler): top menu ONLINE / OFFLINE / HEROES / RANK / SHOP (the open page lights up), full-screen hero picker, hero stats under the hero in the middle, no YOUR HERO card on the online page (bigger online menu), dialogs never bigger than the game, ⛶ in the corner + 🔊 in the middle, clear BACK buttons ===== */
+#topNav .tnTabs button[data-tab=play]{display:none!important}
+#topNav .tnTabs button[data-tab=online].on::after{background:linear-gradient(90deg,var(--tl),#7ff5df)!important;box-shadow:0 0 10px rgba(47,211,181,.7)!important}
+#topNav .tnTabs button.on{background:rgba(255,255,255,.08)!important}
+#topNav .tnBrand{cursor:pointer}
+#myHero{display:none!important}
+/* hero stats under the hero */
+#heroPlate .hpStats{display:flex;gap:10px;font:900 clamp(9px,.85vw,11px)/1 Arial,sans-serif;color:var(--mu);letter-spacing:.06em;margin-top:3px}
+#heroPlate .hpStats b{font:900 1.1em/1 Arial,sans-serif;color:var(--tx);letter-spacing:0}
+#heroPlate .hpXp{display:block;width:100%;min-width:150px;height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}
+#heroPlate .hpXp i{display:block;height:100%;background:linear-gradient(90deg,var(--gd),var(--cr));border-radius:6px}
+#heroPlate{border-radius:20px!important}
+#heroPlate .hpLv:not(.hpLv2){display:none}
+/* bigger, clearer BACK buttons */
+#hub .hBack{width:auto!important;padding:.55em .9em!important;border-radius:999px!important;font:900 11px/1 Arial,sans-serif!important;letter-spacing:.08em}
+#hub .hBack::after{content:' BACK'}
+#modeBack button{font-weight:900!important;letter-spacing:.08em}
+/* FULL-SCREEN HERO PICKER */
+#heroPick{z-index:60!important;background:linear-gradient(180deg,#171a22,#0e1016)!important}
+#heroPick .hpBox{width:100%!important;max-width:none!important;height:100%;max-height:none!important;box-sizing:border-box;border:0!important;border-radius:0!important;padding:clamp(10px,2vw,26px)!important;position:relative}
+#heroPick h3{text-align:center;font-size:clamp(20px,3vw,40px)!important;margin:4px 0 clamp(8px,1.6vw,20px)!important;color:var(--gd)}
+#heroPick .hpGrid{flex:1;min-height:0;grid-template-columns:repeat(auto-fill,minmax(clamp(120px,15vw,200px),1fr))!important;gap:clamp(8px,1.2vw,16px)!important;align-content:start}
+#heroPick .hpGrid button{position:relative;display:flex!important;flex-direction:column;align-items:center;gap:6px;padding:8px!important;border-radius:18px!important;cursor:pointer;color:#fff;transition:transform .12s}
+#heroPick .hpGrid button:hover{transform:translateY(-3px)}
+#heroPick .hpGrid button img{width:100%!important;height:auto!important;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block}
+#heroPick .hpGrid button span:not(.lvB){font:400 clamp(13px,1.5vw,20px)/1.1 'Lilita One','Arial Black',sans-serif;letter-spacing:.04em}
+#heroPick .hpGrid .lvB{font-size:12px!important;top:12px!important;left:12px!important}
+#heroPick .hpClose{position:absolute;top:clamp(10px,2vw,26px);left:clamp(10px,2vw,26px);margin:0!important;font-size:14px!important;padding:.8em 1.3em!important;z-index:2}
+@media (min-width:701px) and (orientation:landscape),(min-width:821px){
+ #topNav .tnTabs{margin-right:calc(var(--tbR,36px) * 3 + 52px)!important}
+ #topNav .tnTabs button{padding:.85em 1em!important}
+ #stage.selecting #fsBtn{right:1.6%!important}
+ #stage.selecting #mute{right:calc(1.6% + var(--tbR) + 8px)!important}
+ #stage.selecting #rulesBtn{right:calc(1.6% + var(--tbR) * 2 + 16px)!important}
+ #stage.selecting[data-mode=online] #onLeft{width:29%!important}
+ #stage.selecting[data-mode=online] #heroPlate{display:flex;position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:2.5%}
+ #stage.selecting[data-mode=online] #modeBack{bottom:auto!important;top:calc(var(--navH) + 1.4%)!important}
+}
+@media (orientation:portrait) and (max-width:820px){
+ #stage.selecting[data-mode=online] #heroPlate{display:flex;position:absolute;z-index:6;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 176px);white-space:nowrap;padding:6px 8px 6px 12px}
+ #stage.selecting[data-mode=online] #topNav{display:flex;position:absolute;z-index:20;left:0;right:0;bottom:0;padding:6px 6px calc(env(safe-area-inset-bottom) + 6px);background:rgba(10,12,18,.96);border-top:1px solid var(--ln);justify-content:center}
+ #topNav .tnTabs button{font-size:9px!important;letter-spacing:.04em!important;padding:.5em .2em!important}
+ #heroPick .hpGrid{grid-template-columns:repeat(2,1fr)!important}
+ #heroPick h3{margin-top:52px!important}
+}
+</style>
+<script>/* ===== LOBBY v3.2 — see the style block above ===== */
+(()=>{const stage=$('stage');const nav=document.getElementById('topNav');if(!stage||!nav)return;
+const tabs=nav.querySelector('.tnTabs');
+tabs.innerHTML='<button type="button" data-tab="play"><i>▶</i>PLAY</button><button type="button" data-tab="online"><i>🌐</i>ONLINE</button><button type="button" data-tab="cpu"><i>🤖</i>OFFLINE</button><button type="button" data-tab="heroes"><i>🦸</i>HEROES</button><button type="button" data-tab="rank"><i>🏆</i>RANK</button><button type="button" data-tab="shop"><i>🛒</i>SHOP</button>';
+const gate=$('modeGate');
+const toLobby=()=>{const b=document.querySelector('#modeBack button');if(stage.dataset.mode!=='gate'&&b)b.click()};
+const goMode=m=>{if(stage.dataset.mode===m)return;stage.classList.remove('playPick');if(stage.dataset.mode!=='gate')toLobby();setTimeout(()=>{const b=gate&&gate.querySelector('button[data-go="'+m+'"]');if(b)b.click()},40)};
+tabs.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{try{beep(620,.05,'triangle',.035)}catch(e){}const t=b.dataset.tab;
+ if(t==='online'||t==='cpu')goMode(t);
+ else if(t==='heroes')window.sdOpenHeroPick&&window.sdOpenHeroPick();
+ else if(t==='rank'){const p=document.getElementById('podium');if(p)p.click()}
+ else if(t==='shop')window.sdOpenShop&&window.sdOpenShop();
+ setTimeout(paintNav,60)});
+const br=nav.querySelector('.tnBrand');if(br){br.title='Back to the lobby';br.onclick=()=>{stage.classList.remove('playPick');toLobby()}}
+const hpk=document.getElementById('heroPick');
+function paintNav(){const m=stage.dataset.mode,hero=hpk&&hpk.classList.contains('show');
+ tabs.querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab;b.classList.toggle('on',hero?t==='heroes':t===m)})}
+new MutationObserver(()=>setTimeout(paintNav,0)).observe(stage,{attributes:true,attributeFilter:['data-mode']});
+if(hpk){new MutationObserver(paintNav).observe(hpk,{attributes:true,attributeFilter:['class']});
+ const c=hpk.querySelector('.hpClose');if(c)c.textContent='⬅ BACK';const h=hpk.querySelector('h3');if(h)h.textContent='🦸 TAP YOUR HERO'}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&hpk&&hpk.classList.contains('show'))hpk.classList.remove('show')});
+const mbb=document.querySelector('#modeBack button');if(mbb)mbb.textContent='⬅ BACK';
+/* hero stats under the hero (all pages) */
+const plate=document.getElementById('heroPlate');
+function paintStats(){if(!plate)return;const k=window.sdFavHero&&window.sdFavHero();const info=plate.querySelector('.hpInfo');if(!info)return;
+ let st=info.querySelector('.hpStats'),xp=info.querySelector('.hpXp');if(!st){st=document.createElement('span');st.className='hpStats';info.appendChild(st)}if(!xp){xp=document.createElement('span');xp.className='hpXp';xp.innerHTML='<i></i>';info.appendChild(xp)}
+ const signed=!!window.sdAccount?.profile,h=(window.sdLV?window.sdLV():{})[k]||{xp:0,level:1,matches:0,wins:0};
+ let lvEl=info.querySelector('.hpLv2');if(!lvEl){lvEl=document.createElement('span');lvEl.className='hpLv hpLv2';info.insertBefore(lvEl,st)}
+ if(!signed){if(lvEl)lvEl.textContent='Log in to level up your hero';st.innerHTML='';xp.style.display='none';return}
+ const L=h.level||Math.floor(Math.sqrt((h.xp||0)/40))+1,lo=40*(L-1)**2,hi=40*L**2,m=h.matches||0,w=h.wins||0;
+ if(lvEl)lvEl.textContent='⭐ LEVEL '+L+' · '+(h.xp||0)+' / '+hi+' XP';
+ st.innerHTML='<span><b>'+w+'</b> WINS</span><span><b>'+(m-w)+'</b> LOSSES</span><span><b>'+m+'</b> MATCHES</span><span><b>'+(m?Math.round(w*100/m):0)+'%</b> WIN</span>';
+ xp.style.display='';xp.firstChild.style.width=Math.max(0,Math.min(100,Math.round(((h.xp||0)-lo)*100/Math.max(1,hi-lo))))+'%'}
+['sd-fav','sd-profile','sd-match-end'].forEach(ev=>window.addEventListener(ev,()=>{setTimeout(paintStats,50);setTimeout(paintStats,1500)}));
+new MutationObserver(()=>setTimeout(paintStats,0)).observe(stage,{attributes:true,attributeFilter:['data-mode']});
+{const _pl=window.sdLoadLevels;if(_pl)window.sdLoadLevels=async function(){const r=await _pl.apply(this,arguments);paintStats();return r}}
+setInterval(()=>{if(selecting)paintStats()},5000);
+/* dialogs never bigger than the game */
+function fit(d){if(!d||!d.open)return;const r=stage.getBoundingClientRect();if(!r.width)return;d.style.boxSizing='border-box';d.style.maxWidth=Math.floor(r.width*.96)+'px';d.style.maxHeight=Math.floor(r.height*.94)+'px';if(getComputedStyle(d).overflowY==='visible')d.style.overflowY='auto'}
+const fitAll=()=>document.querySelectorAll('dialog[open]').forEach(fit);
+new MutationObserver(ms=>ms.forEach(m=>{if(m.target.tagName==='DIALOG')fit(m.target)})).observe(document.body,{attributes:true,attributeFilter:['open'],subtree:true});
+addEventListener('resize',fitAll);document.addEventListener('fullscreenchange',()=>setTimeout(fitAll,100));
+setTimeout(()=>{paintNav();paintStats()},900);setTimeout(paintStats,3000);
+})();
+</script>
 </html>
