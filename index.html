@@ -3892,6 +3892,11 @@ dialog.sdPage{background:linear-gradient(180deg,var(--pnl2,#1c2029),var(--th0,#1
 #arenaSide .asGrid>button{position:relative;display:flex;flex-direction:column;gap:2px;padding:3px;cursor:pointer;border-radius:3px;border:1px solid var(--ln2,#555);background:var(--th0,#111);color:var(--tx,#fff);font:900 11px/1.2 Arial,sans-serif;text-align:center;overflow:hidden}
 #arenaSide .asGrid>button.chosen{border:2px solid var(--gd,#ffb627);box-shadow:0 0 14px var(--thGlow,rgba(255,182,39,.4))}
 #arenaSide .asGrid>button img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:2px}
+/* arena prices visible before clicking (v1.2.3): cards keep their full height so name, rule and the 🔒 price show; price = badge on the picture */
+#arenaSide .asGrid{grid-auto-rows:max-content}#arenaSide .asGrid>button{height:auto!important;min-height:max-content;flex:none}
+#arenaSide .mpName{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#arenaSide .mpRule{display:block;font-size:10px;font-weight:800;color:var(--mu,#aaa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#arenaSide .mpRule.sd{color:#ff8a9a}
+#arenaSide .mpLock{position:absolute;top:6px;right:6px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.8);border:1px solid var(--gd,#ffb627);color:#ffe5a3;font:900 11px/1.25 Arial,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.7)}#arenaSide .mpLock:empty{display:none}#arenaSide .pinkMap .mpLock{border-color:#ff6ad5;color:#ffd6f4}
+#arenaSide .asGrid>button:has(.mpLock:not(:empty)) img{filter:brightness(.6) saturate(.7)}
 dialog.sdPage.sdSide{border-radius:3px!important;box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 14px 34px rgba(0,0,0,.6)!important;padding:12px!important;font-size:13px}
 #heroPick.sdSide{border:1px solid var(--ln2,#555);box-shadow:inset 0 0 0 3px var(--th0,#111),inset 0 0 0 4px var(--ln,#333),0 14px 34px rgba(0,0,0,.6)}
 #heroPick.sdSide .hpBox{padding:10px!important}
@@ -4511,7 +4516,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.2.3';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.2.4';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
