@@ -795,29 +795,36 @@ for(const q of ['#heroCollection #selBtns','#mapPick .mapButtons']){const b=docu
 setTimeout(stripPanel,0);
 async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent='Connecting…';
   try{const client=await sbClient();const ch=client.channel('spaceduel-'+code,{config:{presence:{key:myId},broadcast:{self:false}}});
-    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:resolveMap($('arenaChoice').value),starting:false,localMatchReady:false,remoteMatchReady:{}};const net=NET;try{readyState()}catch(e){}roomUI();
-    ch.on('presence',{event:'sync'},()=>{if(NET!==net)return;const ps0=ch.presenceState(),ps={};for(const k in ps0)if(!(ps0[k][0]&&ps0[k][0].spec))ps[k]=ps0[k];const ids=Object.keys(ps).sort();
+    NET={ch,code,live:false,round:0,myPick:null,oppPicks:{},oppHashes:{},mySalt:{},hashSent:{},revealSent:{},earlyReveal:{},opp:null,host,ready:false,map:resolveMap($('arenaChoice').value),starting:false,localMatchReady:false,remoteMatchReady:{},bc:{}};const net=NET;try{readyState()}catch(e){}roomUI();
+    const syncD=()=>{if(NET!==net)return;const ps0=ch.presenceState(),ps={};for(const k in ps0)if(!(ps0[k][0]&&ps0[k][0].spec))ps[k]=ps0[k];
+      {const now=Date.now();for(const k in net.bc){const b=net.bc[k];if(now-b._t>9000){delete net.bc[k];continue}const x={...b};delete x._t;delete x.id;ps[k]=[{...(ps[k]&&ps[k][0]||{}),...x}]}}const ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
       if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
         if(net.friendChar!==(o.char||null)){net.friendChar=o.char||null;Scene3D.setLobbyFriend?.(net.friendChar)}roomUI();
         if(net.ready&&o.ready){if(isHost){net.starting=true;const a=maps.includes(net.map)?net.map:'temple',b=maps.includes(o.map)?o.map:a,fin=a===b?a:(Math.random()<.5?a:b);net.final=fin;net.flip=a!==b;window.arenaMap=fin;trackRoom();startOnline(o)}
           else if(o.go&&maps.includes(o.final)){window.arenaMap=o.final;net.flip=o.flip;net.starting=true;startOnline(o)}}}
-      else if(net.opp&&!others.some(o=>o.id===net.opp.id)){if(net.live||net.starting)oppLeft();else{net.opp=null;net.ready=false;showOppCard(null);Scene3D.setLobbyFriend?.(null);try{readyState()}catch(e){}trackRoom();roomUI();$('lobStatus').textContent='Your friend left the room — invite someone else.';renderLobby()}}});
+      else if(net.opp&&!others.some(o=>o.id===net.opp.id)){if(net.live||net.starting)oppLeft();else{net.opp=null;net.ready=false;showOppCard(null);Scene3D.setLobbyFriend?.(null);try{readyState()}catch(e){}trackRoom();roomUI();$('lobStatus').textContent='Your friend left the room — invite someone else.';renderLobby()}}};
+    net.syncD=syncD;ch.on('presence',{event:'sync'},syncD);
+    ch.on('broadcast',{event:'dst'},({payload:p})=>{if(NET!==net||!p||!p.id||p.id===myId||p.spec)return;const old=net.bc[p.id];net.bc[p.id]={...p,_t:Date.now()};if(!old||JSON.stringify({...old,_t:0})!==JSON.stringify({...net.bc[p.id],_t:0}))syncD()});
+    ch.on('broadcast',{event:'dbye'},({payload:p})=>{if(NET===net&&p&&p.id){delete net.bc[p.id];syncD()}});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net||!payload||typeof payload.hash!=='string'||net.oppHashes[payload.round])return;net.oppHashes[payload.round]=payload.hash;if(payload.round===net.round)oppReady();sendReveal(net,payload.round);const early=net.earlyReveal[payload.round];if(early){delete net.earlyReveal[payload.round];checkReveal(net,early)}});
     ch.on('broadcast',{event:'reveal'},({payload})=>{if(NET!==net||!payload)return;if(!net.oppHashes[payload.round]){net.earlyReveal[payload.round]=payload;return}checkReveal(net,payload)});
     ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
-    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:!!net.ready,map:net.map});if(!net.opp)roomUI()}
+    ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){net.sub=true;duelBeat(net);if(!net.hbT)net.hbT=setInterval(()=>{if(NET!==net){clearInterval(net.hbT);return}duelBeat(net);const now=Date.now();let gone=false;for(const k in net.bc)if(now-net.bc[k]._t>9000)gone=true;if(gone)syncD()},2000);await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:!!net.ready,map:net.map});if(!net.opp)roomUI()}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')$('onStatus').textContent='Could not connect — check your internet and try again.'});
   }catch(e){console.warn(e);$('onStatus').textContent='Could not connect — check your internet and try again.'}}
-function trackRoom(){if(NET)NET.ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:NET.host,ready:NET.ready,map:NET.map,go:!!NET.final,final:NET.final||null,flip:!!NET.flip})}
+/* READY FIX: the duel state (ready, arena, the host's go) is broadcast at once + every 2 s (`dst`); presence is only a backup because it is rate-limited */
+function duelMe(n){return{char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:n.host,ready:!!n.ready,map:n.map,go:!!n.final,final:n.final||null,flip:!!n.flip}}
+function duelBeat(n){if(!n||!n.sub)return;try{n.ch.send({type:'broadcast',event:'dst',payload:{id:myId,...duelMe(n)}})}catch(e){}}
+function trackRoom(){if(NET){duelBeat(NET);NET.ch.track(duelMe(NET))}}
 window.addEventListener('sd-skins',()=>{try{trackRoom()}catch(e){}});
 function showOppCard(o){window.Scene3D?.setCardSkin?.('a',(o&&typeof o.skin==='string'&&window.SD_CARD_SKINS&&window.SD_CARD_SKINS[o.skin])?o.skin:'classic');let c=document.getElementById('oppCard');if(!c){c=document.createElement('div');c.id='oppCard';const st=$('onStatus');st.parentNode.insertBefore(c,st.nextSibling)}
  c.hidden=!o;if(!o)return;c.replaceChildren();const a=document.createElement('div');a.className='ocAv';if(window.sdAvatarFill)window.sdAvatarFill(a,o.av||'astronaut');const info=document.createElement('div');info.className='ocInfo';const n=document.createElement('b');n.textContent=(o.name||'FRIEND');
  const cup=o.cup&&window.sdCups?window.sdCups(0).list[o.cup-1]:null;if(cup){const im=document.createElement('img');im.src=cup.img;im.alt='';im.title=cup.name+' cup';n.appendChild(im)}const row=document.createElement('div');row.className='ocStats';
  for(const s of (Array.isArray(o.card)?o.card:[]).slice(0,3)){const d=document.createElement('div');const v=document.createElement('b');v.textContent=String(s[2]).slice(0,8);const l=document.createElement('span');l.textContent=String(s[0]).slice(0,4)+' '+String(s[1]).slice(0,10);d.append(v,l);row.appendChild(d)}
  if(!row.children.length){const g=document.createElement('span');g.className='ocGuest';g.textContent='Guest player';row.appendChild(g)}info.append(n,row);c.append(a,info)}
-function leaveOnline(){showOppCard(null);Scene3D.setLobbyFriend?.(null);if(NET){try{NET.ch.unsubscribe()}catch(e){}NET=null;setTimeout(lobbyTrack,50)}try{roomUI();renderLobby()}catch(e){}}
+function leaveOnline(){showOppCard(null);Scene3D.setLobbyFriend?.(null);if(NET){const n=NET;clearInterval(n.hbT);try{n.ch.send({type:'broadcast',event:'dbye',payload:{id:myId}})}catch(e){}setTimeout(()=>{try{n.ch.unsubscribe()}catch(e){}},150);NET=null;setTimeout(lobbyTrack,50)}try{roomUI();renderLobby()}catch(e){}}
 async function startOnline(o){const net=NET;net.opp=o;$('onStatus').textContent='Friend joined! Starting…';
   if(o.char===onChar&&Scene3D.prepareTwin)await Scene3D.prepareTwin(onChar);if(NET!==net)return;
   const r=Scene3D.choose?Scene3D.choose(onChar,o.char):{g:{name:'YOU',voice:'f'},a:{name:'FRIEND',voice:'m'}};
@@ -3107,17 +3114,25 @@ const roomPayload=R=>R&&R.host&&R.set&&R.set.listed?{chan:R.set.locked?R.set.cod
 window.sdRoomAd=()=>roomPayload(ROOM);
 let QM=null;
 {const _lt=lobbyTrack;lobbyTrack=function(){if(!(LOBBY&&LOBBY.joined))return;LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:signed(),lvl:lvOf(onChar),q:QM?QM.t:0}).catch(()=>{})}}
-function roomTrack(){const R=ROOM;if(!R||!R.subscribed)return;const hero=onChar||favHero();const me={name:dispName(),av:myAvKey(),hero,lvl:lvOf(hero),acc:signed(),ready:R.ready,t:R.t};
- if(R.host)Object.assign(me,{host:true,set:R.set,st:R.st,order:R.order,wins:R.wins});return R.ch.track(me).catch(()=>{})}
+/* READY FIX (Nov 2026): presence is limited (5 updates / 30 s), so READY and the host's match state were stuck in the queue and nothing happened.
+   Now every room member also BROADCASTS its state (`rhb`) right away and every 2.5 s; presence is only a backup. Your own entry is always taken from memory. */
+function roomMe(R){const hero=onChar||favHero();const me={name:dispName(),av:myAvKey(),hero,lvl:lvOf(hero),acc:signed(),ready:R.ready,t:R.t};
+ if(R.host)Object.assign(me,{host:true,set:R.set,st:R.st,order:R.order,wins:R.wins});return me}
+function roomBeat(R){if(!R||!R.subscribed)return;try{R.ch.send({type:'broadcast',event:'rhb',payload:{id:myId,...roomMe(R)}})}catch(e){}}
+function roomSelf(R,mem){const me={id:myId,...roomMe(R)},i=mem.findIndex(m=>m.id===myId);if(i>=0)mem[i]={...mem[i],...me};else mem.push(me);return mem}
+function roomTrack(){const R=ROOM;if(!R||!R.subscribed)return;roomBeat(R);return R.ch.track(roomMe(R)).catch(()=>{})}
+setInterval(()=>{const R=ROOM;if(!R||!R.subscribed)return;roomBeat(R);const now=Date.now();let gone=false;for(const id in R.hb){if(now-R.hb[id]._t>9000){delete R.hb[id];gone=true}}if(gone)roomSync()},2500);
 function addLog(t){if(!ROOM)return;ROOM.log.push(t);ROOM.log=ROOM.log.slice(-12);const el=$('rmLog');if(el){el.innerHTML=ROOM.log.map(x=>'<div>'+esc(x)+'</div>').join('');el.scrollTop=el.scrollHeight}}
-function leaveRoomR(silent){const R=ROOM;if(!R)return;ROOM=null;try{R.ch.unsubscribe()}catch(e){}lobbyTrack();if(!silent&&isOnlinePage())view('menu');renderRooms()}
+function leaveRoomR(silent){const R=ROOM;if(!R)return;ROOM=null;try{R.ch.send({type:'broadcast',event:'rbye',payload:{id:myId}})}catch(e){}setTimeout(()=>{try{R.ch.unsubscribe()}catch(e){}},150);lobbyTrack();if(!silent&&isOnlinePage())view('menu');renderRooms()}
 async function openRoom(o){leaveRoomR(true);const code=newCode(),pw=(o.pw||'').trim();const chan=pw?code+(await sha(code+':'+pw)).slice(0,10).toUpperCase():code;
  const pool=(o.maps&&o.maps.length?o.maps:ownedMaps());return joinRoomR(chan,{host:true,set:{code,name:(o.name||dispName()+"'s room").slice(0,24),desc:(o.desc||'').slice(0,60),max:Math.min(5,Math.max(2,o.max||2)),maps:pool.length?pool:['temple'],locked:!!pw,listed:o.listed!==false}})}
 async function joinRoomR(chan,opt={}){leaveRoomR(true);stopSearch();let client;try{client=await sbClient()}catch(e){hubMsg('Could not connect — check your internet.');return}
  const ch=client.channel('spaceduel-room-'+chan,{config:{presence:{key:myId},broadcast:{self:false}}});
- const R=ROOM={chan,ch,host:!!opt.host,set:opt.set||null,members:[],ready:false,t:Date.now(),order:[],st:{playing:null},wins:{},log:[],joinedOk:!!opt.host,hostSeen:false,subscribed:false,handled:null,live:null};
+ const R=ROOM={chan,ch,host:!!opt.host,set:opt.set||null,members:[],hb:{},ready:false,t:Date.now(),order:[],st:{playing:null},wins:{},log:[],joinedOk:!!opt.host,hostSeen:false,subscribed:false,handled:null,live:null};
  view('room');$('rmMsg').textContent=opt.host?'':'Joining…';
  ch.on('presence',{event:'sync'},()=>{if(ROOM===R)roomSync()});
+ ch.on('broadcast',{event:'rhb'},({payload:p})=>{if(ROOM!==R||!p||!p.id||p.id===myId)return;const old=R.hb[p.id];R.hb[p.id]={...p,_t:Date.now()};if(!old||JSON.stringify({...old,_t:0})!==JSON.stringify({...R.hb[p.id],_t:0}))roomSync()});
+ ch.on('broadcast',{event:'rbye'},({payload:p})=>{if(ROOM===R&&p&&p.id){delete R.hb[p.id];roomSync()}});
  ch.on('broadcast',{event:'emote'},({payload:p})=>{if(ROOM===R&&p){const t=(p.name||'?')+': '+String(p.e).slice(0,4);addLog(t);popCheer(t)}});
  ch.on('broadcast',{event:'chat'},({payload:p})=>{if(ROOM===R&&p&&p.t){const t='💬 '+(p.name||'?')+': '+String(p.t).slice(0,80);addLog(t);popCheer(t)}});
  ch.on('broadcast',{event:'cheer'},({payload:p})=>{if(ROOM===R&&p){const t='📣 '+(p.name||'?')+': GO '+String(p.forName||'').toUpperCase()+'!';addLog(t);popCheer(t,p.for===myId)}});
@@ -3128,14 +3143,16 @@ async function joinRoomR(chan,opt={}){leaveRoomR(true);stopSearch();let client;t
   else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){leaveRoomR();hubMsg('Could not connect — check your internet.')}});
  renderRoom();return R}
 const memSort=(a,b)=>(a.t||0)-(b.t||0)||String(a.id).localeCompare(String(b.id));
-function roomSync(){const R=ROOM;const ps=R.ch.presenceState();const mem=Object.keys(ps).map(k=>({id:k,...ps[k][ps[k].length-1]}));
+function roomSync(){const R=ROOM;if(!R)return;const ps=R.ch.presenceState();const mem=Object.keys(ps).map(k=>({id:k,...ps[k][ps[k].length-1]}));
+ {const now=Date.now();for(const id in R.hb){const h=R.hb[id];if(now-h._t>9000){delete R.hb[id];continue}const i=mem.findIndex(x=>x.id===id),x={...h};delete x._t;if(i>=0)mem[i]={...mem[i],...x};else mem.push(x)}}
+ if(R.subscribed)roomSelf(R,mem);
  if(!R.host){const h=mem.find(m=>m.host);if(!h){if(R.hostSeen){leaveRoomR();hubMsg('The host closed the room.')}return}
   R.hostSeen=true;R.set=h.set||R.set;R.st=h.st||{playing:null};R.order=h.order||[];R.wins=h.wins||{};
   if(!R.joinedOk){const idx=mem.slice().sort(memSort).findIndex(m=>m.id===myId);if(idx>=(R.set&&R.set.max||2)){leaveRoomR();hubMsg('That room is full.');return}R.joinedOk=true;$('rmMsg').textContent='';addLog('You joined '+(R.set?R.set.name:'the room')+' — press READY to play.')}}
  const before=new Map(R.members.map(m=>[m.id,m]));if(R.members.length){mem.forEach(m=>{if(!before.has(m.id)&&m.id!==myId)addLog('👋 '+(m.name||'Player')+' joined')});R.members.forEach(m=>{if(!mem.some(x=>x.id===m.id))addLog('🚪 '+(m.name||'Player')+' left')})}
  R.members=mem;if(R.host)hostTick();else checkMyMatch();renderRoom();lobbyTrack()}
 const mName=id=>((ROOM&&ROOM.members.find(m=>m.id===id))||{}).name||'Player';
-function hostTick(){const R=ROOM;if(!R||!R.host)return;let changed=false;
+function hostTick(){const R=ROOM;if(!R||!R.host)return;let changed=false;if(R.subscribed)roomSelf(R,R.members);
  const ids=R.members.slice().sort(memSort).slice(0,R.set.max).map(m=>m.id);
  const ord=R.order.filter(id=>ids.includes(id));ids.forEach(id=>{if(!ord.includes(id))ord.push(id)});if(ord.join()!==R.order.join()){R.order=ord;changed=true}
  if(R.st.playing&&!R.st.playing.every(id=>ids.includes(id))&&Date.now()>R.st.at+25000){addLog('Match cancelled — a player left.');R.st={...R.st,playing:null};changed=true}
