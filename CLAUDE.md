@@ -107,7 +107,19 @@ RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Nam
 - STEP BY STEP START (Nov 2026, last style+script block in index.html, `#wiz`, `window.sdWizard.open({mode,step})`): one full-screen flow with a step bar on top (done steps are clickable), ‹ BACK / NEXT › at the bottom, ✕ LOBBY, Esc = back, Enter = next. OFFLINE: 1 MODE → 2 HERO → 3 ARENA (locked arenas show the price; a signed-in player's click opens the normal unlock window) → 4 START (hero vs computer + arena summary) → ▶ START MATCH. ONLINE: 1 MODE → 2 HERO → 3 PLAY WITH (friends / host / join / random) → the ONLINE page with that hub view. It opens on the first visit of the page (not for `?room=` links), from PLAY (`#playBig`) and from the OFFLINE tab (at the hero step); it closes by itself when a match starts. It only presses the game's own controls (`#modeGate` cards, `sdSetFav`, `#selBtns`, `#mapPick` buttons, `#readyPlayer`, `sdHubGo`) and closes the side panels (`closeSide`), so the old pages keep working.
 - STEP GLOW (start screen, both modes): `sdSteps()` sets `#stage[data-step]` = hero → arena → invite (online only) → ready; the next panel glows yellow (`stepGlow`). READY sits at the bottom right under the arena panel.
 
+## UPDATES + VERSION NUMBER (both brothers' Claudes MUST do this on every update)
+- The game has a version number like a normal game: `SD_VERSION` in index.html (block "UPDATES + SHINE", last block) and `version.json` (`current` + `releases`, newest first). Players see it in the 📰 WHAT'S NEW window (📰 button left of 🎓 on the start screen, also in the ? window). The window opens by itself once after each new version (not for brand-new players, not during a match; localStorage `sd_seen_ver`).
+- EVERY push that players can notice (feature, fix, look change) = a new version. Before pushing:
+  1. `git pull` first. Look at the top of version.json — if your brother already used the next number, take the one after it.
+  2. Pick the number: fix / small polish → PATCH +1 (1.0.0 → 1.0.1); new feature or new content → MINOR +1 and PATCH 0 (1.0.1 → 1.1.0); huge relaunch → MAJOR (only when Dainis says).
+  3. Add a release at the TOP of `releases` and set `current` to it: `{"v","date" (YYYY-MM-DD),"title" (short),"new":[...],"fixed":[...]}`. Write lines for players (simple English, kids play this): what they can do now / what works again. No code names, no file names.
+  4. Set `const SD_VERSION='x.y.z'` in index.html to the SAME number.
+  5. Run `python3 tools/check_version.py` — it must print ✓. Mention the version in the commit message (e.g. "v1.1.0: …").
+  - Several commits for one feature in one session can share one version: update that release's lines instead of making a new number each commit. Internal-only changes (CLAUDE.md, tools, tests) need no new version.
+- Live update banner: open games fetch version.json (no cache) every 3 min and when the tab comes back; if `current` is newer than the loaded SD_VERSION a gold banner "🆕 Update vX is ready — RELOAD" shows on the start screen (never covers a match). So bumping the number is what tells players to reload.
+- SHINE = "not done yet" on the start screen: 🎓 shines until the tutorial is done (`sd_tut_done`), 📰 shines + red dot until the newest version was read, the DAILY tab shines while missions/rewards are open (`#dailyBtn.has` / `.todo`). New "unfinished" things: add them to `paint()` in that block with class `sdShine`.
+
 ## Working together
-- Always `git pull` before starting and push small commits with clear messages, so the two brothers' changes don't collide.
+- Always `git pull` before starting, bump the version (see UPDATES above), and push small commits with clear messages, so the two brothers' changes don't collide.
 - Agree who is working on what; avoid both editing the same part of `index.html` at the same time.
 - After a change, check the browser console for errors and, for online changes, test with two tabs (`?room=TESTCODE` in both).

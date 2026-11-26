@@ -3595,7 +3595,7 @@ setTimeout(()=>{onMode();loadBoard();paintRank()},800);setTimeout(()=>{paintHero
 #heroPick .hpGrid .lvB{font-size:12px!important;top:12px!important;left:12px!important}
 #heroPick .hpClose{position:absolute;top:clamp(10px,2vw,26px);left:clamp(10px,2vw,26px);margin:0!important;font-size:14px!important;padding:.8em 1.3em!important;z-index:2}
 @media (min-width:701px) and (orientation:landscape),(min-width:821px){
- #topNav .tnTabs{margin-right:calc(var(--tbR,36px) * 4 + 64px)!important}
+ #topNav .tnTabs{margin-right:calc(var(--tbR,36px) * 5 + 76px)!important}
  #topNav .tnTabs button{padding:.85em 1em!important}
  #stage.selecting #fsBtn{right:1.6%!important}
  #stage.selecting #mute{right:calc(1.6% + var(--tbR) + 8px)!important}
@@ -4387,7 +4387,7 @@ dlg.addEventListener('close',()=>{chat=null});
 #tutPill{left:0;right:0;margin:0 auto;width:max-content;white-space:nowrap}
 @media (min-width:701px) and (orientation:landscape),(min-width:821px){#tutPill{top:calc(var(--navH,8%) + 2.2%)}}
 @media (orientation:portrait) and (max-width:820px){#tutPill{top:calc(env(safe-area-inset-top) + 150px)}}
-#tutBtn{position:absolute;z-index:13;display:none;place-items:center;padding:0;cursor:pointer;border:1px solid var(--ln2,#785a28);background:var(--th0,#111);color:var(--gd,#ffb627);box-shadow:0 0 14px var(--thGlow,rgba(255,182,39,.4));animation:twPulse 2.2s ease-in-out infinite}
+#tutBtn{position:absolute;z-index:13;display:none;place-items:center;padding:0;cursor:pointer;border:1px solid var(--ln2,#785a28);background:var(--th0,#111);color:var(--gd,#ffb627);box-shadow:0 0 14px var(--thGlow,rgba(255,182,39,.4))}
 #rulesDialog .rTut{background:var(--thBtn,linear-gradient(180deg,#ffd166,#f29e2e))!important;color:var(--thBtnTx,#2a1600)!important;border:0!important;font-weight:900!important;padding:.75em 1.3em!important;margin:0 auto 12px!important}
 </style>
 <script>/* ===== TUTORIAL — see the style block above ===== */
@@ -4452,6 +4452,91 @@ function placeTb(){const r=document.getElementById('rulesBtn');if(!r||!vis(r)||!
  const S=stage.getBoundingClientRect(),R=r.getBoundingClientRect(),cs=getComputedStyle(r);tb.style.display='grid';
  Object.assign(tb.style,{width:R.width+'px',height:R.height+'px',top:(R.top-S.top)+'px',left:(R.left-S.left-R.width-8)+'px',borderRadius:cs.borderRadius,fontSize:Math.round(R.height*.5)+'px'})}
 setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));setTimeout(placeTb,300);
+})();
+</script>
+<!-- ===== UPDATES + SHINE (version number, WHAT'S NEW window, update-ready banner, unfinished things shine) ===== -->
+<style>
+@keyframes sdShine{0%,100%{box-shadow:0 0 5px rgba(255,200,60,.35),0 0 0 1px rgba(255,210,90,.5)}50%{box-shadow:0 0 20px 5px rgba(255,200,60,.85),0 0 0 2px rgba(255,225,130,.95)}}
+@keyframes sdShineT{0%,100%{text-shadow:0 0 4px rgba(255,200,60,.4)}50%{text-shadow:0 0 12px rgba(255,210,80,1),0 0 22px rgba(255,180,40,.8)}}
+#tutBtn.sdShine,#updBtn.sdShine{animation:sdShine 1.6s ease-in-out infinite;color:#ffd76a}
+#topNav [data-tab="daily"].sdShine{animation:sdShineT 1.6s ease-in-out infinite;color:#ffd76a!important}
+#updBtn{position:absolute;z-index:13;display:none;place-items:center;padding:0;cursor:pointer;border:1px solid var(--ln2,#785a28);background:var(--th0,#111);color:var(--gd,#ffb627)}
+#updBtn .uDot,#tutBtn .uDot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 6px #ff4d4d}
+#updDlg{max-width:min(560px,92vw);width:560px;max-height:84vh;padding:0;border:1px solid var(--ln2,#785a28);border-radius:14px;background:var(--pnl,#14161c);color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+#updDlg::backdrop{background:rgba(0,0,0,.6)}
+#updDlg .uHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln,#3a2f1a);position:sticky;top:0;background:inherit;z-index:1}
+#updDlg .uHead h3{margin:0;flex:1;font:700 20px/1.1 Cinzel,serif;color:var(--gd,#ffb627);letter-spacing:.04em}
+#updDlg .uHead small{color:#aab;font:600 12px system-ui}
+#updDlg .uX{background:none;border:1px solid var(--ln2,#785a28);color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px}
+#updDlg .uBody{padding:6px 16px 16px;overflow:auto;max-height:calc(84vh - 64px)}
+#updDlg .uRel{margin-top:12px;padding:12px 14px;border:1px solid var(--ln,#3a2f1a);border-radius:10px;background:rgba(255,255,255,.03)}
+#updDlg .uRel.cur{border-color:var(--gd,#ffb627);box-shadow:0 0 14px rgba(255,182,39,.18)}
+#updDlg .uRel h4{margin:0 0 6px;font:700 15px system-ui;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+#updDlg .uRel h4 b{color:var(--gd,#ffb627)}#updDlg .uRel h4 span{color:#99a;font-weight:600;font-size:12px}
+#updDlg .uTag{display:inline-block;margin:8px 0 4px;padding:2px 8px;border-radius:20px;font:800 11px system-ui;letter-spacing:.08em}
+#updDlg .uTag.n{background:rgba(40,200,170,.18);color:#4fe3c4}#updDlg .uTag.f{background:rgba(255,150,80,.18);color:#ffb37a}
+#updDlg ul{margin:2px 0 0;padding-left:20px}#updDlg li{margin:3px 0;font:14px/1.35 system-ui;color:#e6e6ea}
+#updDlg .uOld{text-align:center;margin-top:12px}#updDlg .uOld button{background:none;border:1px solid var(--ln2,#785a28);color:#ccd;border-radius:8px;padding:6px 14px;cursor:pointer;font:700 12px system-ui}
+#updBar{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:99999;display:none;align-items:center;gap:12px;padding:10px 12px 10px 16px;border-radius:12px;background:linear-gradient(180deg,#2a2210,#17130a);border:1px solid #ffb627;color:#fff;font:700 14px system-ui;box-shadow:0 8px 30px rgba(0,0,0,.6),0 0 18px rgba(255,182,39,.35)}
+#updBar button{border:0;border-radius:8px;padding:8px 14px;font:800 13px system-ui;cursor:pointer;background:#ffb627;color:#1a1305}
+#updBar .ubX{background:none;color:#ccc;padding:6px 8px}
+#rulesDialog .rUpd{display:block;margin:6px auto 0;background:none;border:1px solid var(--ln2,#785a28);color:var(--gd,#ffb627);border-radius:8px;padding:6px 14px;font:700 12px system-ui;cursor:pointer}
+</style>
+<script>
+(()=>{
+/* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
+const SD_VERSION='1.0.0';window.SD_VERSION=SD_VERSION;
+const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
+const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let DATA=null;
+async function load(){try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(r.ok)DATA=await r.json()}catch(e){}return DATA}
+/* ---- WHAT'S NEW window ---- */
+const dlg=document.createElement('dialog');dlg.id='updDlg';document.body.appendChild(dlg);
+let showAll=false;
+function render(){const rel=(DATA&&DATA.releases)||[];const list=showAll?rel:rel.slice(0,3);
+ dlg.innerHTML='<div class="uHead"><h3>📰 WHAT\'S NEW</h3><small>v'+SD_VERSION+'</small><button class="uX" type="button" aria-label="Close">✕</button></div><div class="uBody">'+
+ (list.length?list.map(r=>'<div class="uRel'+(r.v===SD_VERSION?' cur':'')+'"><h4><b>v'+esc(r.v)+'</b> '+esc(r.title||'')+' <span>'+esc(r.date||'')+'</span></h4>'+
+  (r.new&&r.new.length?'<span class="uTag n">✨ NEW</span><ul>'+r.new.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+  (r.fixed&&r.fixed.length?'<span class="uTag f">🔧 FIXED</span><ul>'+r.fixed.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p style="color:#aab">Could not load the update list. Try again later.</p>')+
+ (!showAll&&rel.length>3?'<div class="uOld"><button type="button">SHOW OLDER UPDATES</button></div>':'')+'</div>';
+ dlg.querySelector('.uX').onclick=()=>dlg.close();const o=dlg.querySelector('.uOld button');if(o)o.onclick=()=>{showAll=true;render()}}
+async function openUpd(){if(!DATA)await load();showAll=false;render();SS('sd_seen_ver',SD_VERSION);paint();try{dlg.showModal()}catch(e){dlg.show()}}
+window.sdOpenUpdates=openUpd;
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+/* ---- 📰 button left of 🎓 ---- */
+const ub=document.createElement('button');ub.type='button';ub.id='updBtn';ub.title="What's new — updates";ub.setAttribute('aria-label','Updates');ub.textContent='📰';ub.onclick=e=>{e.stopPropagation();openUpd()};stage.appendChild(ub);
+const vis=e=>e&&e.offsetParent!==null&&getComputedStyle(e).display!=='none';
+function place(){const t=document.getElementById('tutBtn');if(!vis(t)){ub.style.display='none';return}
+ const S=stage.getBoundingClientRect(),R=t.getBoundingClientRect();let left=R.left-S.left-R.width-8,top=R.top-S.top;
+ const pc=document.getElementById('playerCard');if(pc&&vis(pc)){const P=pc.getBoundingClientRect();if(left<P.right-S.left+4&&R.top<P.bottom){left=R.left-S.left;top=R.bottom-S.top+6}}
+ Object.assign(ub.style,{display:'grid',width:R.width+'px',height:R.height+'px',top:top+'px',left:left+'px',borderRadius:getComputedStyle(t).borderRadius,fontSize:Math.round(R.height*.5)+'px'})}
+/* ---- shine on unfinished things (lobby / start screen only) ---- */
+const dot=(b,on)=>{let d=b.querySelector('.uDot');if(on&&!d){d=document.createElement('i');d.className='uDot';b.appendChild(d)}else if(!on&&d)d.remove()};
+function paint(){const lobby=stage.classList.contains('selecting');
+ const tb=document.getElementById('tutBtn');if(tb){const on=lobby&&!LS('sd_tut_done');tb.classList.toggle('sdShine',on);tb.title=on?'Tutorial — not done yet!':'Tutorial — how to play'}
+ const upNew=LS('sd_seen_ver')!==SD_VERSION;ub.classList.toggle('sdShine',lobby&&upNew);dot(ub,lobby&&upNew);
+ const db=document.getElementById('dailyBtn'),dt=document.querySelector('#topNav [data-tab="daily"]');
+ if(dt){const on=lobby&&!!db&&(db.classList.contains('has')||db.classList.contains('todo'));dt.classList.toggle('sdShine',on)}}
+setInterval(()=>{place();paint()},700);addEventListener('resize',()=>setTimeout(place,120));
+/* ---- show WHAT'S NEW once after an update (not for brand-new players, not during a match) ---- */
+const newPlayer=!LS('sd_seen_ver')&&!LS('sd_wiz_seen')&&!LS('sd_tut_done');
+if(newPlayer)SS('sd_seen_ver',SD_VERSION);
+let autoTried=false;
+function busy(){return !stage.classList.contains('selecting')||stage.classList.contains('wizOn')||document.querySelector('#tour.show,#tutWel.show,#tutWel[open],dialog[open]:not(.sdPage)')}
+const autoT=setInterval(()=>{if(autoTried)return clearInterval(autoT);if(LS('sd_seen_ver')===SD_VERSION){autoTried=true;return}if(busy())return;autoTried=true;openUpd()},2500);
+/* ---- live check: a newer version was pushed while the game is open ---- */
+const bar=document.createElement('div');bar.id='updBar';document.body.appendChild(bar);let barFor=null,barHide=null;
+async function check(){const d=await load();if(!d||!d.current||cmp(d.current,SD_VERSION)<=0||barHide===d.current)return;
+ barFor=d.current;const top=(d.releases||[]).find(r=>r.v===d.current);
+ bar.innerHTML='<span>🆕 Update v'+esc(d.current)+' is ready'+(top&&top.title?' — '+esc(top.title):'')+'</span><button type="button" class="ubR">RELOAD</button><button type="button" class="ubX" aria-label="Later">✕</button>';
+ bar.querySelector('.ubR').onclick=()=>location.reload();bar.querySelector('.ubX').onclick=()=>{barHide=barFor;bar.style.display='none'};
+ bar.style.display=stage.classList.contains('selecting')?'flex':'none'}
+setInterval(()=>{if(barFor&&barHide!==barFor)bar.style.display=stage.classList.contains('selecting')?'flex':'none'},1500);
+load().then(()=>check());setInterval(check,3*60*1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+/* ---- button in the ? window ---- */
+setInterval(()=>{const d=document.getElementById('rulesDialog');if(!d||d.querySelector('.rUpd'))return;const b=document.createElement('button');b.type='button';b.className='rUpd';b.textContent="📰 WHAT'S NEW · v"+SD_VERSION;b.onclick=()=>{try{d.close()}catch(e){}openUpd()};const t=d.querySelector('.rTut');if(t)t.after(b);else d.insertBefore(b,d.firstChild.nextSibling||null)},1500);
 })();
 </script>
 </html>

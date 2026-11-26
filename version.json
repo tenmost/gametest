@@ -1,0 +1,27 @@
+{
+  "current": "1.0.0",
+  "releases": [
+    {
+      "v": "1.0.0",
+      "date": "2026-11-26",
+      "title": "The big lobby update",
+      "new": [
+        "UPDATES window: see what changed in every new version (this window!)",
+        "A banner tells you when a new update is ready while you play: just press RELOAD",
+        "Things you haven't finished yet (tutorial, daily missions, new updates) now shine in the lobby",
+        "Tutorial: a welcome card for new players and a guided tour of the lobby; the 🎓 button next to ? starts it any time",
+        "Private messages between friends and a 🔔 bell for friend requests and new messages",
+        "Themes: Moon Temple and Fire Forge are free; Magic Night, Sakura Dojo, Frost Kingdom and the legendary Golden Dragon in the theme shop",
+        "New top menu that works like browser tabs: heroes, arenas, rank, daily and theme open beside the game",
+        "Rank and weekly leaderboard always on the lobby"
+      ],
+      "fixed": [
+        "You stay logged in when you refresh the page",
+        "Pressing READY in a room now starts the match",
+        "Open rooms, guests and random-player search show up on phones too",
+        "All rooms are public unless you set a password",
+        "Arena row scrolls sideways on phones again"
+      ]
+    }
+  ]
+}
