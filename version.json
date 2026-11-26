@@ -1,6 +1,16 @@
 {
-  "current": "1.1.1",
+  "current": "1.1.2",
   "releases": [
+    {
+      "v": "1.1.2",
+      "date": "2026-11-26",
+      "title": "Tutorial steps work again",
+      "new": [],
+      "fixed": [
+        "After the tutorial (and after pressing PLAY) the steps at the top work again: choose ONLINE or OFFLINE, then your hero, then an arena (offline) or who to play with (online), and the game starts",
+        "The quick ONLINE / OFFLINE question for new players no longer shows steps that don't do anything"
+      ]
+    },
     {
       "v": "1.1.1",
       "date": "2026-11-26",

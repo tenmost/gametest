@@ -4178,6 +4178,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('#roomsRefresh');
  background:linear-gradient(180deg,#ffd166,var(--gd,#ffb627) 55%,var(--gd2,#ff8a00));box-shadow:0 8px 22px rgba(255,150,30,.35)}
 #wiz .wzNext:disabled{filter:saturate(.2) brightness(.6);cursor:default;box-shadow:none}
 #wiz .wzNext[hidden]{display:none}
+#wiz.wzSimple .wzSteps,#wiz.wzSimple .wzHead small{visibility:hidden}
 #wiz .wzEmpty{color:var(--mu,#a7afc0);padding:30px;text-align:center}
 @media (orientation:portrait) and (max-width:820px){
  #wiz .wzBrand{display:none}#wiz .wzTop{flex-wrap:wrap}#wiz .wzSteps{order:2;width:100%}#wiz .wzSteps button span{display:none}#wiz .wzX{margin-left:auto}
@@ -4215,7 +4216,7 @@ function paint(){if(!W.open)return;const f=flow(),id=f[W.step][0],body=q('.wzBod
  if(id==='mode'){head(stepTxt,'HOW DO YOU WANT TO PLAY?','Pick one — you can always come back.');next.hidden=true;
   body.innerHTML='<div class="wzGrid big"><button type="button" class="wzCard'+(W.mode==='online'?' on':'')+'" data-m="online"><span class="wzI">🌐</span><div><b>ONLINE</b><small>Play your friends or other players</small></div></button>'+
    '<button type="button" class="wzCard'+(W.mode==='cpu'?' on':'')+'" data-m="cpu"><span class="wzI">🤖</span><div><b>OFFLINE</b><small>Play against the computer'+(signedIn()?' and earn crystals':'')+'</small></div></button></div>';
-  body.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{beepS();W.mode=b.dataset.m;try{localStorage.setItem('sd_wiz_seen','1')}catch(e){}close();toMode(W.mode)})}
+  body.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{beepS();W.mode=b.dataset.m;try{localStorage.setItem('sd_wiz_seen','1')}catch(e){}if(W.full){W.step=1;paint()}else{close();toMode(W.mode)}})}
  else if(id==='hero'){head(stepTxt,'CHOOSE YOUR HERO','Tap a hero, then press NEXT.');const H=heroes();
   if(!W.hero||!H.some(h=>h.k===W.hero))W.hero=(window.sdFavHero&&window.sdFavHero())||null;if(W.hero&&!H.some(h=>h.k===W.hero))W.hero=H[0]?H[0].k:null;
   body.innerHTML=H.length?'<div class="wzGrid">'+H.map(h=>{const pic=heroPic(h.k),lv=heroLv(h.k);return '<button type="button" class="wzCard'+(h.k===W.hero?' on':'')+'" data-h="'+esc(h.k)+'"><span class="wzPic">'+(pic?'<img alt="" src="'+esc(pic)+'">':'🦸')+'</span><b>'+esc(h.name)+'</b>'+(lv?'<small>Lv '+lv+'</small>':'')+'</button>'}).join('')+'</div>':'<div class="wzEmpty">Loading heroes…</div>';
@@ -4246,7 +4247,7 @@ q('.wzNext').onclick=()=>{beepS();goNext()};
 q('.wzBack').onclick=()=>{beepS();if(W.step>0){W.step--;paint()}};
 q('.wzX').onclick=()=>{beepS();close()};
 /* ---- open / close ---- */
-function open(o){o=o||{};if(o.mode)W.mode=o.mode;W.step=o.step||0;if(W.step&&!W.mode)W.step=0;W.open=true;try{window.sdCloseXP&&window.sdCloseXP()}catch(e){}stage.classList.remove('playPick');stage.classList.add('wizOn');paint();el.tabIndex=-1;setTimeout(()=>{try{el.focus({preventScroll:true})}catch(e){}},50)}
+function open(o){o=o||{};W.full=!!o.full;el.classList.toggle('wzSimple',!W.full);if(o.mode)W.mode=o.mode;W.step=o.step||0;if(W.step&&!W.mode)W.step=0;W.open=true;try{window.sdCloseXP&&window.sdCloseXP()}catch(e){}stage.classList.remove('playPick');stage.classList.add('wizOn');paint();el.tabIndex=-1;setTimeout(()=>{try{el.focus({preventScroll:true})}catch(e){}},50)}
 function close(){W.open=false;stage.classList.remove('wizOn')}
 window.sdWizard={open,close,state:W};
 /* ---- leave the wizard and press the game's own buttons ---- */
@@ -4261,7 +4262,7 @@ async function startOnline(g){const hero=W.hero;close();try{window.sdSetFav&&win
  const hub=$('hub');if(stage.dataset.mode==='online'&&hub&&hub.dataset.v&&hub.dataset.v!=='menu'&&hub.dataset.v!==g){hub.querySelector('.hv[data-v="'+hub.dataset.v+'"] .hBack')?.click();await wait(80)}
  await toMode('online');try{window.sdNavDrop&&window.sdNavDrop.close&&window.sdNavDrop.close()}catch(e){}window.sdHubGo&&window.sdHubGo(g);setTimeout(closeSide,400)}
 /* PLAY opens the steps instead of the old ONLINE / OFFLINE pop-up */
-document.addEventListener('click',e=>{const b=e.target.closest('#playBig');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open()},true);
+document.addEventListener('click',e=>{const b=e.target.closest('#playBig');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open({full:true})},true);
 /* the OFFLINE tab in the top menu: straight to the hero step of the offline flow */
 /* (Nov 2026: the OFFLINE tab goes straight to the offline page again — no forced steps) */
 document.addEventListener('keydown',e=>{if(!W.open)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(W.step>0){W.step--;paint()}else close()}else if(e.key==='Enter'&&!e.target.closest('input,textarea')){const c=e.target.closest('.wzCard');if(c)return;e.preventDefault();goNext()}},true);
@@ -4450,7 +4451,7 @@ function start(cb){onEnd=cb||null;try{window.sdNavDrop&&window.sdNavDrop.close()
  if(stage.dataset.mode&&stage.dataset.mode!=='gate')document.querySelector('#modeBack button')?.click();
  setTimeout(()=>{list=STEPS.map(([q,t,x])=>({el:q.length?pick(q):null,t,x,need:q.length})).filter(s=>!s.need||s.el);i=0;tour.classList.add('show');show()},q0());}
 const q0=()=>stage.dataset.mode==='gate'?50:450;
-function end(play){tour.classList.remove('show');setDone();const cb=onEnd;onEnd=null;if(play){try{window.sdWizard&&window.sdWizard.open()}catch(e){}}else if(cb)cb()}
+function end(play){tour.classList.remove('show');setDone();const cb=onEnd;onEnd=null;if(play){try{window.sdWizard&&window.sdWizard.open({full:true})}catch(e){}}else if(cb)cb()}
 tour.querySelector('.tNext').onclick=()=>{beepS();if(i<list.length-1){i++;show()}else end(true)};
 tour.querySelector('.tBack').onclick=()=>{beepS();if(i>0){i--;show()}};
 tour.querySelector('.tSkip').onclick=()=>{beepS();end(false)};
@@ -4507,7 +4508,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.1.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.1.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
