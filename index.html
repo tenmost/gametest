@@ -3052,7 +3052,10 @@ window.addEventListener('sd-match-end',async e=>{const d=e.detail||{};
  if(!signed()||!d.hero)return;let src,ref;
  if(d.online){if(!d.code)return;src='online';ref=d.code;await new Promise(r=>setTimeout(r,2500))}
  else{if(!d.cpu)return;const id=await Promise.resolve(d.cpu).catch(()=>null);if(!id)return;src='cpu';ref=String(id)}
- try{const r=await window.sdAccount.client.rpc('sd_hero_xp_award',{p_source:src,p_ref:ref,p_hero:d.hero});if(r.error||!r.data)return;const old=lvOf(d.hero);
+ try{let r=await window.sdAccount.client.rpc('sd_hero_xp_award',{p_source:src,p_ref:ref,p_hero:d.hero});
+  /* online XP needs the match confirmed by BOTH players — wait for the other report a little */
+  for(const w of (src==='online'?[4000,8000,15000]:[])){if(!(r.error&&/confirmed/i.test(r.error.message||'')))break;await new Promise(x=>setTimeout(x,w));r=await window.sdAccount.client.rpc('sd_hero_xp_award',{p_source:src,p_ref:ref,p_hero:d.hero})}
+  if(r.error||!r.data)return;const old=lvOf(d.hero);
   LV[d.hero]={...(LV[d.hero]||{matches:0,wins:0}),hero:d.hero,xp:r.data.xp,level:r.data.level};if(r.data.gained){LV[d.hero].matches=(LV[d.hero].matches||0)+1;if(r.data.won)LV[d.hero].wins=(LV[d.hero].wins||0)+1}
   if(r.data.gained)toast('⭐ <b>'+esc(heroName(d.hero))+'</b> +'+r.data.gained+' XP'+(r.data.level>old?' · <b>LEVEL UP! Lv '+r.data.level+'</b>':' · Lv '+r.data.level));paintLv()}catch(err){}});
 window.addEventListener('sd-fight',e=>{const d=e.detail||{};if(NET&&NET.roomMatch&&ROOM&&ROOM.st&&ROOM.st.playing){const a=ROOM.st.playing[0]===myId;const p={code:NET.code,s:a?[d.pf,d.of]:[d.of,d.pf]};try{ROOM.ch.send({type:'broadcast',event:'live',payload:p})}catch(err){}ROOM.live=p;renderRoom()}});
@@ -3855,7 +3858,7 @@ const LBL={friends:['👥','FRIENDS ROOM'],host:['🏠','HOST A ROOM'],rooms:['�
 function paintOnline(){const t=tab('online');if(!t)return;const v=hub?hub.dataset.v:'menu';let L=GM.matches?(stage.dataset.mode==='cpu'?['🤖','VS COMPUTER']:['🎮','GAME MODE']):['🌐','ONLINE'];
  if(stage.dataset.mode==='online'&&v&&v!=='menu'){if(v==='room')L=lastGo==='friends'?LBL.friends:['🏠','MY ROOM'];else if(v==='search')L=LBL.quick;else if(LBL[v])L=LBL[v]}
  t.innerHTML='<i>'+L[0]+'</i>'+L[1]}
-if(hub)new MutationObserver(paintOnline).observe(hub,{attributes:true,attributeFilter:['data-v']});
+if(hub)new MutationObserver(()=>{paintOnline();if(openK==='online'&&hub.dataset.v&&hub.dataset.v!=='menu')close()}).observe(hub,{attributes:true,attributeFilter:['data-v']});
 new MutationObserver(()=>setTimeout(()=>{paintOnline();if(stage.dataset.mode==='online'&&hub&&hub.dataset.v==='menu'&&stage.classList.contains('selecting')&&openK!=='online')onlineDrop()},250)).observe(stage,{attributes:true,attributeFilter:['data-mode']});
 /* ---- DAILY + ACCOUNT in the top menu ---- */
 const mk=(k,html)=>{const b=document.createElement('button');b.type='button';b.dataset.tab=k;b.innerHTML=html+'<span class="ndDot"></span>';return b};
@@ -4508,7 +4511,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.1.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.1.3';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4562,4 +4565,10 @@ load().then(()=>check());setInterval(check,3*60*1000);document.addEventListener(
 setInterval(()=>{const d=document.getElementById('rulesDialog');if(!d||d.querySelector('.rUpd'))return;const b=document.createElement('button');b.type='button';b.className='rUpd';b.textContent="📰 WHAT'S NEW · v"+SD_VERSION;b.onclick=()=>{try{d.close()}catch(e){}openUpd()};const t=d.querySelector('.rTut');if(t)t.after(b);else d.insertBefore(b,d.firstChild.nextSibling||null)},1500);
 })();
 </script>
+<style>/* ===== PLAY SIZE (v1.1.3): smaller PLAY on wide screens, never wider than the middle between the side columns ===== */
+@media not all and (orientation:portrait) and (max-width:820px){
+ html #stage.selecting[data-mode=gate] #playBig{min-width:0!important;width:min(calc(var(--midW,44%) - 32px),340px)!important;padding:0 1em!important;height:clamp(50px,5.4vw,70px)!important;font-size:clamp(20px,2.2vw,32px)!important;box-sizing:border-box}
+ html #stage.selecting[data-mode=gate] #playBig small{font-size:clamp(8px,.7vw,10px)!important;letter-spacing:.14em!important}
+}
+</style>
 </html>

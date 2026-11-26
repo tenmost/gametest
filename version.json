@@ -1,6 +1,17 @@
 {
-  "current": "1.1.2",
+  "current": "1.1.3",
   "releases": [
+    {
+      "v": "1.1.3",
+      "date": "2026-11-26",
+      "title": "Smaller PLAY button + fair rewards",
+      "new": [],
+      "fixed": [
+        "The PLAY button in the lobby is smaller and never runs into the side boxes, in every theme",
+        "Online hero XP only counts when BOTH players are logged in and the match is confirmed by both — playing against a guest gives no XP, crystals or rank",
+        "After accepting a room invite, the PLAY ONLINE menu no longer stays open on top of the room"
+      ]
+    },
     {
       "v": "1.1.2",
       "date": "2026-11-26",
