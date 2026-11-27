@@ -1,6 +1,17 @@
 {
-  "current": "1.7.0",
+  "current": "1.8.0",
   "releases": [
+    {
+      "v": "1.8.0",
+      "date": "2026-11-27",
+      "title": "New hero + many more moves",
+      "new": [
+        "Meet STONE SENTINEL: a giant of mossy stone with glowing blue cracks. He does karate, a handstand, a flying kick — and even a penguin walk",
+        "Every hero now has 11 to 14 moves to unlock instead of 7 — dances, kicks, backflips and funny ones. Level up a hero to unlock the next move",
+        "The MOVES column shows how many moves you have unlocked and which one comes next"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.7.0",
       "date": "2026-11-27",
