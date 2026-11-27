@@ -1,6 +1,15 @@
 {
-  "current": "1.13.2",
+  "current": "1.13.3",
   "releases": [
+    {
+      "v": "1.13.3",
+      "date": "2026-11-27",
+      "title": "Stone Sentinel breathes",
+      "new": [],
+      "fixed": [
+        "Stone Sentinel no longer stands frozen like a statue — he now breathes and moves a little while waiting"
+      ]
+    },
     {
       "v": "1.13.2",
       "date": "2026-11-27",
