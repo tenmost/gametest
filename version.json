@@ -1,6 +1,15 @@
 {
-  "current": "1.11.1",
+  "current": "1.11.2",
   "releases": [
+    {
+      "v": "1.11.2",
+      "date": "2026-11-27",
+      "title": "JOYJOY.GG in your browser tab",
+      "new": [
+        "The browser tab now says JOYJOY.GG — Enjoy Good Games and has its own colourful JJ icon"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.11.1",
       "date": "2026-11-27",

@@ -1,7 +1,7 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RPS Rivals — 3D Rock Paper Scissors Duels</title>
+<!doctype html><html lang="en"><meta charset="utf-8"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2314171d'/><text x='20' y='50' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='46' fill='%23ffc93c' text-anchor='middle'>J</text><text x='42' y='50' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='46' fill='%23ff6b8b' text-anchor='middle'>J</text><circle cx='55' cy='47' r='5.5' fill='%233ee6c5'/></svg>"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JOYJOY.GG — Enjoy Good Games</title>
 <meta name="description" content="RPS Rivals: a 3D rock-paper-scissors battle game. Duel the computer or your friends online, unlock arenas and avatars.">
-<meta property="og:title" content="RPS Rivals"><meta property="og:description" content="3D rock-paper-scissors duels — play the computer or challenge your friends online."><meta name="theme-color" content="#101b3d">
+<meta property="og:title" content="JOYJOY.GG — Enjoy Good Games"><meta property="og:description" content="3D rock-paper-scissors duels — play the computer or challenge your friends online."><meta name="theme-color" content="#101b3d">
 <script>(function(){try{var t=localStorage.getItem("sd_theme");document.documentElement.dataset.theme=["moon","forge","arcane","sakura","frost","royal"].indexOf(t)>=0?t:"moon"}catch(e){document.documentElement.dataset.theme="moon"}})();</script>
 <script>(function(){try{var q=new URLSearchParams(location.search).get("xmas"),d=new Date(),m=d.getMonth(),day=d.getDate();window.SD_XMAS=q?q==="1":(m===10&&day>=20)||m===11||(m===0&&day<=6);if(window.SD_XMAS)document.documentElement.classList.add("xmas");}catch(e){}})();</script>
 <script>/* themes other than CLASSIC SPACE: no Christmas space extras (Santa, night Earth, logo hat) */if(window.SD_XMAS)document.documentElement.classList.add("xhat");if(document.documentElement.dataset.theme!=="classic"&&window.SD_XMAS){window.SD_XMAS=false;document.documentElement.classList.remove("xmas")}</script>
@@ -4610,7 +4610,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.11.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.11.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
