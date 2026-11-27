@@ -2454,7 +2454,8 @@ const HREV=(()=>{
      else pos=tgt0}
     scl=lerp(1.25,1.0,Math.min(1,(T-pl.L)/pl.fl))}}
   o.root.position.copy(pos);o.root.lookAt(camera.position);o.root.scale.setScalar(scl);
-  for(const kk of['rock','paper','scissors'])P.lab[kk].visible=!!(ready&&kk===kind);
+  const inAir=pl.mode==='fly'&&T>=pl.L&&T<Ti+.25;/* no label while it flies (labels piled up at the catcher's hand) */
+  for(const kk of['rock','paper','scissors'])P.lab[kk].visible=!!(ready&&kk===kind&&!inAir);
   P.lab[kind].material.opacity=res==='lose'&&T>Ti?.5:1;
   return true}
  if(ON)window.__hrev=()=>{const o=OBJ.g;if(!o)return null;const P=o.P,vis=x=>x.visible;return{hero:o.hk,kind:CARD.g.kind,res:st.res,root:vis(o.root),my:vis(P.my),rock:vis(P.rock),paper:vis(P.paper),sc:vis(P.scissors)}};
