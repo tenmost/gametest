@@ -1161,8 +1161,8 @@ function poseSkinned(R,h,dt){
 
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 let CHARS=[
- {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=1',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Ready_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'victory',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand'}},
- {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=1',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance'}}];
+ {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=2',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'Champion_Dance',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand'}},
+ {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=2',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance'}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.68},a:{p:[2.35,FLOOR+.82,.35],r:-.68}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
@@ -1173,9 +1173,12 @@ function hideBuiltInHero(){hero.root.visible=false;Object.values(hero.L).forEach
 const PTC=window.SD_PT={k:.82,ly:-.55,ks:.5,lys:-.95};const PT=()=>camera.aspect<.95;
 let previewHeroKey=null;const heroPortraits={};
 let lobbyFriendKey=null;
-function layoutSelect(){setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const fk=lobbyFriendKey,F=fk?(fk===previewHeroKey?LOADED[fk+'#2']:LOADED[fk]):null,R=LOADED[previewHeroKey],two=!!F,sp=PT()?.72:.95;
- if(R){R.holder.visible=true;R.holder.scale.setScalar(two?.72:.82);R.holder.position.set(two?-sp:(PT()?0:.15),FLOOR+1.05,.2);R.holder.rotation.y=two?.35:-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}
- if(F){F.holder.visible=true;F.holder.scale.setScalar(.72);F.holder.position.set(sp,FLOOR+1.05,.2);F.holder.rotation.y=-.35;F.cur=null;F.play(F.cfg.anim.select||F.cfg.anim.idle)}}
+/* where the hero stands on the start screen: on the painted floor ring (desktop), above the name box (phone lobby), between the top bar and HERO COLLECTION (phone OFFLINE/ONLINE pages) */
+function selSpot(){const m=(document.getElementById('stage')||{}).dataset?.mode;if(!PT())return{y:.7,s:.82};return m==='gate'?{y:-.05,s:.82}:{y:.95,s:.72}}
+(()=>{const s=document.getElementById('stage');if(s)new MutationObserver(()=>{if(st.select)layoutSelect()}).observe(s,{attributes:true,attributeFilter:['data-mode']})})();
+function layoutSelect(){const SP=selSpot();setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const fk=lobbyFriendKey,F=fk?(fk===previewHeroKey?LOADED[fk+'#2']:LOADED[fk]):null,R=LOADED[previewHeroKey],two=!!F,sp=PT()?.72:.95;
+ if(R){R.holder.visible=true;R.holder.scale.setScalar(two?.72:SP.s);R.holder.position.set(two?-sp:(PT()?0:.15),FLOOR+SP.y,.2);R.holder.rotation.y=two?.35:-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}
+ if(F){F.holder.visible=true;F.holder.scale.setScalar(.72);F.holder.position.set(sp,FLOOR+SP.y,.2);F.holder.rotation.y=-.35;F.cur=null;F.play(F.cfg.anim.select||F.cfg.anim.idle)}}
 /* online room on the start screen: the friend's hero stands next to yours */
 API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
@@ -4514,7 +4517,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.3.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.3.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
