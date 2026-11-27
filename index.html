@@ -1294,7 +1294,8 @@ async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co
    anim:{...x.anim,show:(Array.isArray(x.anim.show)&&x.anim.show.length?x.anim.show:[x.anim.idle])}}));
   return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
 fetchRoster().then(list=>{if(list)CHARS=list;window.SD_HERO_N=CHARS.filter(c=>!c.proc).length;for(const c of CHARS)if(!c.proc)loadChar(c)});
-function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
+/* v1.13.2: match idle per hero — oni's 'Idle' swings his hips like a dance, stone's 'One_Arm_Handstand' matched /stand/ */const WAIT_IDLE={oni:'Idle_10',stone:'Idle_Stand'};
+function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break|handstand|flip|cartwheel/i;const configured=String(R.cfg.anim.idle).split('*')[0];const fixed=WAIT_IDLE[R.cfg.key];const safe=(fixed&&names.includes(fixed)?fixed:null)||(/idle|stand|breath|rest/i.test(configured)&&!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
 function mushroomDance(R){
  if(R.act.MushTVMenuDance)return true;
  const donor=Object.values(LOADED).find(x=>x!==R&&/tv.?head|^tv$/i.test(x.cfg.name+' '+x.cfg.key));
@@ -4920,7 +4921,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.13.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.13.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
