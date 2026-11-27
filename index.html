@@ -2201,7 +2201,7 @@ const HREV=(()=>{
    const h=new THREE.Mesh(new THREE.TorusGeometry(.085,.022,8,18),MAT.brass);h.position.set(0,-.17,0);arm.add(h);
    const st2=new THREE.Mesh(new THREE.BoxGeometry(.035,.09,.025),MAT.brass);st2.position.set(0,-.07,0);arm.add(st2);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const piv=gear(.07,10,.05,MAT.copper,.02);piv.position.z=.04;sc.add(piv);sc.userData.base=1.4;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   P.anim=(kind,dt,res)=>{if(kind==='rock'){ring.rotation.z+=dt*(res==='win'?6:3);boulder.rotation.y+=dt*.6}
    if(kind==='paper'){cg.rotation.z+=dt*4;paper.rotation.z=Math.sin(TIME*2.4)*.06}
    if(kind==='scissors'){const op=.42+.3*Math.sin(TIME*(res==='win'?14:7));for(const a of blades)a.rotation.z=a.userData.s*op;piv.rotation.z+=dt*5}};
@@ -2232,7 +2232,7 @@ const HREV=(()=>{
   for(const s of[-1,1]){const arm=new THREE.Group();const bl=shard(.55,.05,MAT.ice);bl.scale.z=.35;bl.position.z=s*.015;arm.add(bl);
    const h=new THREE.Mesh(new THREE.TorusGeometry(.085,.024,6,14),MAT.iceDeep);h.position.set(0,-.15,0);arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const piv=flake(.09,MAT.snow);piv.position.z=.05;sc.add(piv);sc.userData.base=1.35;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   P.anim=(kind,dt,res)=>{if(kind==='rock'){boulder.rotation.y+=dt*.8;rock.rotation.z=Math.sin(TIME*3)*.05}
    if(kind==='paper'){paper.rotation.z=Math.sin(TIME*2)*.05;sheet.material.emissiveIntensity=.4+.15*Math.sin(TIME*5)}
    if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?14:7));for(const a of blades)a.rotation.z=a.userData.s*op;piv.rotation.z+=dt*4}};
@@ -2261,26 +2261,25 @@ const HREV=(()=>{
   const sc=new THREE.Group();const blades=[];
   for(const s of[-1,1]){const arm=new THREE.Group();const bl=shard(.55,.07,dark);bl.scale.z=.3;bl.position.z=s*.02;arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.08,.03,5,10),granite);h.position.y=-.15;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const piv=new THREE.Mesh(new THREE.DodecahedronGeometry(.07),granite);piv.position.z=.05;sc.add(piv);const pg=new THREE.Mesh(new THREE.TorusGeometry(.08,.01,4,16),glow);pg.position.z=.06;sc.add(pg);sc.userData.base=1.35;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   const DUST=[.62,.58,.52];
-  /* own entrance: called every frame instead of the generic "grow in the air" */
-  P.enter=(o,kind,revealed,T,res,dt,wp)=>{
+  /* timing from the real moves: tc = second in the clip where the foot / hands are furthest forward (measured from the GLB) */
+  P.spec={rock:{clip:'Spartan_Kick',tc:.67,ready:.55,kick:'RightFoot'},paper:{clip:'Cheer_with_Both_Hands_Up',tc:.67,ready:.6},scissors:{clip:'Thrust_Slash',tc:.8,ready:.85}};
+  /* own entrance: pebbles dive, the choice erupts from the ground; flying / holding is done by the shared code */
+  P.enter=(o,kind,revealed,T,res,dt,wp,pl)=>{
    for(const kk of['rock','paper','scissors'])P[kk].visible=revealed&&kk===kind;
-   const sr=.6+.25*Math.sin(TIME*5);glow.color.setHSL(.37,1,.35+.3*(revealed?Math.min(1,o.lit||0):sr*.4));
-   /* pebbles: orbit before, dive into the ground on the reveal */
-   const dive=revealed?sstep(.0,.3,T):0;my.visible=dive<1;rg.scale.setScalar(1-dive*.6);
+   glow.color.setHSL(.37,1,.35+.3*(revealed?Math.min(1,o.lit||0):(.6+.25*Math.sin(TIME*5))*.4));
+   const dive=revealed?sstep(0,.28,T):0;my.visible=dive<1;rg.scale.setScalar(1-dive*.6);
    peb.forEach((m,i)=>{const a=TIME*(1.6+(st.shaking?2.2:0))+i/6*Math.PI*2;m.position.set(Math.cos(a)*.3,Math.sin(a)*.3*.32-dive*1.7+Math.sin(TIME*4+i)*.03,Math.sin(a)*.08);m.rotation.x+=dt*3;m.rotation.y+=dt*2;m.scale.setScalar(1-dive*.5)});
-   if(!revealed){o.ready=false;o.lit=0;o.stomp=false;o.dust2=false;return}
-   const ts=.36,ground=wp.clone().add(V3(0,-1.35,0));
-   if(!o.stomp&&T>ts){o.stomp=true;st.camShake=Math.max(st.camShake,.16);burst(ground.clone(),DUST,90,2.8);spray(ground,granite,dark,8)}
-   const rise=sstep(ts,kind==='paper'?.95:.8,T),y=-1.7*(1-eob(rise));
-   const g=P[kind];g.position.y=y;g.scale.setScalar((g.userData.base||1)*(.55+.45*Math.min(1,rise*1.6)));
-   if(!o.dust2&&rise>.5){o.dust2=true;burst(wp.clone().add(V3(0,-.4,0)),DUST,40,1.6)}
-   o.lit=sstep(.7,1.05,T);o.ready=rise>.85;
-   if(kind==='rock'){g.rotation.y=(1-rise)*1.6+T*.4;g.rotation.z=Math.sin(T*9)*.08*(1-rise);crk.forEach((c,i)=>c.scale.setScalar(.95+.1*Math.sin(TIME*6+i)))}
-   if(kind==='paper'){g.rotation.z=Math.sin(T*14)*.05*(1-rise)+Math.sin(TIME*2)*.03;runeM.emissiveIntensity=.55*o.lit*(.8+.2*Math.sin(TIME*5))}
-   if(kind==='scissors'){const join=sstep(.78,1.0,T),op=.4+.28*Math.sin(TIME*(res==='win'?13:6))*join;
-    blades.forEach((a,i)=>{const s=a.userData.s;a.position.x=s*.32*(1-join);a.position.y=-.35*(1-sstep(ts,.75,T))*(i?1:.6);a.rotation.z=s*(op+.9*(1-join))});
+   if(!revealed){o.ready=false;o.lit=0;o.stomp=false;return}
+   const t0=.2,t1=Math.max(t0+.32,(kind==='scissors'?pl.ready-.25:pl.L-.1));
+   if(!o.stomp&&T>t0){o.stomp=true;st.camShake=Math.max(st.camShake,.14);const gr=wp.clone();gr.y=-1.55;burst(gr.clone(),DUST,90,2.8);spray(gr,granite,dark,8)}
+   const rise=sstep(t0,t1,T),g=P[kind];g.position.y=-1.8*(1-eob(rise));g.scale.setScalar((g.userData.base||1)*(.55+.45*Math.min(1,rise*1.6)));
+   o.lit=sstep(t1-.1,t1+.25,T);o.ready=rise>.85;
+   if(kind==='rock'){g.rotation.z=Math.sin(T*9)*.08*(1-rise);crk.forEach((c,i)=>c.scale.setScalar(.95+.1*Math.sin(TIME*6+i)))}
+   if(kind==='paper'){g.rotation.z=Math.sin(T*14)*.05*(1-rise);runeM.emissiveIntensity=.55*o.lit*(.8+.2*Math.sin(TIME*5))}
+   if(kind==='scissors'){const join=sstep(t1-.05,pl.ready,T);
+    blades.forEach((a,i)=>{const sd=a.userData.s;a.position.x=sd*.32*(1-join);a.position.y=-.35*(1-rise)*(i?1:.6);if(join<1)a.rotation.z=sd*(.55+.9*(1-join))});
     piv.visible=pg.visible=join>.3;piv.scale.setScalar(Math.max(.01,join));piv.rotation.z+=dt*3}};
   P.spark=[.65,.68,.7];P.bits=i=>new THREE.Mesh(new THREE.DodecahedronGeometry(.04+Math.random()*.07),i%3?granite:dark);
   P.onBreak=p=>burst(p.clone(),DUST,80,2.2);
@@ -2309,7 +2308,7 @@ const HREV=(()=>{
   const sc=new THREE.Group();const blades=[];
   for(const s of[-1,1]){const arm=new THREE.Group();const bl=new THREE.Mesh(new THREE.ShapeGeometry(leafShape(.09,.6)),leafG);bl.position.set(0,.22,s*.01);arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,14),vine);h.position.y=-.13;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const pf=flower(.06);pf.position.z=.04;sc.add(pf);sc.userData.base=1.35;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   P.anim=(kind,dt,res)=>{if(kind==='rock'){b.rotation.y+=dt*.5;fl.rotation.z+=dt*2}
    if(kind==='paper'){paper.rotation.z=Math.sin(TIME*2.2)*.08}
    if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?13:6));for(const a of blades)a.rotation.z=a.userData.s*op;pf.rotation.z+=dt*3}};
@@ -2332,7 +2331,7 @@ const HREV=(()=>{
   for(const s of[-1,1]){const arm=new THREE.Group();const bl=new THREE.Mesh(new THREE.BoxGeometry(.035,.56,.012),steel);bl.position.set(0,.22,s*.012);arm.add(bl);const tip=shard(.08,.024,steel);tip.position.y=.5;tip.scale.z=.4;arm.add(tip);
    const gd=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.015,10),M(0xd4a017));gd.rotation.x=Math.PI/2;gd.position.y=-.07;arm.add(gd);const hd=new THREE.Mesh(new THREE.BoxGeometry(.035,.16,.03),M(0x222222,{m:.2,r:.6}));hd.position.y=-.16;arm.add(hd);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const pad=new THREE.Mesh(new THREE.CircleGeometry(.08,16,.3,Math.PI*1.8),lily);pad.position.z=.03;sc.add(pad);sc.userData.base=1.3;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   P.anim=(kind,dt,res)=>{if(kind==='rock'){b.rotation.y+=dt*.6;spl.scale.setScalar(1+.12*Math.sin(TIME*6))}
    if(kind==='paper')paper.rotation.z=Math.sin(TIME*2)*.05;
    if(kind==='scissors'){const op=.38+.26*Math.sin(TIME*(res==='win'?14:7));for(const a of blades)a.rotation.z=a.userData.s*op;pad.rotation.z+=dt*2}};
@@ -2354,7 +2353,7 @@ const HREV=(()=>{
   const sc=new THREE.Group();const blades=[];
   for(const s of[-1,1]){const arm=new THREE.Group();const bl=shard(.56,.05,s<0?pink:cyan);bl.scale.z=.3;bl.position.z=s*.015;arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.08,.018,6,16),s<0?pink:cyan);h.position.y=-.14;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
   const piv=new THREE.Mesh(new THREE.OctahedronGeometry(.06),M(0xffffff,{m:0,e:1,em:0xff8cf0}));piv.position.z=.04;sc.add(piv);sc.userData.base=1.35;
-  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.rock=rock;P.paper=paper;P.scissors=sc;P.blades=blades;root.add(rock,paper,sc);
   P.anim=(kind,dt,res)=>{const f=.75+.25*Math.sin(TIME*9);if(kind==='rock'){b.rotation.y+=dt*.5;ed.rotation.y=b.rotation.y;ed.material.color.setRGB(1*f,.17*f,.84*f)}
    if(kind==='paper'){sheet.material.opacity=.75+.2*Math.sin(TIME*7);paper.rotation.z=Math.sin(TIME*2)*.04}
    if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?15:7));for(const x of blades)x.rotation.z=x.userData.s*op;piv.rotation.y+=dt*6}};
@@ -2373,44 +2372,98 @@ const HREV=(()=>{
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(!o||o.hk!==hk){if(o)scene.remove(o.root);const b=BUILD[hk]();b.P.lab=addLabels(b.root);
    for(const kk of['rock','paper','scissors'])b.P[kk].visible=false;b.root.visible=false;scene.add(b.root);o=OBJ[k]={...b,hk,emoted:false,sparked:false,broken:false}}return o}
  function breakIt(k){const o=OBJ[k];if(!o)return;o.broken=true;const p=o.root.getWorldPosition(V3(0,0,0));
+  if(CARD[k].kind==='paper'&&CARD[k==='g'?'a':'g'].kind==='scissors'){cutPaper(o);burst(p.clone(),[1,1,1],50,1.6);return}
   burst(p.clone(),o.P.spark,120,3.4);if(o.P.onBreak)o.P.onBreak(p);
   for(let i=0;i<10;i++){const m=o.P.bits(i);m.position.copy(p);scene.add(m);
    BITS.push({m,v:V3((Math.random()-.5)*3.2,1.2+Math.random()*2.2,(Math.random()-.2)*2),w:V3(Math.random()*12,Math.random()*12,Math.random()*12),age:0})}}
  function spray(at,m1,m2,n){for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.DodecahedronGeometry(.03+Math.random()*.06),i%2?m1:m2);m.position.copy(at).add(V3((Math.random()-.5)*.5,0,(Math.random()-.5)*.3));scene.add(m);
    BITS.push({m,v:V3((Math.random()-.5)*2.4,3+Math.random()*2.6,(Math.random()-.3)*1.2),w:V3(Math.random()*10,Math.random()*10,Math.random()*10),age:0})}}
- function updateBits(dt){for(let i=BITS.length-1;i>=0;i--){const b=BITS[i];b.age+=dt;b.v.y-=6*dt;b.m.position.addScaledVector(b.v,dt);b.m.rotation.x+=b.w.x*dt;b.m.rotation.y+=b.w.y*dt;b.m.rotation.z+=b.w.z*dt;b.m.scale.setScalar(Math.max(.01,1-Math.pow(b.age/1.3,3)));if(b.age>1.3){scene.remove(b.m);b.m.geometry.dispose();BITS.splice(i,1)}}}
+ function updateBits(dt){updateHalves(dt);for(let i=BITS.length-1;i>=0;i--){const b=BITS[i];b.age+=dt;b.v.y-=6*dt;b.m.position.addScaledVector(b.v,dt);b.m.rotation.x+=b.w.x*dt;b.m.rotation.y+=b.w.y*dt;b.m.rotation.z+=b.w.z*dt;b.m.scale.setScalar(Math.max(.01,1-Math.pow(b.age/1.3,3)));if(b.age>1.3){scene.remove(b.m);b.m.geometry.dispose();BITS.splice(i,1)}}}
  /* called from updateCards for each side, after the card's position is known */
- const D=ON?1.1:0;if(ON)window.SD_HREV_D=D;/* the prototype gives every hero ~1.1 s more to show its power before the clash */
+ /* ---------- SHARED CHOREOGRAPHY ----------
+  rock + paper FLY (rock is kicked / thrown, paper glides), scissors are HELD in the hero's hand.
+  rock→scissors: the rock flies into the scissors and they break in his hand · paper→scissors: he cuts the paper in two
+  rock vs paper: they meet in the middle and the paper covers the rock. Everything is planned at reveal (prep) so the
+  hero's kick / throw / cut lands exactly when the object leaves or hits. */
+ let D=0,PLAN=null;
+ function prep(){PLAN=null;D=0;if(ON)window.SD_HREV_D=0;if(!ON||st.select)return;const sides={};let Ti=.95,n=0;
+  for(const k of['g','a']){if(!active(k))continue;const o=obj(k),kind=CARD[k].kind,sp=(o.P.spec&&o.P.spec[kind])||{};
+   const clip=sp.clip||(CLIP[o.hk]&&CLIP[o.hk][kind]),tc=sp.tc??null,mode=kind==='scissors'?'hold':'fly',fl=kind==='rock'?.34:.5,ready=sp.ready??.62;
+   const need=mode==='fly'?Math.max(ready,tc!=null?.05+tc:0)+fl:Math.max(ready+.2,tc!=null?.05+tc:0);
+   sides[k]={kind,mode,fl,clip,tc,ready,kick:sp.kick};Ti=Math.max(Ti,need);n++}
+  if(!n)return;
+  for(const k in sides){const x=sides[k];x.L=x.mode==='fly'?Ti-x.fl:Ti;x.cs=x.tc!=null?Math.max(.02,x.L-x.tc):.02}
+  PLAN={Ti,sides,rs:st.revStart};D=Ti-.55;window.SD_HREV_D=D}
+ const tmpV=V3(0,0,0);
+ function bonePos(k,name){const R=SL[k]&&SL[k].R,b=R&&R.B&&R.B[name];return b?b.getWorldPosition(V3(0,0,0)):null}
+ function heldPos(k){const h=bonePos(k,'RightHand');if(!h)return null;const L=bonePos(k,'RightHandMiddle1');if(L)h.lerp(L,.6);h.z+=.12;return h}
+ function hitPos(){if(!PLAN)return null;for(const k of['g','a']){const x=PLAN.sides[k],o=OBJ[k];if(x&&x.mode==='hold'&&o&&PLAN.sides[k==='g'?'a':'g']&&PLAN.sides[k==='g'?'a':'g'].mode==='fly')return o.root.getWorldPosition(V3(0,0,0))}return null}
+ /* paper cut in two: two clipped copies fall apart */
+ let clipOn=false;const HALVES=[];
+ function cutPaper(o){if(!clipOn){renderer.localClippingEnabled=true;clipOn=true}const src=o.P.paper;src.updateMatrixWorld(true);
+  for(const sd of[-1,1]){const h=src.clone(true),pl=new THREE.Plane();h.traverse(m=>{if(m.material){m.material=Array.isArray(m.material)?m.material.map(x=>{const c=x.clone();c.clippingPlanes=[pl];return c}):(()=>{const c=m.material.clone();c.clippingPlanes=[pl];return c})()}});
+   src.matrixWorld.decompose(h.position,h.quaternion,h.scale);scene.add(h);HALVES.push({h,pl,sd,v:V3(sd*.9,.6,.2),w:sd*3,age:0})}}
+ function updateHalves(dt){for(let i=HALVES.length-1;i>=0;i--){const x=HALVES[i];x.age+=dt;x.v.y-=2.2*dt;x.h.position.addScaledVector(x.v,dt);x.h.rotateZ(-x.w*dt);x.h.rotateY(x.sd*dt*.8);x.h.updateMatrixWorld(true);
+   const nrm=V3(-x.sd,0,0).applyQuaternion(x.h.getWorldQuaternion(new THREE.Quaternion()));x.pl.setFromNormalAndCoplanarPoint(nrm,x.h.getWorldPosition(V3(0,0,0)));
+   if(x.age>1.6){scene.remove(x.h);x.h.traverse(m=>{if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(q=>q.dispose())});HALVES.splice(i,1)}}}
  function update(k,c,p,revealed,T,res,sgn,dt){revealed=!!revealed;/* three.js only hides objects whose visible is exactly false, so never pass null */
   const on=active(k);const o=on?obj(k):OBJ[k];
   if(!on){if(o)o.root.visible=false;return false}
   c.g.visible=false;
-  if(!revealed||o.rs!==st.revStart){o.rs=revealed?st.revStart:null;o.broken=false;o.emoted=false;o.sparked=false}
+  if(!revealed||o.rs!==st.revStart){o.rs=revealed?st.revStart:null;o.broken=false;o.emoted=false;o.sparked=false;o.kicked=false;o.cut=false;o.ip=null}
   const show=!stage.classList.contains('waiting-fight-ready');
   o.root.visible=show&&!o.broken;if(!o.root.visible)return true;
-  const P=o.P,kind=c.kind,T2=T-D;
+  const P=o.P,kind=c.kind,pl=revealed&&PLAN&&PLAN.rs===st.revStart&&PLAN.sides[k];
   const home=V3(-sgn*1.5,-.25+Math.sin(TIME*2+sgn)*.05,1.05);
-  const tr=revealed?sstep(.28,.52,T2):0;
-  const pos=home.clone().lerp(p,tr);o.root.position.copy(pos);o.root.lookAt(camera.position);
-  const sc=lerp(1.25,res==='win'?1.0+.06*Math.sin(TIME*6):res==='lose'?.8:.92,tr)*(st.shaking&&st.beatN?1+.05*st.beatN:1);o.root.scale.setScalar(sc);
+  if(!pl){/* before the reveal: the hero's power gathers at home */
+   o.root.position.copy(home);o.root.lookAt(camera.position);o.root.scale.setScalar(1.25*(st.shaking&&st.beatN?1+.05*st.beatN:1));
+   if(P.enter)P.enter(o,kind,false,0,null,dt,home,null);else{P.my.visible=true;P.my.scale.setScalar(P.my.userData.s0||(P.my.userData.s0=P.my.scale.x));P.spin(dt,1.2+(st.shaking?3:0))}
+   for(const kk of['rock','paper','scissors']){P[kk].visible=false;P.lab[kk].visible=false}return true}
+  const Ti=PLAN.Ti,ok=k==='g'?'a':'g',ox=PLAN.sides[ok],R=SL[k]&&SL[k].R;
+  if(!o.emoted&&T>=pl.cs){o.emoted=true;try{if(pl.clip&&R&&R.act[pl.clip])API.emote(k,pl.clip)}catch(err){}}
+  /* where the formed object waits: home, or for a kick right in front of the kicking foot */
+  let W=home.clone();
+  if(pl.kick){const f=bonePos(k,pl.kick);W.set(-sgn*1.55,-1.0,.7);if(f){f.x+=sgn*.38;W.lerp(f,sstep(pl.L-.3,pl.L,T))}}
+  /* formation (own entrance or the generic grow-in) */
   let ready;
-  if(P.enter){P.enter(o,kind,revealed,T,res,dt,home);ready=revealed&&o.ready}
-  else{const build=revealed?sstep(.02,.3+D*.55,T):0;ready=build>.7;
-   P.my.visible=build<.98;P.my.scale.setScalar(Math.max(.001,(P.my.userData.s0||(P.my.userData.s0=P.my.scale.x))*(1-build)));P.spin(dt,1.2+build*14+(st.shaking?3:0));
-   for(const kk of['rock','paper','scissors'])P[kk].visible=revealed&&kk===kind&&build>.02;
-   if(revealed){const g=P[kind],base=g.userData.base||1;g.scale.setScalar(Math.max(.001,base*build*(1+.25*Math.sin(build*Math.PI))));g.rotation.y=(1-build)*Math.PI*2;
-    if(!o.sparked&&T>.04){o.sparked=true;burst(pos.clone(),P.spark,70,2.2)}P.anim(kind,dt,res)}}
+  if(P.enter){P.enter(o,kind,true,T,res,dt,W,pl);ready=o.ready}
+  else{const build=sstep(.02,pl.ready,T);ready=build>.7;
+   P.my.visible=build<.98;P.my.scale.setScalar(Math.max(.001,(P.my.userData.s0||(P.my.userData.s0=P.my.scale.x))*(1-build)));P.spin(dt,1.2+build*14);
+   for(const kk of['rock','paper','scissors'])P[kk].visible=kk===kind&&build>.02;
+   const g=P[kind],base=g.userData.base||1;g.scale.setScalar(Math.max(.001,base*build*(1+.25*Math.sin(build*Math.PI))));g.rotation.y=(1-build)*Math.PI*2;
+   if(!o.sparked&&T>.04){o.sparked=true;burst(home.clone(),P.spark,70,2.2)}P.anim(kind,dt,res)}
+  let pos=W,scl=1.25;
+  if(pl.mode==='hold'){/* scissors fly into the hand and stay there */
+   const hp=heldPos(k)||home;const g=sstep(pl.ready-.3,pl.ready,T);pos=W.clone().lerp(hp,g);scl=lerp(1.25,.85,g);
+   const bl=P.blades||[];let op;
+   if(T<Ti)op=.62+.06*Math.sin(TIME*8);                 // open, waiting
+   else if(T<Ti+.09)op=.62*(1-(T-Ti)/.09);               // SNIP
+   else op=res==='win'?.3+.28*Math.sin(TIME*16):.05;
+   if(g>.5)for(const a of bl)a.rotation.z=a.userData.s*op;
+   if(!o.cut&&T>=Ti){o.cut=true;if(ox&&ox.mode==='fly'&&res==='win')st.camShake=Math.max(st.camShake,.12)}}
+  else{/* rock is kicked / thrown, paper glides */
+   if(T<pl.L){pos=W}
+   else{if(!o.kicked){o.kicked=true;o.L0=o.root.position.clone();st.camShake=Math.max(st.camShake,kind==='rock'?.13:.06);burst(o.L0.clone(),P.spark,40,1.8)}
+    const u=Math.min(1,(T-pl.L)/pl.fl);
+    const tgt=ox&&ox.mode==='hold'&&OBJ[ok]&&!OBJ[ok].broken?OBJ[ok].root.getWorldPosition(V3(0,0,0)).add(V3(sgn*.12,0,.05)):MID.clone().add(V3(-sgn*(ox?.16:0),0,.1));
+    if(u<1){pos=o.L0.clone().lerp(tgt,kind==='rock'?u*u*(1.4-.4*u):u).add(V3(0,Math.sin(u*Math.PI)*(kind==='rock'?.35:.2),0));
+     if(kind==='rock')P.rock.rotation.z-=sgn*dt*9;else P.paper.rotation.z=Math.sin(T*16)*.12}
+    else{const a=T-Ti;if(!o.ip)o.ip=tgt.clone();const tgt0=o.ip;
+     if(res==='win'){pos=tgt0.clone().lerp(MID.clone().add(V3(0,.35,.2)),sstep(0,.6,a));pos.y+=Math.sin(TIME*3)*.04}
+     else if(res==='tie'){pos=tgt0.clone().add(V3(-sgn*.55*sstep(0,.35,a),.15*sstep(0,.35,a),0))}
+     else pos=tgt0}
+    scl=lerp(1.25,1.0,Math.min(1,(T-pl.L)/pl.fl))}}
+  o.root.position.copy(pos);o.root.lookAt(camera.position);o.root.scale.setScalar(scl);
   for(const kk of['rock','paper','scissors'])P.lab[kk].visible=!!(ready&&kk===kind);
-  if(revealed){if(!o.emoted&&T>.02){o.emoted=true;try{const cl=CLIP[o.hk]&&CLIP[o.hk][kind],e=API.emoteHero&&API.emoteHero(k);if(cl&&e&&!e.busy()&&e.has(cl))API.emote(k,cl)}catch(err){}}
-   P.lab[kind].material.opacity=res==='lose'&&T2>.6?.55:1}
+  P.lab[kind].material.opacity=res==='lose'&&T>Ti?.5:1;
   return true}
  if(ON)window.__hrev=()=>{const o=OBJ.g;if(!o)return null;const P=o.P,vis=x=>x.visible;return{hero:o.hk,kind:CARD.g.kind,res:st.res,root:vis(o.root),my:vis(P.my),rock:vis(P.rock),paper:vis(P.paper),sc:vis(P.scissors)}};
- return{on:ON,D,active,update,breakIt,updateBits}})();
+ return{on:ON,get D(){return D},prep,hitPos,active,update,breakIt,updateBits}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT-HREV.D;
  if(revealed&&!st.impacted&&T>=.55){st.impacted=true;st.camShake=.2;const r=st.res;
-  if(r.g==='tie')burst(MID.clone(),[.55,.75,1],90,2.6);
-  else{const lk=r.g==='lose'?'g':'a';if(HREV.active(lk)){CARD[lk].broken=true;HREV.breakIt(lk)}else shatter(CARD[lk]);burst(MID.clone(),r.g==='win'?[.3,1,.55]:[1,.28,.45],150,3.8)}}
+  const HP=HREV.hitPos()||MID;if(r.g==='tie')burst(HP.clone(),[.55,.75,1],90,2.6);
+  else{const lk=r.g==='lose'?'g':'a';if(HREV.active(lk)){CARD[lk].broken=true;HREV.breakIt(lk)}else shatter(CARD[lk]);burst(HP.clone(),r.g==='win'?[.3,1,.55]:[1,.28,.45],150,3.8)}}
  updateShards(dt);HREV.updateBits(dt);
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
@@ -2457,7 +2510,7 @@ Object.assign(API,{
   return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle}).then(R=>{R.cfg=c;R.holder.visible=false;LOADED[key+'#2']=R}).catch(()=>{})},
  roster:()=>rosterInfo(),
  say(who,text,ms=2300){const b=bubbleEl(who);b.textContent=text;b.classList.add('show');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('show'),ms);TALK[who]=Math.min(2.2,.35+text.length*.06)},
- reveal(res){st.res=res;st.revT=0;st.revStart=performance.now();st.impacted=false;CARD.g.broken=CARD.a.broken=false}});
+ reveal(res){st.res=res;st.revT=0;st.revStart=performance.now();st.impacted=false;CARD.g.broken=CARD.a.broken=false;HREV.prep()}});
 stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();st.mx=(e.clientX-r.left)/r.width*2-1;st.my=(e.clientY-r.top)/r.height*2-1});
 stage.addEventListener('pointerleave',()=>{st.mx=st.my=0});
 
