@@ -4730,7 +4730,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.12.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.12.3';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4984,7 +4984,7 @@ window.sdNavFit=fit;addEventListener('resize',()=>setTimeout(fit,60));try{new Re
 .lastCard b{font:900 8px/1 Arial,sans-serif;letter-spacing:.14em;color:#f2e7c9;text-shadow:0 1px 3px #000;background:#000a;padding:2px 5px;border-radius:5px}
 .lastCard img{width:clamp(26px,3vw,40px);aspect-ratio:.72;object-fit:contain;filter:drop-shadow(0 3px 6px #000c)}
 #emoBar.on{display:flex}
-#emoBar{max-height:62%;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:2px 3px 6px}#emoBar::-webkit-scrollbar{display:none}#emoBar .emT small{font-size:8px;color:#ffd27a}
+#emoBar{max-height:66%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#ffd27a88 transparent;padding:2px 5px 8px}#emoBar::-webkit-scrollbar{width:4px}#emoBar::-webkit-scrollbar-thumb{background:#ffd27a88;border-radius:4px}#emoBar.many{display:none;flex-direction:row;flex-wrap:wrap;justify-content:center;align-content:flex-start;width:calc(2 * clamp(32px,3.4vw,42px) + 22px);row-gap:10px}#emoBar.many.on{display:flex}#emoBar.many .emT{width:100%;text-align:center}#emoBar .emT small{font-size:8px;color:#ffd27a}
 #emoBar .emT{font:900 9px/1 Arial,sans-serif;letter-spacing:.14em;color:#f2e7c9cc;text-shadow:0 1px 3px #000;min-height:9px;white-space:nowrap}
 #emoBar .emB{position:relative;width:clamp(32px,3.4vw,42px);height:clamp(32px,3.4vw,42px);border-radius:50%;border:1px solid rgba(255,214,120,.45);background:rgba(15,17,22,.5);backdrop-filter:blur(3px);cursor:pointer;padding:0;display:grid;place-items:center;font-size:clamp(15px,1.7vw,20px);line-height:1;transition:transform .12s,background .15s,box-shadow .15s;color:#fff}
 #emoBar .emB:hover:not(.lock){background:rgba(40,34,18,.8);box-shadow:0 0 12px rgba(255,200,90,.45);transform:scale(1.08)}
@@ -5003,7 +5003,7 @@ const signedIn=()=>!!(window.sdAccount&&window.sdAccount.profile);
 const lvOf=k=>{try{const L=window.sdLV&&window.sdLV();const r=L&&(L[k]||(Array.isArray(L)&&L.find(x=>x.hero===k)));if(!r)return 1;return r.level||Math.floor(Math.sqrt((r.xp||0)/40))+1}catch(e){return 1}};
 function build(){const H=window.Scene3D&&Scene3D.emoteHero&&Scene3D.emoteHero('g');if(!H||!H.list.length){box.innerHTML='';sig=null;return}
  const lv=signedIn()?lvOf(H.key):1,open=1+lv,/* v1.9.1 (Dainis): 2 free moves, then 1 new move per hero level (move 3 = Lv 2, move 4 = Lv 3 …) */list=H.list.filter(e=>H.has(e[0])),s=H.key+':'+open+':'+list.length;if(s===sig)return;sig=s;
- box.innerHTML='<div class="emT">MOVES <small>'+Math.min(open,list.length)+'/'+list.length+'</small></div>'+list.slice(0,open+1).map((e,i)=>{const lock=i>=open,need=Math.max(1,i);return '<button type="button" class="emB'+(lock?' lock':'')+'" data-c="'+e[0]+'" data-need="'+need+'" title="'+(lock?'🔒 '+e[2]+' — hero level '+need:e[2])+'" aria-label="'+e[2]+(lock?' (locked, hero level '+need+')':'')+'"><span>'+e[1]+'</span>'+(lock?'<i>LV '+need+'</i>':'')+'</button>'}).join('')}
+ box.classList.toggle('many',list.length>8);box.innerHTML='<div class="emT">MOVES <small>'+Math.min(open,list.length)+'/'+list.length+'</small></div>'+list.map((e,i)=>{const lock=i>=open,need=Math.max(1,i);return '<button type="button" class="emB'+(lock?' lock':'')+'" data-c="'+e[0]+'" data-need="'+need+'" title="'+(lock?'🔒 '+e[2]+' — hero level '+need:e[2])+'" aria-label="'+e[2]+(lock?' (locked, hero level '+need+')':'')+'"><span>'+e[1]+'</span>'+(lock?'<i>LV '+need+'</i>':'')+'</button>'}).join('')}
 function hint(t){const h=box.querySelector('.emT');if(!h)return;h.textContent=t;clearTimeout(hintT);hintT=setTimeout(()=>{h.textContent='MOVES'},2200)}
 box.addEventListener('click',e=>{const b=e.target.closest('.emB');if(!b)return;e.stopPropagation();
  if(b.classList.contains('lock')){hint(signedIn()?'LV '+b.dataset.need+' HERO':'LOG IN');return}
