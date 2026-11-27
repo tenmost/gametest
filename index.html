@@ -2238,9 +2238,111 @@ const HREV=(()=>{
    if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?14:7));for(const a of blades)a.rotation.z=a.userData.s*op;piv.rotation.z+=dt*4}};
   P.spark=[.6,.9,1];P.bits=i=>{const m=shard(.06+Math.random()*.1,.025+Math.random()*.02,i%3?MAT.ice:MAT.snow);return m};
   return{root,P}}
- const BUILD={gearfox:buildGearfox,frost:buildFrost};
+ /* ---------- STONE SENTINEL: rune stone, granite boulder with moss, carved stone tablet, slate blades ---------- */
+ let RUNE=null;
+ function buildStone(){const root=new THREE.Group(),P={};
+  const granite=M(0x8a8d92,{m:.05,r:.85,flat:true,e:.08}),dark=M(0x5c6066,{m:.05,r:.9,flat:true,e:.06}),moss=M(0x5fa83a,{m:0,r:.9,e:.18}),glow=new THREE.MeshBasicMaterial({color:0x7dff9a});
+  RUNE=RUNE||canvasTex(384,512,(g,w,h)=>{g.fillStyle='#8d9096';g.fillRect(0,0,w,h);for(let i=0;i<900;i++){g.fillStyle=`rgba(${Math.random()<.5?40:200},${Math.random()<.5?40:200},${Math.random()<.5?40:200},.08)`;g.fillRect(Math.random()*w,Math.random()*h,3,3)}
+   g.strokeStyle='#3a3e44';g.lineWidth=8;g.strokeRect(22,22,w-44,h-44);g.strokeStyle='#7dff9a';g.shadowColor='#7dff9a';g.shadowBlur=14;g.lineWidth=7;
+   const rn=[[[0,0],[0,1]],[[0,0],[1,.5],[0,1]],[[1,0],[0,.5],[1,1]],[[0,0],[1,1]],[[0,1],[1,0]],[[.5,0],[.5,1],[0,.6]],[[0,.5],[1,.5],[.5,0]]];
+   for(let r=0;r<4;r++)for(let c=0;c<3;c++){const s=rn[(r*3+c)%rn.length],x0=70+c*95,y0=70+r*100;g.beginPath();s.forEach(([x,y],i)=>i?g.lineTo(x0+x*50,y0+y*60):g.moveTo(x0+x*50,y0+y*60));g.stroke()}});
+  const my=new THREE.Group();const st=new THREE.Mesh(new THREE.DodecahedronGeometry(.24),granite),rg=new THREE.Mesh(new THREE.TorusGeometry(.34,.025,6,28),glow);my.add(st,rg);P.my=my;root.add(my);
+  P.spin=(dt,k)=>{st.rotation.y+=dt*k*.5;st.rotation.x+=dt*k*.2;rg.rotation.z+=dt*k*.8};
+  const rock=new THREE.Group();const b=new THREE.Mesh(lumpy(.32,1,7,11),granite);rock.add(b);
+  for(let i=0;i<6;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.06+Math.random()*.04,6,4),moss);const a=i/6*Math.PI*2;m.position.set(Math.cos(a)*.2,.22+Math.random()*.05,Math.sin(a)*.2);m.scale.y=.45;rock.add(m)}
+  const crack=new THREE.Mesh(new THREE.TorusGeometry(.31,.012,4,24,Math.PI*1.1),glow);crack.rotation.set(.3,.2,.4);rock.add(crack);
+  const paper=new THREE.Group();const tab=new THREE.Mesh(new THREE.BoxGeometry(.5,.66,.06),[dark,dark,dark,dark,new THREE.MeshStandardMaterial({map:RUNE,roughness:.9,emissive:0xffffff,emissiveMap:RUNE,emissiveIntensity:.25}),dark]);paper.add(tab);
+  const sc=new THREE.Group();const blades=[];
+  for(const s of[-1,1]){const arm=new THREE.Group();const bl=shard(.55,.07,dark);bl.scale.z=.3;bl.position.z=s*.02;arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.08,.03,5,10),granite);h.position.y=-.15;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
+  const piv=new THREE.Mesh(new THREE.DodecahedronGeometry(.07),granite);piv.position.z=.05;sc.add(piv);const pg=new THREE.Mesh(new THREE.TorusGeometry(.08,.01,4,16),glow);pg.position.z=.06;sc.add(pg);sc.userData.base=1.35;
+  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.anim=(kind,dt,res)=>{if(kind==='rock'){b.rotation.y+=dt*.5;glow.color.setHSL(.36,1,.6+.15*Math.sin(TIME*6))}
+   if(kind==='paper')paper.rotation.z=Math.sin(TIME*2)*.04;
+   if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?13:6));for(const a of blades)a.rotation.z=a.userData.s*op;piv.rotation.z+=dt*3}};
+  P.spark=[.65,.68,.7];P.bits=i=>new THREE.Mesh(new THREE.DodecahedronGeometry(.04+Math.random()*.06),i%3?granite:dark);
+  return{root,P}}
+ /* ---------- VERDANT GUARDIAN: flower bud, vine-wrapped boulder, big leaf, leaf blades with a flower pivot ---------- */
+ let LEAF=null;
+ function leafShape(w,h){const s=new THREE.Shape();s.moveTo(0,-h/2);s.quadraticCurveTo(w,-h*.1,0,h/2);s.quadraticCurveTo(-w,-h*.1,0,-h/2);return s}
+ function flower(r){const f=new THREE.Group(),pm=M(0xff7eb6,{m:0,r:.6,e:.3}),cm=M(0xffd23f,{m:0,r:.5,e:.4});
+  for(let i=0;i<6;i++){const p=new THREE.Mesh(new THREE.SphereGeometry(r*.45,8,6),pm);const a=i/6*Math.PI*2;p.position.set(Math.cos(a)*r*.6,Math.sin(a)*r*.6,0);p.scale.z=.35;f.add(p)}
+  const c=new THREE.Mesh(new THREE.SphereGeometry(r*.38,10,8),cm);c.position.z=.01;f.add(c);return f}
+ function buildVerdant(){const root=new THREE.Group(),P={};
+  const vine=M(0x3f9a2e,{m:0,r:.7,e:.2}),stoneM=M(0x7d7a70,{m:.05,r:.85,flat:true,e:.08}),leafG=M(0x4fc23a,{m:0,r:.6,e:.25,ds:true});
+  LEAF=LEAF||canvasTex(384,512,(g,w,h)=>{const gr=g.createLinearGradient(0,0,w,0);gr.addColorStop(0,'#2f8f2a');gr.addColorStop(.5,'#5fd24a');gr.addColorStop(1,'#2f8f2a');g.fillStyle=gr;g.fillRect(0,0,w,h);
+   g.strokeStyle='rgba(230,255,200,.85)';g.lineWidth=7;g.beginPath();g.moveTo(w/2,h);g.lineTo(w/2,0);g.stroke();g.lineWidth=4;
+   for(let y=60;y<h-30;y+=55)for(const s of[-1,1]){g.beginPath();g.moveTo(w/2,y+40);g.quadraticCurveTo(w/2+s*70,y+15,w/2+s*150,y);g.stroke()}});
+  const my=new THREE.Group();const bud=new THREE.Mesh(new THREE.SphereGeometry(.16,12,10),M(0xff7eb6,{m:0,r:.6,e:.3}));bud.scale.y=1.3;my.add(bud);
+  const lv=[];for(let i=0;i<5;i++){const l=new THREE.Mesh(new THREE.ShapeGeometry(leafShape(.12,.36)),leafG);const piv=new THREE.Group();piv.rotation.z=i/5*Math.PI*2;l.position.y=.2;piv.add(l);my.add(piv);lv.push(piv)}P.my=my;root.add(my);
+  P.spin=(dt,k)=>{my.rotation.z+=dt*k*.4;bud.scale.setScalar(1+.08*Math.sin(TIME*4))};
+  const rock=new THREE.Group();const b=new THREE.Mesh(lumpy(.3,1,9,7),stoneM);rock.add(b);
+  for(let i=0;i<3;i++){const v=new THREE.Mesh(new THREE.TorusGeometry(.31,.022,6,30,Math.PI*1.6),vine);v.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);rock.add(v)}
+  const fl=flower(.07);fl.position.set(.1,.24,.18);rock.add(fl);
+  const paper=new THREE.Group();const lg=new THREE.ShapeGeometry(leafShape(.42,.78),12),la=lg.attributes.position,uv=lg.attributes.uv;
+  for(let i=0;i<la.count;i++){const x=la.getX(i),y=la.getY(i);uv.setXY(i,(x+.3)/.6,(y+.39)/.78);la.setZ(i,Math.abs(x)*.25)}lg.computeVertexNormals();
+  const leaf=new THREE.Mesh(lg,new THREE.MeshStandardMaterial({map:LEAF,roughness:.6,emissive:0xffffff,emissiveMap:LEAF,emissiveIntensity:.25,side:THREE.DoubleSide}));paper.add(leaf);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.015,.02,.16,6),vine);stem.position.y=-.45;paper.add(stem);
+  const sc=new THREE.Group();const blades=[];
+  for(const s of[-1,1]){const arm=new THREE.Group();const bl=new THREE.Mesh(new THREE.ShapeGeometry(leafShape(.09,.6)),leafG);bl.position.set(0,.22,s*.01);arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,14),vine);h.position.y=-.13;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
+  const pf=flower(.06);pf.position.z=.04;sc.add(pf);sc.userData.base=1.35;
+  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.anim=(kind,dt,res)=>{if(kind==='rock'){b.rotation.y+=dt*.5;fl.rotation.z+=dt*2}
+   if(kind==='paper'){paper.rotation.z=Math.sin(TIME*2.2)*.08}
+   if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?13:6));for(const a of blades)a.rotation.z=a.userData.s*op;pf.rotation.z+=dt*3}};
+  P.spark=[.5,1,.45];P.bits=i=>{const m=new THREE.Mesh(new THREE.ShapeGeometry(leafShape(.04+Math.random()*.03,.1+Math.random()*.06)),i%4?leafG:M(0xff7eb6,{m:0,r:.6,e:.3,ds:true}));return m};
+  return{root,P}}
+ /* ---------- FROG RONIN: water orb, river stone with a splash ring, paper scroll, twin katana blades on a lily pad ---------- */
+ let SCROLL=null;
+ function buildFrog(){const root=new THREE.Group(),P={};
+  const water=M(0x4fc3ff,{m:.1,r:.05,e:.4,em:0x1f8fff,op:.55}),slate=M(0x3f4a52,{m:.2,r:.25,e:.08}),wood=M(0x8a5a2b,{m:0,r:.7,e:.1}),steel=M(0xd8e2ea,{m:.95,r:.15,e:.12}),lily=M(0x4caf50,{m:0,r:.6,e:.2,ds:true});
+  SCROLL=SCROLL||canvasTex(384,512,(g,w,h)=>{g.fillStyle='#f3e6c8';g.fillRect(0,0,w,h);for(let i=0;i<500;i++){g.fillStyle='rgba(120,90,40,.06)';g.fillRect(Math.random()*w,Math.random()*h,4,1)}
+   g.strokeStyle='#1d4f7a';g.lineCap='round';for(let r=0;r<4;r++){g.lineWidth=10-r*2;g.beginPath();for(let x=30;x<=w-30;x+=6){const y=330+r*36+Math.sin(x/28+r)*14;x===30?g.moveTo(x,y):g.lineTo(x,y)}g.stroke()}
+   g.fillStyle='#1d4f7a';g.beginPath();g.arc(w/2,170,70,Math.PI,0);g.fill();g.fillStyle='#f3e6c8';g.beginPath();g.arc(w/2+18,170,52,Math.PI,0);g.fill();
+   g.fillStyle='#c0392b';g.beginPath();g.arc(w-70,90,26,0,7);g.fill()});
+  const my=new THREE.Group();const orb=new THREE.Mesh(new THREE.SphereGeometry(.2,20,16),water),r1=new THREE.Mesh(new THREE.TorusGeometry(.32,.02,6,30),water),r2=r1.clone();r2.rotation.x=1.2;my.add(orb,r1,r2);P.my=my;root.add(my);
+  P.spin=(dt,k)=>{r1.rotation.z+=dt*k*.7;r2.rotation.y+=dt*k*.9;orb.scale.setScalar(1+.06*Math.sin(TIME*5))};
+  const rock=new THREE.Group();const b=new THREE.Mesh(new THREE.SphereGeometry(.28,20,14),slate);b.scale.set(1.15,.85,.95);rock.add(b);const spl=new THREE.Mesh(new THREE.TorusGeometry(.36,.03,6,32),water);spl.rotation.x=Math.PI/2;spl.position.y=-.12;rock.add(spl);
+  const paper=new THREE.Group();const sheet=new THREE.Mesh(new THREE.PlaneGeometry(.48,.66),new THREE.MeshStandardMaterial({map:SCROLL,roughness:.9,emissive:0xffffff,emissiveMap:SCROLL,emissiveIntensity:.3,side:THREE.DoubleSide}));paper.add(sheet);
+  for(const y of[.35,-.35]){const rod=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.58,10),wood);rod.rotation.z=Math.PI/2;rod.position.y=y;paper.add(rod)}
+  const sc=new THREE.Group();const blades=[];
+  for(const s of[-1,1]){const arm=new THREE.Group();const bl=new THREE.Mesh(new THREE.BoxGeometry(.035,.56,.012),steel);bl.position.set(0,.22,s*.012);arm.add(bl);const tip=shard(.08,.024,steel);tip.position.y=.5;tip.scale.z=.4;arm.add(tip);
+   const gd=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.015,10),M(0xd4a017));gd.rotation.x=Math.PI/2;gd.position.y=-.07;arm.add(gd);const hd=new THREE.Mesh(new THREE.BoxGeometry(.035,.16,.03),M(0x222222,{m:.2,r:.6}));hd.position.y=-.16;arm.add(hd);arm.userData.s=s;sc.add(arm);blades.push(arm)}
+  const pad=new THREE.Mesh(new THREE.CircleGeometry(.08,16,.3,Math.PI*1.8),lily);pad.position.z=.03;sc.add(pad);sc.userData.base=1.3;
+  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.anim=(kind,dt,res)=>{if(kind==='rock'){b.rotation.y+=dt*.6;spl.scale.setScalar(1+.12*Math.sin(TIME*6))}
+   if(kind==='paper')paper.rotation.z=Math.sin(TIME*2)*.05;
+   if(kind==='scissors'){const op=.38+.26*Math.sin(TIME*(res==='win'?14:7));for(const a of blades)a.rotation.z=a.userData.s*op;pad.rotation.z+=dt*2}};
+  P.spark=[.45,.8,1];P.bits=i=>new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.03,8,6),water);
+  return{root,P}}
+ /* ---------- NEON ONI: neon rings, obsidian boulder with glowing cracks, holo sheet, neon blades ---------- */
+ let HOLO=null;
+ function buildOni(){const root=new THREE.Group(),P={};
+  const pink=new THREE.MeshBasicMaterial({color:0xff2bd6}),cyan=new THREE.MeshBasicMaterial({color:0x2bf0ff}),obs=M(0x1a1420,{m:.6,r:.2,flat:true,e:.05});
+  HOLO=HOLO||canvasTex(384,512,(g,w,h)=>{g.fillStyle='rgba(20,0,40,.55)';g.fillRect(0,0,w,h);g.strokeStyle='rgba(43,240,255,.5)';g.lineWidth=2;
+   for(let x=0;x<=w;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<=h;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
+   g.strokeStyle='#ff2bd6';g.shadowColor='#ff2bd6';g.shadowBlur=18;g.lineWidth=8;g.strokeRect(14,14,w-28,h-28);
+   g.beginPath();g.moveTo(w/2-70,190);g.lineTo(w/2,120);g.lineTo(w/2+70,190);g.lineTo(w/2+50,300);g.lineTo(w/2-50,300);g.closePath();g.stroke();
+   g.strokeStyle='#2bf0ff';g.shadowColor='#2bf0ff';g.beginPath();g.moveTo(w/2-30,230);g.lineTo(w/2-10,250);g.moveTo(w/2+30,230);g.lineTo(w/2+10,250);g.moveTo(w/2-30,275);g.lineTo(w/2+30,275);g.stroke()});
+  const my=new THREE.Group();const a=new THREE.Mesh(new THREE.TorusGeometry(.32,.022,6,36),pink),c=new THREE.Mesh(new THREE.TorusGeometry(.22,.02,6,30),cyan),core=new THREE.Mesh(new THREE.OctahedronGeometry(.1),pink);my.add(a,c,core);P.my=my;root.add(my);
+  P.spin=(dt,k)=>{a.rotation.y+=dt*k*.7;c.rotation.x+=dt*k*.9;core.rotation.y-=dt*k};
+  const rock=new THREE.Group();const geo=lumpy(.3,0,8,12),b=new THREE.Mesh(geo,obs);rock.add(b);const ed=new THREE.LineSegments(new THREE.EdgesGeometry(geo,20),new THREE.LineBasicMaterial({color:0xff2bd6}));ed.scale.setScalar(1.005);rock.add(ed);
+  const paper=new THREE.Group();const sheet=new THREE.Mesh(new THREE.PlaneGeometry(.5,.68),new THREE.MeshBasicMaterial({map:HOLO,transparent:true,opacity:.92,side:THREE.DoubleSide,depthWrite:false}));paper.add(sheet);
+  const sc=new THREE.Group();const blades=[];
+  for(const s of[-1,1]){const arm=new THREE.Group();const bl=shard(.56,.05,s<0?pink:cyan);bl.scale.z=.3;bl.position.z=s*.015;arm.add(bl);const h=new THREE.Mesh(new THREE.TorusGeometry(.08,.018,6,16),s<0?pink:cyan);h.position.y=-.14;arm.add(h);arm.userData.s=s;sc.add(arm);blades.push(arm)}
+  const piv=new THREE.Mesh(new THREE.OctahedronGeometry(.06),M(0xffffff,{m:0,e:1,em:0xff8cf0}));piv.position.z=.04;sc.add(piv);sc.userData.base=1.35;
+  P.rock=rock;P.paper=paper;P.scissors=sc;root.add(rock,paper,sc);
+  P.anim=(kind,dt,res)=>{const f=.75+.25*Math.sin(TIME*9);if(kind==='rock'){b.rotation.y+=dt*.5;ed.rotation.y=b.rotation.y;ed.material.color.setRGB(1*f,.17*f,.84*f)}
+   if(kind==='paper'){sheet.material.opacity=.75+.2*Math.sin(TIME*7);paper.rotation.z=Math.sin(TIME*2)*.04}
+   if(kind==='scissors'){const op=.4+.28*Math.sin(TIME*(res==='win'?15:7));for(const x of blades)x.rotation.z=x.userData.s*op;piv.rotation.y+=dt*6}};
+  P.spark=[1,.3,.9];P.bits=i=>shard(.06+Math.random()*.08,.02,i%2?pink:cyan);
+  return{root,P}}
+ const BUILD={gearfox:buildGearfox,frost:buildFrost,stone:buildStone,verdant:buildVerdant,frog:buildFrog,oni:buildOni};
  const CLIP={gearfox:{rock:'Victory_Fist_Pump',paper:'Combat_Strike_Pose',scissors:'Axe_Spin_Attack'},
-             frost:{rock:'Victory_Fist_Pump',paper:'Arm_Circles',scissors:'Victory_Leg_Sweep'}};
+             frost:{rock:'Victory_Fist_Pump',paper:'Arm_Circles',scissors:'Victory_Leg_Sweep'},
+             stone:{rock:'Victory_Fist_Pump',paper:'Cheer_with_Both_Hands_Up',scissors:'Thrust_Slash'},
+             verdant:{rock:'Angry_Ground_Stomp',paper:'Combat_Seed_Throw',scissors:'Combat_Draw_Strike'},
+             frog:{rock:'Charged_Ground_Slam',paper:'Big_Heart_Gesture',scissors:'Victory_Double_Kick'},
+             oni:{rock:'Victory_Fist_Pump',paper:'Arm_Circle_Dance',scissors:'Combat_Weapon_Combo'}};
  const OBJ={},BITS=[];
  const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>ON&&!st.select&&!!BUILD[heroKey(k)];
