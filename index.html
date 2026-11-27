@@ -4916,7 +4916,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.13.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.13.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -5223,41 +5223,20 @@ setInterval(()=>{const on=stage.classList.contains('match-active')&&!stage.class
 #mLoad .mlMsg{font-weight:900;letter-spacing:.12em;font-size:clamp(12px,1.6vw,15px);color:#f2e7c9;min-height:1.3em}
 #mLoad .mlMsg i{display:inline-block;animation:sdHop 1.2s ease-in-out infinite;font-style:normal;margin-left:6px}
 @media (prefers-reduced-motion:reduce){#mLoad .mlH,#mLoad .mlX{animation:none}#mLoad .mlMsg i{animation:none}}
-/* MATCH INTRO VIDEO (v1.13.0): when the video is loaded it plays instead of the portraits; names + arena + bar sit at the bottom */
-#mLoad .mlVid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#07080b;display:none;z-index:0}
-#mLoad.vid{justify-content:flex-end;background:#07080b;padding-bottom:clamp(16px,4vh,40px)}
-#mLoad.vid .mlVid{display:block}
-#mLoad.vid .mlLogo,#mLoad.vid .mlVs,#mLoad.vid .mlMsg{display:none}
-#mLoad .mlWho{display:none;position:relative;z-index:1;font-weight:900;letter-spacing:.1em;font-size:clamp(13px,1.9vw,19px);color:#f4efe4;text-shadow:0 2px 6px #000,0 0 14px #000;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
-#mLoad .mlWho i{font-style:normal;color:#e46b55;margin:0 .6em}
-#mLoad.vid .mlWho{display:block}
-#mLoad.vid .mlMap,#mLoad.vid .mlBar{position:relative;z-index:1;text-shadow:0 2px 6px #000}
-#mLoad .mlSkip{display:none;position:absolute;z-index:2;top:max(14px,env(safe-area-inset-top));right:16px;padding:7px 14px;border-radius:999px;border:1px solid #ffffff44;background:#0009;color:#f4efe4;font:900 12px Arial,sans-serif;letter-spacing:.12em;cursor:pointer}
-#mLoad.vid .mlSkip{display:block}
 </style>
-<div id="mLoad" role="status" aria-live="polite"><video class="mlVid" playsinline preload="none" disablepictureinpicture aria-hidden="true"><source src="assets/match-intro.webm" type="video/webm"><source src="assets/match-intro.mp4" type="video/mp4"></video><button type="button" class="mlSkip">SKIP ›</button><div class="mlWho"></div><div class="mlLogo">RPS <b>RIVALS</b></div><div class="mlVs"><div class="mlH a"><div class="pic"></div><b></b><small></small></div><div class="mlX">VS</div><div class="mlH b"><div class="pic"></div><b></b><small></small></div></div><div class="mlMap"></div><div class="mlBar"><div class="mlFill"></div></div><div class="mlMsg"></div></div>
+<div id="mLoad" role="status" aria-live="polite"><div class="mlLogo">RPS <b>RIVALS</b></div><div class="mlVs"><div class="mlH a"><div class="pic"></div><b></b><small></small></div><div class="mlX">VS</div><div class="mlH b"><div class="pic"></div><b></b><small></small></div></div><div class="mlMap"></div><div class="mlBar"><div class="mlFill"></div></div><div class="mlMsg"></div></div>
 <script>(()=>{const el=document.getElementById('mLoad');let on=false,wait=[],tT=0,mT=0;const T=2600;
 const set=(sel,v)=>{const n=el.querySelector(sel);if(n)n.textContent=v};
 const pic=(sel,k)=>{try{const u=k&&window.Scene3D&&Scene3D.heroPortrait?Scene3D.heroPortrait(k):'';el.querySelector(sel+' .pic').style.backgroundImage=u?'url("'+u+'")':''}catch(e){}};
-const vid=el.querySelector('.mlVid');let vOk=false;
-const vLoad=()=>{try{if(vid.preload!=='auto'){vid.preload='auto';vid.load()}}catch(e){}};
-vid.addEventListener('canplaythrough',()=>{vOk=true});vid.addEventListener('error',()=>{vOk=false},true);vid.addEventListener('ended',()=>{if(on&&el.classList.contains('vid'))done()});
-if(window.sdBoot&&sdBoot.done())vLoad();else{addEventListener('sd-loaded',vLoad,{once:true});setTimeout(vLoad,15000)}
-el.querySelector('.mlSkip').addEventListener('click',e=>{e.stopPropagation();if(on)done()});
-const tryVid=()=>{if(!vOk||vid.readyState<3||matchMedia('(prefers-reduced-motion:reduce)').matches)return 0;
- try{vid.pause();vid.currentTime=0;vid.volume=.7;vid.muted=typeof muted!=='undefined'&&!!muted;const pr=vid.play();if(pr&&pr.catch)pr.catch(()=>{vid.muted=true;vid.play().catch(()=>{})})}catch(e){return 0}
- const d=vid.duration;return isFinite(d)&&d>1&&d<15?Math.round(d*1000):0};
-function done(){on=false;el.classList.remove('on');clearInterval(mT);try{vid.pause()}catch(e){}const w=wait;wait=[];w.forEach(f=>{try{f()}catch(e){}})}
-function show(r,online){clearTimeout(tT);clearInterval(mT);el.classList.remove('vid');
+function done(){on=false;el.classList.remove('on');clearInterval(mT);const w=wait;wait=[];w.forEach(f=>{try{f()}catch(e){}})}
+function show(r,online){clearTimeout(tT);clearInterval(mT);
  pic('.mlH.a',r&&r.g&&r.g.key);pic('.mlH.b',r&&r.a&&r.a.key);
  set('.mlH.a b',(r&&r.g&&r.g.name)||'YOU');set('.mlH.b b',(r&&r.a&&r.a.name)||'RIVAL');
  set('.mlH.a small',window.SD_SPEC?'PLAYER 1':'YOU');set('.mlH.b small',window.SD_SPEC?'PLAYER 2':online?'RIVAL':'🤖 COMPUTER');
  const m=window.arenaMap,mb=m&&document.querySelector('#mapPick [data-map="'+m+'"] .mpName');set('.mlMap',mb?'⚔ '+mb.textContent.trim().toUpperCase():'');
  const msgs=online?['CONNECTING TO YOUR RIVAL','SYNCING THE ARENA','GET READY']:['PREPARING THE ARENA','WARMING UP THE HEROES','GET READY'];let i=0;
  const say=()=>{const n=el.querySelector('.mlMsg');n.textContent=msgs[Math.min(i,msgs.length-1)];const d=document.createElement('i');d.textContent=['✊','✋','✌️'][i%3];n.appendChild(d);i++};say();mT=setInterval(say,T/3);
- const w=el.querySelector('.mlWho');w.textContent='';w.append(el.querySelector('.mlH.a b').textContent);const vs=document.createElement('i');vs.textContent='VS';w.append(vs,el.querySelector('.mlH.b b').textContent);
- const VT=tryVid();if(VT)el.classList.add('vid');const t=VT||T;
- el.style.setProperty('--mlT',t+'ms');el.classList.remove('on');void el.offsetWidth;el.classList.add('on');on=true;tT=setTimeout(done,t+(VT?400:0))}
+ el.style.setProperty('--mlT',T+'ms');el.classList.remove('on');void el.offsetWidth;el.classList.add('on');on=true;tT=setTimeout(done,T)}
 window.sdMatchLoad={busy:()=>on,after:f=>{if(on)wait.push(f);else f()},show};
 const wrap=()=>{const S=window.Scene3D;if(!S||!S.choose){setTimeout(wrap,300);return}if(S.choose.__ml)return;const orig=S.choose;
  const f=function(){const r=orig.apply(this,arguments);try{show(r,!!(typeof NET!=='undefined'&&NET)||!!window.SD_SPEC)}catch(e){on=false}return r};f.__ml=true;S.choose=f};wrap();
