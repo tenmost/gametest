@@ -1,6 +1,18 @@
 {
-  "current": "1.6.0",
+  "current": "1.6.1",
   "releases": [
+    {
+      "v": "1.6.1",
+      "date": "2026-11-27",
+      "title": "Phone fixes",
+      "new": [],
+      "fixed": [
+        "On phones the hero pictures in HEROES and HERO COLLECTION show the hero's face again instead of only the chest",
+        "On phones the screen between rounds no longer shows a big blurry picture at the bottom",
+        "On phones held sideways and in small windows, the top menu no longer hides under the round buttons",
+        "The loading bar keeps moving while the game loads"
+      ]
+    },
     {
       "v": "1.6.0",
       "date": "2026-11-27",

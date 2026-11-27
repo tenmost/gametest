@@ -159,8 +159,7 @@ footer{text-align:center;color:#d7dadf;font-size:13px;margin-top:8px}
 #sdBoot .bRps span:nth-child(2){animation-delay:.2s}#sdBoot .bRps span:nth-child(3){animation-delay:.4s}
 @keyframes sdHop{0%,60%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-14px) scale(1.12)}}
 #sdBoot .bBar{width:min(420px,78vw);height:14px;border-radius:999px;background:#0c0e12;border:1px solid #d9b45f66;box-shadow:inset 0 2px 6px #000a,0 0 18px #d9b45f22;overflow:hidden}
-#sdBoot .bFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#b8862f,#f2cf72,#b8862f);background-size:200% 100%;animation:sdShine 1.4s linear infinite;transition:width .35s ease}
-@keyframes sdShine{to{background-position:-200% 0}}
+#sdBoot .bFill{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,#b8862f,#f2cf72,#b8862f);transform-origin:0 50%;transform:scaleX(0);transition:transform .6s ease;will-change:transform}
 #sdBoot .bMsg{font-weight:900;font-size:clamp(12px,1.7vw,16px);letter-spacing:.08em;color:#f2e7c9;min-height:1.3em}
 #sdBoot .bTip{font-size:clamp(11px,1.5vw,14px);color:#aeb4be;max-width:min(520px,86vw);line-height:1.45;min-height:2.9em}
 #sdBoot .bErr{display:none;flex-direction:column;align-items:center;gap:10px}
@@ -173,7 +172,7 @@ footer{text-align:center;color:#d7dadf;font-size:13px;margin-top:8px}
 #sdBoot .bFoot b{color:#d9b45f}
 #sdNet{position:fixed;left:50%;top:10px;transform:translate(-50%,-150%);z-index:2147483001;background:#3a1d18f0;border:1px solid #ff8a6b;color:#ffe3d9;font:900 13px Arial,sans-serif;letter-spacing:.05em;padding:9px 16px;border-radius:12px;box-shadow:0 6px 22px #0009;transition:transform .3s ease;pointer-events:none;white-space:nowrap}
 #sdNet.on{transform:translate(-50%,0)}
-@media (prefers-reduced-motion:reduce){#sdBoot .bRps span,#sdBoot .bFill{animation:none}}
+@media (prefers-reduced-motion:reduce){#sdBoot .bRps span{animation:none}#sdBoot .bFill{transition:none}}
 </style>
 <div class="bLogo"><b>RPS</b> RIVALS</div><div class="bSub">ROCK · PAPER · SCISSORS DUELS</div>
 <div class="bRps" aria-hidden="true"><span>✊</span><span>✋</span><span>✌️</span></div>
@@ -199,10 +198,10 @@ function step2(){
  var S=window.Scene3D||{},ready3d=!!S.ready,noGL=/could not load/i.test((document.getElementById('nogl')||{}).textContent||'');
  var n=window.SD_HERO_N||0,have=0,bad=window.SD_HERO_FAIL||0;try{have=S.roster?S.roster().length:0}catch(e){}
  var p=8+(fontsOk?10:0)+(ready3d?32:0)+(n?Math.min(1,have/n)*50:0);
- if(p>shown)shown=p;fill.style.width=Math.min(100,shown)+'%';
+ if(p>shown)shown=p;fill.style.transform='scaleX('+(Math.min(100,shown)/100)+')';
  msg.textContent=!navigator.onLine?'WAITING FOR INTERNET…':!ready3d?'BUILDING THE ARENA…':!n||have<n?'CALLING THE HEROES'+(n?' ('+have+'/'+n+')':'')+'…':'GET READY!';
  var all=ready3d&&n>0&&have>=1&&have+bad>=n&&fontsOk;
- if(all&&Date.now()-T0>=MIN){fill.style.width='100%';msg.textContent='GET READY!';setTimeout(finish,350);done=true;return}
+ if(all&&Date.now()-T0>=MIN){fill.style.transform='scaleX(1)';msg.textContent='GET READY!';setTimeout(finish,350);done=true;return}
  if(noGL&&Date.now()-T0>4000){fail('The 3D arena could not load. Check your internet connection and try again.');return}
  if(Date.now()-T0>LIMIT){fail(navigator.onLine?'This is taking too long — your connection may be slow or the game server is busy.':'No internet connection. Connect to the internet and try again.');return}
  setTimeout(step,150)}
@@ -1252,10 +1251,10 @@ function layoutSelect(){const SP=selSpot();setAstroVisible(false);for(const R of
 /* online room on the start screen: the friend's hero stands next to yours */
 API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
-API.heroPortrait=function(key){if(heroPortraits[key])return heroPortraits[key];const R=LOADED[key];if(!R)return '';const saved=Object.values(LOADED).map(o=>[o,o.holder.visible]);const pos=R.holder.position.clone(),scale=R.holder.scale.clone(),rot=R.holder.rotation.clone();try{saved.forEach(([o])=>o.holder.visible=false);R.holder.visible=true;R.holder.position.set(0,FLOOR+1.45,.2);R.holder.scale.setScalar(.82);R.holder.rotation.y=0;scene.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(R.holder);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());if(!Number.isFinite(size.y)||size.y<.01)return '';const pc=new THREE.PerspectiveCamera(35,cv.width/cv.height,.01,400);const y=center.y+size.y*.25;pc.position.set(center.x,y,center.z+Math.max(1.2,size.y*1.2));pc.lookAt(center.x,y,center.z);
+API.heroPortrait=function(key){if(heroPortraits[key])return heroPortraits[key];const R=LOADED[key];if(!R)return '';const saved=Object.values(LOADED).map(o=>[o,o.holder.visible]);const pos=R.holder.position.clone(),scale=R.holder.scale.clone(),rot=R.holder.rotation.clone();try{saved.forEach(([o])=>o.holder.visible=false);R.holder.visible=true;R.holder.position.set(0,FLOOR+1.45,.2);R.holder.scale.setScalar(.82);R.holder.rotation.y=0;scene.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(R.holder);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());if(!Number.isFinite(size.y)||size.y<.01)return '';const pc=new THREE.PerspectiveCamera(35,1,.01,400);const y=center.y+size.y*.25;pc.position.set(center.x,y,center.z+Math.max(1.2,size.y*1.2));pc.lookAt(center.x,y,center.z);
 /* hero pictures: only the hero on a plain background (no space, planet or logo behind it) */
 const hid=[];scene.children.forEach(o=>{if(o!==R.holder&&!o.isLight&&o.visible){hid.push(o);o.visible=false}});const bg0=scene.background,fog0=scene.fog,cc0=renderer.getClearColor(new THREE.Color()),ca0=renderer.getClearAlpha();scene.background=null;scene.fog=null;renderer.setClearColor(0x252a37,1);
-try{renderer.render(scene,pc)}finally{hid.forEach(o=>o.visible=true);scene.background=bg0;scene.fog=fog0;renderer.setClearColor(cc0,ca0)}const thumb=document.createElement('canvas');thumb.width=128;thumb.height=128;const side=Math.min(cv.width,cv.height)*.65;thumb.getContext('2d').drawImage(cv,(cv.width-side)/2,(cv.height-side)/2,side,side,0,0,128,128);return heroPortraits[key]=thumb.toDataURL('image/jpeg',.85)}catch(e){return ''}finally{R.holder.position.copy(pos);R.holder.scale.copy(scale);R.holder.rotation.copy(rot);saved.forEach(([o,v])=>o.holder.visible=v);}};
+/* square viewport in the middle of the canvas = same framing on wide screens and tall phones */const vp0=renderer.getViewport(new THREE.Vector4()),cs=renderer.getSize(new THREE.Vector2()),sq=Math.min(cs.x,cs.y);renderer.setViewport((cs.x-sq)/2,(cs.y-sq)/2,sq,sq);try{renderer.render(scene,pc)}finally{renderer.setViewport(vp0);hid.forEach(o=>o.visible=true);scene.background=bg0;scene.fog=fog0;renderer.setClearColor(cc0,ca0)}const thumb=document.createElement('canvas');thumb.width=128;thumb.height=128;const side=Math.min(cv.width,cv.height)*.65;thumb.getContext('2d').drawImage(cv,(cv.width-side)/2,(cv.height-side)/2,side,side,0,0,128,128);return heroPortraits[key]=thumb.toDataURL('image/jpeg',.85)}catch(e){return ''}finally{R.holder.position.copy(pos);R.holder.scale.copy(scale);R.holder.rotation.copy(rot);saved.forEach(([o,v])=>o.holder.visible=v);}};
 function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHARS[0],opts=available().filter(c=>c.key!==me.key);
  let opp=oppKey?CHARS.find(c=>c.key===oppKey):null;if(!opp||(!opp.proc&&!LOADED[opp.key]))opp=opts[Math.floor(Math.random()*opts.length)]||me;
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
@@ -2799,6 +2798,8 @@ window.sdShareGame=async()=>{const url=window.sdInviteLink(),text='Play RPS Riva
 
  /* dark floor under the cards so the bottom of the screen looks like a card table, not a cut-off arena */
  .controls::before{content:'';position:absolute;left:0;right:0;bottom:0;height:44dvh;background:linear-gradient(to bottom,#12141800,#121418c8 30%,#121418f0 60%);pointer-events:none;z-index:1}
+ /* START ROUND screen between rounds: keep the dark band so the planet under the arena doesn't show as a big blur */
+ #stage.waiting-fight-ready::after{content:'';position:absolute;left:0;right:0;bottom:0;height:44dvh;background:linear-gradient(to bottom,#12141800,#121418c8 30%,#121418f0 60%);pointer-events:none;z-index:1}
  .stage:has(#select.show) .controls::before{display:none}
  .controls button{z-index:2}
  /* overlays (online duel, game over, invites) cover the whole phone screen and sit on top */
@@ -4587,7 +4588,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.6.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.6.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4806,5 +4807,22 @@ d.innerHTML='<div class="aHead"><h3>📖 ABOUT &amp; FAQ</h3><button type="butto
 d.querySelector('.aX').onclick=()=>d.close();d.addEventListener('click',e=>{if(e.target===d)d.close()});
 function open(){try{d.showModal()}catch(e){d.show()}}window.sdOpenAbout=open;
 setInterval(()=>{const r=document.getElementById('rulesDialog');if(!r||r.querySelector('.rAbout'))return;const b=document.createElement('button');b.type='button';b.className='rAbout';b.textContent='📖 ABOUT & FAQ';b.onclick=()=>{try{r.close()}catch(e){}open()};const t=r.querySelector('.rUpd')||r.querySelector('.rTut');if(t)t.after(b);else r.insertBefore(b,r.firstChild.nextSibling||null)},1500);
+})();</script>
+<style>/* ===== TOP MENU FIT (v1.6.1, window.sdNavFit): the tabs never run under the round icons (📰 🎓 ? 🔊 ⛶). navT1 = smaller text, navT2 = icons only (sideways phones / small windows) ===== */
+html.navT1 #topNav .tnTabs button{font-size:8.5px!important;letter-spacing:.02em!important;padding:.6em .32em!important}
+html.navT1 #topNav .tnSep{margin-left:2px!important;padding-left:.32em!important}
+html.navT2 #topNav .tnTabs button{font-size:0!important;letter-spacing:0!important;padding:.55em .6em!important;gap:0!important}
+html.navT2 #topNav .tnTabs button i{display:inline-block!important;font-size:17px!important;font-style:normal;line-height:1}
+</style>
+<script>(()=>{const H=document.documentElement;
+function fit(){const nav=document.getElementById('topNav'),t=nav&&nav.querySelector('.tnTabs');if(!t)return;const nr=nav.getBoundingClientRect();
+ if(getComputedStyle(nav).display==='none'||nr.height<1||nr.top>innerHeight/2){t.style.removeProperty('margin-right');H.classList.remove('navT1','navT2');return}
+ const ic=[...document.querySelectorAll('#updBtn,#tutBtn,#rulesBtn,#mute,#fsBtn')].filter(e=>e.offsetParent).map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.top<nr.bottom&&r.bottom>nr.top);if(!ic.length)return;
+ const left=Math.min(...ic.map(r=>r.left));t.style.setProperty('margin-right',Math.max(0,nr.right-left+8)+'px','important');
+ const brand=nav.querySelector('.tnBrand'),bR=brand&&brand.offsetParent?brand.getBoundingClientRect().right:nr.left;
+ const ok=()=>{const r=t.getBoundingClientRect();return r.left>=bR+4&&r.right<=left-4};
+ t.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.textContent.replace(/^\W+/,'').trim())});
+ H.classList.remove('navT1','navT2');if(ok())return;H.classList.add('navT1');if(ok())return;H.classList.remove('navT1');H.classList.add('navT2')}
+window.sdNavFit=fit;addEventListener('resize',()=>setTimeout(fit,60));try{new ResizeObserver(()=>fit()).observe(document.getElementById('stage'))}catch(e){}setInterval(fit,2000);setTimeout(fit,300);addEventListener('sd-loaded',()=>setTimeout(fit,50));
 })();</script>
 </html>
