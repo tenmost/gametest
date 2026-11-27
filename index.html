@@ -628,7 +628,7 @@ function updateFightReady(){const online=!!(NET&&NET.live),local=online&&NET.loc
 const readyCount=document.createElement('div');readyCount.id='readyCount';readyCount.setAttribute('aria-live','polite');stage.appendChild(readyCount);
 let readyTimer=null;
 function stopReadyCountdown(){clearInterval(readyTimer);readyTimer=null;readyCount.className='';readyCount.textContent=''}
-function startReadyCountdown(){stopReadyCountdown();let n=10;
+function startReadyCountdown(){stopReadyCountdown();if(window.sdMatchLoad&&window.sdMatchLoad.busy()){window.sdMatchLoad.after(()=>{if(awaitingMatchReady)startReadyCountdown()});return}let n=10;
  const show=()=>{readyCount.textContent=n;readyCount.style.setProperty('--s',(1+(10-n)*.14).toFixed(2));readyCount.className='';void readyCount.offsetWidth;readyCount.className='show'+(n<=3?' urgent':n<=6?' warn':'')};
  show();readyTimer=setInterval(()=>{if(!awaitingMatchReady){stopReadyCountdown();return}n--;
   if(n<=0){stopReadyCountdown();const ex=document.getElementById('exitDialog');if(ex&&ex.open)ex.close();if(!(NET&&NET.live&&NET.localMatchReady))matchReady.onclick();return}
@@ -4596,7 +4596,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.8.3';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.9.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4860,8 +4860,8 @@ let sig=null,last=0,hintT=0;
 const signedIn=()=>!!(window.sdAccount&&window.sdAccount.profile);
 const lvOf=k=>{try{const L=window.sdLV&&window.sdLV();const r=L&&(L[k]||(Array.isArray(L)&&L.find(x=>x.hero===k)));if(!r)return 1;return r.level||Math.floor(Math.sqrt((r.xp||0)/40))+1}catch(e){return 1}};
 function build(){const H=window.Scene3D&&Scene3D.emoteHero&&Scene3D.emoteHero('g');if(!H||!H.list.length){box.innerHTML='';sig=null;return}
- const lv=signedIn()?lvOf(H.key):1,open=1+lv,list=H.list.filter(e=>H.has(e[0])),s=H.key+':'+open+':'+list.length;if(s===sig)return;sig=s;
- box.innerHTML='<div class="emT">MOVES <small>'+Math.min(open,list.length)+'/'+list.length+'</small></div>'+list.slice(0,open+1).map((e,i)=>{const lock=i>=open,need=Math.max(1,i);return '<button type="button" class="emB'+(lock?' lock':'')+'" data-c="'+e[0]+'" data-need="'+need+'" title="'+(lock?'🔒 '+e[2]+' — hero level '+need:e[2])+'" aria-label="'+e[2]+(lock?' (locked, hero level '+need+')':'')+'"><span>'+e[1]+'</span>'+(lock?'<i>LV '+need+'</i>':'')+'</button>'}).join('')}
+ const lv=signedIn()?lvOf(H.key):1,open=5*lv,/* v1.9.0: 5 moves per hero level */list=H.list.filter(e=>H.has(e[0])),s=H.key+':'+open+':'+list.length;if(s===sig)return;sig=s;
+ box.innerHTML='<div class="emT">MOVES <small>'+Math.min(open,list.length)+'/'+list.length+'</small></div>'+list.slice(0,open+1).map((e,i)=>{const lock=i>=open,need=Math.floor(i/5)+1;return '<button type="button" class="emB'+(lock?' lock':'')+'" data-c="'+e[0]+'" data-need="'+need+'" title="'+(lock?'🔒 '+e[2]+' — hero level '+need:e[2])+'" aria-label="'+e[2]+(lock?' (locked, hero level '+need+')':'')+'"><span>'+e[1]+'</span>'+(lock?'<i>LV '+need+'</i>':'')+'</button>'}).join('')}
 function hint(t){const h=box.querySelector('.emT');if(!h)return;h.textContent=t;clearTimeout(hintT);hintT=setTimeout(()=>{h.textContent='MOVES'},2200)}
 box.addEventListener('click',e=>{const b=e.target.closest('.emB');if(!b)return;e.stopPropagation();
  if(b.classList.contains('lock')){hint(signedIn()?'LV '+b.dataset.need+' HERO':'LOG IN');return}
@@ -4873,5 +4873,44 @@ window.sdEmoteIn=c=>{try{const H=Scene3D.emoteHero&&Scene3D.emoteHero('a');if(H&
 const LC={};for(const w of ['g','a']){const d=document.createElement('div');d.className='lastCard';d.innerHTML='<b>'+(w==='g'?'YOU':'RIVAL')+'</b><img alt="">';stage.appendChild(d);LC[w]=d}
 function lastCards(){const on=box.classList.contains('on');for(const [w,id] of [['g','historyP'],['a','historyC']]){const d=LC[w],sp=document.querySelector('#'+id+' span[data-move]'),p=on&&sp&&window.Scene3D&&Scene3D.headPos?Scene3D.headPos(w):null;if(!p){d.classList.remove('on');continue}const img=d.querySelector('img'),src=sp.querySelector('img')?.src||'';if(img.getAttribute('src')!==src)img.src=src;img.alt=sp.dataset.move;d.style.left=(p.x*100)+'%';d.style.top=(p.y*100)+'%';d.classList.add('on')}requestAnimationFrame(lastCards)}requestAnimationFrame(lastCards);
 setInterval(()=>{const on=stage.classList.contains('match-active')&&!stage.classList.contains('selecting')&&!window.SD_SPEC&&!document.querySelector('#over.show,.over.show');box.classList.toggle('on',on);if(on){build();try{const H=Scene3D.emoteHero('g');box.classList.toggle('busy',!!(H&&H.busy()))}catch(e){}}else sig=null},400);
+})();</script>
+<style>/* MATCH LOADING (v1.9.0): 2.6 s "preparing match" screen between the menu and the START ROUND screen */
+#mLoad{position:fixed;inset:0;z-index:2147482990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2.4vh,24px);background:radial-gradient(ellipse at 50% 40%,#2a2f3b 0,#14171d 58%,#0b0d11 100%);color:#e9e3d2;font-family:Arial,sans-serif;text-align:center;padding:24px;box-sizing:border-box;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s ease,visibility .35s}
+#mLoad.on{opacity:1;visibility:visible;pointer-events:auto;transition:none}
+#mLoad .mlLogo{font:900 clamp(30px,6vw,64px)/1 'Cinzel','Lilita One',Georgia,serif;letter-spacing:.06em;color:#d9b45f;text-shadow:0 0 24px #d9b45f55,0 3px 0 #2b2418;white-space:nowrap}
+#mLoad .mlLogo b{color:#f4efe4}
+#mLoad .mlVs{display:flex;align-items:center;gap:clamp(14px,4vw,48px)}
+#mLoad .mlH{display:flex;flex-direction:column;align-items:center;gap:8px;width:clamp(100px,18vw,190px)}
+#mLoad .mlH .pic{width:100%;aspect-ratio:1;border-radius:16px;background:#252a37 center/cover no-repeat;border:2px solid #d9b45f;box-shadow:0 0 24px #d9b45f33,inset 0 0 20px #0008}
+#mLoad .mlH.b .pic{border-color:#e46b55;box-shadow:0 0 24px #e46b5533,inset 0 0 20px #0008}
+#mLoad .mlH b{font-weight:900;letter-spacing:.08em;font-size:clamp(11px,1.5vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#mLoad .mlH small{font-size:clamp(10px,1.2vw,12px);color:#aeb4be;letter-spacing:.06em}
+#mLoad .mlH.a{animation:mlInL .5s ease-out both}#mLoad .mlH.b{animation:mlInR .5s ease-out both}
+#mLoad .mlX{font:900 clamp(28px,5vw,56px) 'Cinzel',Georgia,serif;color:#f4efe4;text-shadow:0 0 18px #e46b55aa;animation:mlPop .6s .25s ease-out both}
+@keyframes mlInL{from{transform:translateX(-60px);opacity:0}}@keyframes mlInR{from{transform:translateX(60px);opacity:0}}@keyframes mlPop{from{transform:scale(2.2);opacity:0}}
+#mLoad .mlMap{font-weight:900;letter-spacing:.22em;font-size:clamp(11px,1.5vw,14px);color:#d9b45f}
+#mLoad .mlBar{width:min(380px,74vw);height:12px;border-radius:999px;background:#0c0e12;border:1px solid #d9b45f66;box-shadow:inset 0 2px 6px #000a;overflow:hidden}
+#mLoad .mlFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#b8862f,#f2cf72,#b8862f);transform-origin:0 50%;transform:scaleX(0)}
+#mLoad.on .mlFill{animation:mlFill var(--mlT,2.6s) linear forwards}@keyframes mlFill{to{transform:scaleX(1)}}
+#mLoad .mlMsg{font-weight:900;letter-spacing:.12em;font-size:clamp(12px,1.6vw,15px);color:#f2e7c9;min-height:1.3em}
+#mLoad .mlMsg i{display:inline-block;animation:sdHop 1.2s ease-in-out infinite;font-style:normal;margin-left:6px}
+@media (prefers-reduced-motion:reduce){#mLoad .mlH,#mLoad .mlX{animation:none}#mLoad .mlMsg i{animation:none}}
+</style>
+<div id="mLoad" role="status" aria-live="polite"><div class="mlLogo">RPS <b>RIVALS</b></div><div class="mlVs"><div class="mlH a"><div class="pic"></div><b></b><small></small></div><div class="mlX">VS</div><div class="mlH b"><div class="pic"></div><b></b><small></small></div></div><div class="mlMap"></div><div class="mlBar"><div class="mlFill"></div></div><div class="mlMsg"></div></div>
+<script>(()=>{const el=document.getElementById('mLoad');let on=false,wait=[],tT=0,mT=0;const T=2600;
+const set=(sel,v)=>{const n=el.querySelector(sel);if(n)n.textContent=v};
+const pic=(sel,k)=>{try{const u=k&&window.Scene3D&&Scene3D.heroPortrait?Scene3D.heroPortrait(k):'';el.querySelector(sel+' .pic').style.backgroundImage=u?'url("'+u+'")':''}catch(e){}};
+function done(){on=false;el.classList.remove('on');clearInterval(mT);const w=wait;wait=[];w.forEach(f=>{try{f()}catch(e){}})}
+function show(r,online){clearTimeout(tT);clearInterval(mT);
+ pic('.mlH.a',r&&r.g&&r.g.key);pic('.mlH.b',r&&r.a&&r.a.key);
+ set('.mlH.a b',(r&&r.g&&r.g.name)||'YOU');set('.mlH.b b',(r&&r.a&&r.a.name)||'RIVAL');
+ set('.mlH.a small',window.SD_SPEC?'PLAYER 1':'YOU');set('.mlH.b small',window.SD_SPEC?'PLAYER 2':online?'RIVAL':'🤖 COMPUTER');
+ const m=window.arenaMap,mb=m&&document.querySelector('#mapPick [data-map="'+m+'"] .mpName');set('.mlMap',mb?'⚔ '+mb.textContent.trim().toUpperCase():'');
+ const msgs=online?['CONNECTING TO YOUR RIVAL','SYNCING THE ARENA','GET READY']:['PREPARING THE ARENA','WARMING UP THE HEROES','GET READY'];let i=0;
+ const say=()=>{const n=el.querySelector('.mlMsg');n.textContent=msgs[Math.min(i,msgs.length-1)];const d=document.createElement('i');d.textContent=['✊','✋','✌️'][i%3];n.appendChild(d);i++};say();mT=setInterval(say,T/3);
+ el.style.setProperty('--mlT',T+'ms');el.classList.remove('on');void el.offsetWidth;el.classList.add('on');on=true;tT=setTimeout(done,T)}
+window.sdMatchLoad={busy:()=>on,after:f=>{if(on)wait.push(f);else f()},show};
+const wrap=()=>{const S=window.Scene3D;if(!S||!S.choose){setTimeout(wrap,300);return}if(S.choose.__ml)return;const orig=S.choose;
+ const f=function(){const r=orig.apply(this,arguments);try{show(r,!!(typeof NET!=='undefined'&&NET)||!!window.SD_SPEC)}catch(e){on=false}return r};f.__ml=true;S.choose=f};wrap();
 })();</script>
 </html>

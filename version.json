@@ -1,6 +1,18 @@
 {
-  "current": "1.8.3",
+  "current": "1.9.0",
   "releases": [
+    {
+      "v": "1.9.0",
+      "date": "2026-11-27",
+      "title": "More moves + match loading screen",
+      "new": [
+        "Every hero level now unlocks 5 new moves — level 1 already has 5 moves to show off",
+        "A short loading screen with both heroes face to face shows before every match starts"
+      ],
+      "fixed": [
+        "Starting a match no longer jumps straight into the arena with a sudden screen flip"
+      ]
+    },
     {
       "v": "1.8.3",
       "date": "2026-11-27",
