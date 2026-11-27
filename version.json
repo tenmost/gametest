@@ -1,6 +1,17 @@
 {
-  "current": "1.4.0",
+  "current": "1.5.0",
   "releases": [
+    {
+      "v": "1.5.0",
+      "date": "2026-11-27",
+      "title": "New hero: Frog Ronin",
+      "new": [
+        "Meet FROG RONIN: a frog samurai with a straw hat and a red scarf. He dances, does big kicks when he wins a round, backflips when he wins the match — and sits down sulking when he loses"
+      ],
+      "fixed": [
+        "Heroes no longer jump to a different spot on the floor during some moves"
+      ]
+    },
     {
       "v": "1.4.0",
       "date": "2026-11-27",
