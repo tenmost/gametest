@@ -4730,7 +4730,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.12.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.12.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -5072,6 +5072,7 @@ const wrap=()=>{const S=window.Scene3D;if(!S||!S.choose){setTimeout(wrap,300);re
 #siteHdr .jjSoc .socB i{width:32px;height:32px}#siteHdr .jjSoc .socB i img{width:17px;height:17px}
 #siteHdr .jjSoc .socB b{display:none}
 #siteHdr .jjSoc .socB.soon::after{bottom:auto;top:calc(100% + 6px)}
+#siteHdr.home .jjLogo{pointer-events:auto;cursor:pointer;transition:transform .15s}#siteHdr.home .jjLogo:hover{transform:scale(1.05)}
 </style>
 <script>(()=>{
 /* Put the real links here when the accounts exist. Empty url = shows "COMING SOON". */
@@ -5086,6 +5087,10 @@ function btn(x){const b=document.createElement('button');b.type='button';b.class
  b.onclick=e=>{e.stopPropagation();if(x.url){window.open(x.url,'_blank','noopener')}else{b.classList.add('soon');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('soon'),1600)}};return b}
 function row(){const r=document.createElement('div');r.className='socRow';r.innerHTML='<div class="sT">FOLLOW FOR UPDATES</div>';SOC.forEach(x=>r.appendChild(btn(x)));const n=document.createElement('div');n.className='sN';n.textContent='Social media is for ages 13+ — younger players, ask a parent.';r.appendChild(n);return r}
 window.sdSocialRow=row;
+/* JOYJOY.GG logo = back to the start page (lobby), like the RPS RIVALS brand in the top menu. Only on the start screens, never during a match. */
+{const hd=document.getElementById('siteHdr'),stg=document.getElementById('stage'),lg=hd&&hd.querySelector('.jjLogo');
+ if(hd&&stg&&lg){const sync=()=>hd.classList.toggle('home',stg.classList.contains('selecting'));sync();new MutationObserver(sync).observe(stg,{attributes:true,attributeFilter:['class']});
+  lg.title='Back to the start page';lg.addEventListener('click',()=>{if(!stg.classList.contains('selecting'))return;document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});const br=document.querySelector('#topNav .tnBrand');if(br)br.click()})}}
 /* 1) small icons in the JOYJOY.GG header above the game (computer) */
 const h=document.getElementById('siteHdr');if(h&&!h.querySelector('.jjSoc')){const w=document.createElement('div');w.className='jjSoc';SOC.forEach(x=>w.appendChild(btn(x)));h.appendChild(w)}
 /* 2) WHAT'S NEW, 3) ? window, 4) ABOUT & FAQ — they are built later / re-rendered, so keep checking */
