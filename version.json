@@ -1,6 +1,15 @@
 {
-  "current": "1.12.0",
+  "current": "1.12.1",
   "releases": [
+    {
+      "v": "1.12.1",
+      "date": "2026-11-27",
+      "title": "Real social icons",
+      "new": [],
+      "fixed": [
+        "The Discord, YouTube and TikTok buttons now show their real icons, so it's easy to see which is which"
+      ]
+    },
     {
       "v": "1.12.0",
       "date": "2026-11-27",

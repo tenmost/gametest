@@ -4610,7 +4610,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.12.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.12.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4942,12 +4942,14 @@ const wrap=()=>{const S=window.Scene3D;if(!S||!S.choose){setTimeout(wrap,300);re
 .socRow .sN{width:100%;text-align:center;font:600 10px/1.2 Arial,sans-serif;color:#8d939d;margin-top:2px}
 .socB{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--ln2,#785a28);background:#1b1e25;color:#fff;font:800 12px/1 Arial,sans-serif;letter-spacing:.06em;cursor:pointer;transition:transform .12s,border-color .12s}
 .socB:hover{transform:translateY(-1px);border-color:var(--gd,#ffb627)}
-.socB i{font-style:normal;font-size:15px;line-height:1}
-.socB[data-k=discord] i{color:#8f9cff}.socB[data-k=youtube] i{color:#ff5a5a}.socB[data-k=tiktok] i{color:#3ee6c5}
+.socB i{font-style:normal;font-size:12px;line-height:1;width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;flex:none}
+.socB i img{width:13px;height:13px;filter:invert(1);display:block}
+.socB[data-k=discord] i{background:#5865f2}.socB[data-k=youtube] i{background:#ff0000}.socB[data-k=tiktok] i{background:#000;box-shadow:inset 0 0 0 1.5px #25f4ee,0 0 0 1px #fe2c55}
 .socB.soon::after{content:'COMING SOON';position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:6px;background:#000d;color:#ffc93c;font:800 10px/1 Arial,sans-serif;letter-spacing:.1em;pointer-events:none}
 #siteHdr{position:relative;z-index:30}
 #siteHdr .jjSoc{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:6px;pointer-events:auto}
-#siteHdr .jjSoc .socB{width:34px;height:34px;padding:0;justify-content:center;background:rgba(27,30,37,.75)}
+#siteHdr .jjSoc .socB{width:34px;height:34px;padding:0;justify-content:center;background:transparent;border:0}
+#siteHdr .jjSoc .socB i{width:32px;height:32px}#siteHdr .jjSoc .socB i img{width:17px;height:17px}
 #siteHdr .jjSoc .socB b{display:none}
 #siteHdr .jjSoc .socB.soon::after{bottom:auto;top:calc(100% + 6px)}
 </style>
@@ -4957,8 +4959,10 @@ const SOC=window.SD_SOCIAL=window.SD_SOCIAL||[
  {k:'discord',name:'DISCORD',icon:'💬',url:''},
  {k:'youtube',name:'YOUTUBE',icon:'▶',url:''},
  {k:'tiktok',name:'TIKTOK',icon:'♪',url:''}];
+/* real platform icons from the Simple Icons library (CC0, loaded from jsDelivr like Three.js); if they can't load, the emoji above stays */
+const ICON=k=>'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/'+k+'.svg';
 function btn(x){const b=document.createElement('button');b.type='button';b.className='socB';b.dataset.k=x.k;b.title=x.name.charAt(0)+x.name.slice(1).toLowerCase()+' — follow for updates (13+)';b.setAttribute('aria-label',b.title);
- b.innerHTML='<i>'+x.icon+'</i><b>'+x.name+'</b>';
+ b.innerHTML='<i><img alt="" src="'+ICON(x.k)+'"></i><b>'+x.name+'</b>';const im=b.querySelector('img');im.onerror=()=>{im.parentNode.textContent=x.icon};
  b.onclick=e=>{e.stopPropagation();if(x.url){window.open(x.url,'_blank','noopener')}else{b.classList.add('soon');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('soon'),1600)}};return b}
 function row(){const r=document.createElement('div');r.className='socRow';r.innerHTML='<div class="sT">FOLLOW FOR UPDATES</div>';SOC.forEach(x=>r.appendChild(btn(x)));const n=document.createElement('div');n.className='sN';n.textContent='Social media is for ages 13+ — younger players, ask a parent.';r.appendChild(n);return r}
 window.sdSocialRow=row;
