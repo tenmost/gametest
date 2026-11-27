@@ -1,6 +1,16 @@
 {
-  "current": "1.9.0",
+  "current": "1.10.0",
   "releases": [
+    {
+      "v": "1.10.0",
+      "date": "2026-11-27",
+      "title": "10 new moves for every hero",
+      "new": [
+        "Every hero learned 10 new moves — over 20 moves each to collect",
+        "You start with 2 moves; every hero level unlocks one more"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.9.0",
       "date": "2026-11-27",
