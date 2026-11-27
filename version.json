@@ -1,6 +1,16 @@
 {
-  "current": "1.8.0",
+  "current": "1.8.1",
   "releases": [
+    {
+      "v": "1.8.1",
+      "date": "2026-11-27",
+      "title": "Smooth hero moves",
+      "new": [],
+      "fixed": [
+        "Hero moves no longer glitch: when you tap a move, your hero now does the whole move smoothly from start to end",
+        "A move always finishes, even when the next round starts or the match ends"
+      ]
+    },
     {
       "v": "1.8.0",
       "date": "2026-11-27",

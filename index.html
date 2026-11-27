@@ -1254,7 +1254,7 @@ function layoutSelect(){const SP=selSpot();setAstroVisible(false);for(const R of
 API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
 /* MOVE buttons (v1.7.0): who = 'g' (you) | 'a' (opponent); plays a move once, to the end */
-API.emote=function(who,clip){const R=SL[who]&&SL[who].R;if(!R||!R.act[clip])return false;R.emote={c:clip,t:TIME,d:R.act[clip].getClip().duration/(R.act[clip].timeScale||1)};R.cur=null;R.phaseClip=null;return true};
+API.emote=function(who,clip){const R=SL[who]&&SL[who].R;if(!R||!R.act[clip])return false;const a=R.act[clip],prev=R.cur;a.reset();a.timeScale=1;a.setLoop(THREE.LoopOnce);a.clampWhenFinished=true;a.enabled=true;a.setEffectiveWeight(1);if(prev&&prev!==a)a.crossFadeFrom(prev,.2,false);a.play();R.cur=a;R.emote={c:clip,a,t:TIME,d:a.getClip().duration};R.phaseClip=null;R.waitFrozen=false;return true};
 API.headPos=function(who){const S=SL[who];const R=S&&S.R;if(!R||!R.holder.visible)return null;const b=R.B.HeadTop_End||R.B.Head;if(!b)return null;const v=b.getWorldPosition(new THREE.Vector3());v.y+=.06;v.project(camera);if(v.z>1)return null;return {x:(v.x+1)/2,y:(1-v.y)/2}};
 API.emoteHero=function(who){const S=SL[who];return S&&S.R?{key:S.cfg.key,list:(S.cfg.anim&&S.cfg.anim.emotes)||[],has:c=>!!S.R.act[c],busy:()=>!!(S.R.emote&&TIME-S.R.emote.t<S.R.emote.d)}:null};
 API.heroPortrait=function(key){if(heroPortraits[key])return heroPortraits[key];const R=LOADED[key];if(!R)return '';const saved=Object.values(LOADED).map(o=>[o,o.holder.visible]);const pos=R.holder.position.clone(),scale=R.holder.scale.clone(),rot=R.holder.rotation.clone();try{saved.forEach(([o])=>o.holder.visible=false);R.holder.visible=true;R.holder.position.set(0,FLOOR+1.45,.2);R.holder.scale.setScalar(.82);R.holder.rotation.y=0;scene.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(R.holder);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());if(!Number.isFinite(size.y)||size.y<.01)return '';const pc=new THREE.PerspectiveCamera(35,1,.01,400);const y=center.y+size.y*.25;pc.position.set(center.x,y,center.z+Math.max(1.2,size.y*1.2));pc.lookAt(center.x,y,center.z);
@@ -1295,12 +1295,12 @@ function mushroomDance(R){
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
  const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='lose'?'lose':'wait'; /* v1.7.0: no automatic round-win moves — the player picks moves with the MOVE buttons (R.emote) */
- const emo=R.emote&&!st.select&&!mine&&R.act[R.emote.c]?(TIME-R.emote.t<R.emote.d?R.emote:(R.emote=null,null)):null;if(!emo&&R.emote&&(st.select||mine))R.emote=null;
+ /* a chosen move always plays to the end (even if the next round starts or the match ends) */const emo=R.emote&&!st.select&&R.act[R.emote.c]?(TIME-R.emote.t<R.emote.d?R.emote:(R.emote=null,null)):null;if(!emo&&R.emote&&st.select)R.emote=null;
  const names=Object.keys(R.act), reject=/walk|run|strut|march|sprint|break.?dance/i;
  const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
  if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
- if(emo){R.play(emo.c,{loop:false,fade:.2});if(R.cur)R.cur.paused=false}
+ if(emo){const A=emo.a;if(R.cur!==A){const prev=R.cur;A.enabled=true;A.setEffectiveWeight(1);if(prev)A.crossFadeFrom(prev,.15,false);A.play();R.cur=A}A.paused=false;R.phaseClip=null}
  else if(phase==='menu'&&/mush/i.test(R.cfg.key+' '+R.cfg.name)&&mushroomDance(R))R.play('MushTVMenuDance',{fade:.25});
  else if(/cosmic/i.test(R.cfg.key+' '+R.cfg.name)&&(phase==='menu'||phase==='wait'||phase==='champ'||phase==='win')&&R.act.Arm_Circle_Shuffle){R.play('Arm_Circle_Shuffle',{fade:.3,loop:true});if(R.cur){R.cur.paused=false;R.cur.timeScale=phase==='wait'?.3:1;}}
  else if(phase==='wait')waitingPose(R);
@@ -1310,7 +1310,7 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  if(!R.phaseClip||(rotate&&TIME-R.phaseAt>Math.max(1.6,R.cur?.getClip().duration||2))){const choices=pool.filter(n=>n!==R.lastPhaseClip);R.phaseClip=(choices.length?choices:pool)[Math.floor(Math.random()*(choices.length||pool.length))]||null;R.phaseAt=TIME;if(R.phaseClip)R.lastPhaseClip=R.phaseClip;}
  if(cosmic&&phase==='fight'&&R.phaseClip){R.play(R.phaseClip,{loop:false,fade:.25});if(R.cur)R.cur.timeScale=.85;}else if(R.phaseClip)R.play(R.phaseClip,{loop:phase!=='lose'&&phase!=='dead',fade:.25});else waitingPose(R);
  }
- R.headDown=lerp(R.headDown,(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt);}
+ R.headDown=lerp(R.headDown,!emo&&(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt);}
 function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
 
 
@@ -4596,7 +4596,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.8.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.8.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
