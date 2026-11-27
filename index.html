@@ -2241,6 +2241,7 @@ const HREV=(()=>{
    if(kind==='scissors'){const op=.42+.3*Math.sin(TIME*(res==='win'?14:7));for(const a of P.blades)a.rotation.z=a.userData.s*op;P.piv.rotation.z+=dt*5}
    P.lab[kind].material.opacity=res==='lose'&&T>.6?.55:1}
   return true}
+ if(ON)window.__hrev=()=>{const o=OBJ.g;if(!o)return null;const P=o.parts,vis=x=>x.visible;let n=0;scene.traverse(x=>{if(x.isSprite&&x.parent&&x.parent.parent===scene&&x.visible)n++});return{kind:CARD.g.kind,res:st.res,shaking:st.shaking,revT:st.revT,root:vis(o.root),my:vis(P.my),rock:vis(P.rock),paper:vis(P.paper),sc:vis(P.scissors),labs:Object.fromEntries(Object.entries(P.lab).map(([k,v])=>[k,v.visible])),roots:Object.keys(OBJ),visSprites:n}};
  return{on:ON,active,update,breakIt,updateBits}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT;
