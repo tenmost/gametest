@@ -2155,12 +2155,99 @@ function shatter(c){c.broken=true;const tex=c.front.material.map;
 function updateShards(dt){for(let i=SHARDS.length-1;i>=0;i--){const g=SHARDS[i];g.age+=dt;g.mat.opacity=Math.max(0,1-Math.pow(g.age/1.4,2));
  for(const s of g.list){s.v.y-=5*dt;s.m.position.addScaledVector(s.v,dt);s.m.rotation.x+=s.w.x*dt;s.m.rotation.y+=s.w.y*dt;s.m.rotation.z+=s.w.z*dt}
  if(g.age>1.4){for(const s of g.list){scene.remove(s.m);s.m.geometry.dispose()}g.mat.dispose();SHARDS.splice(i,1)}}}
+/* ===== HERO REVEAL prototype (only with ?reveal=hero): instead of a card, the hero makes its own rock / paper / scissors.
+   GEARFOX first: an iron boulder in a spinning brass gear ring, a blueprint sheet, steel scissors on a gear pivot. ===== */
+const HREV=(()=>{
+ const ON=/[?&]reveal=hero/.test(location.search);
+ const HEROES={gearfox:1};
+ const M=(c,o={})=>new THREE.MeshStandardMaterial({color:c,metalness:o.m??.85,roughness:o.r??.32,emissive:c,emissiveIntensity:o.e??.12,flatShading:!!o.flat,side:o.ds?THREE.DoubleSide:THREE.FrontSide});
+ const MAT={brass:M(0xd09a3a),copper:M(0xb8662e),steel:M(0xaab3c0,{r:.25}),iron:M(0x5d646e,{m:.6,r:.55,flat:true,e:.08}),dark:M(0x2a2e35,{m:.5,r:.5})};
+ function gearGeo(r,teeth,th,hole){const s=new THREE.Shape(),ri=r*.82,n=teeth*4;
+  for(let i=0;i<=n;i++){const a=i/n*Math.PI*2,q=i%4,rr=(q===1||q===2)?r:ri;const x=Math.cos(a)*rr,y=Math.sin(a)*rr;i?s.lineTo(x,y):s.moveTo(x,y)}
+  if(hole){const h=new THREE.Path();h.absarc(0,0,hole,0,Math.PI*2,true);s.holes.push(h)}
+  const g=new THREE.ExtrudeGeometry(s,{depth:th,bevelEnabled:true,bevelThickness:th*.25,bevelSize:th*.25,bevelSegments:1,curveSegments:6});g.center();return g}
+ const gear=(r,t,th,mat,hole)=>new THREE.Mesh(gearGeo(r,t,th,hole??r*.3),mat);
+ function label(kind){const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');
+  const txt={rock:'✊ ROCK',paper:'✋ PAPER',scissors:'✌️ SCISSORS'}[kind];
+  g.fillStyle='rgba(12,14,20,.82)';g.strokeStyle='#ffc93c';g.lineWidth=6;g.beginPath();g.roundRect(8,14,496,100,50);g.fill();g.stroke();
+  g.font='900 58px Arial';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ffe6a0';g.fillText(txt,256,66);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(.9,.225,1);s.renderOrder=20;return s}
+ function blueprint(){const c=document.createElement('canvas');c.width=384;c.height=512;const g=c.getContext('2d');
+  g.fillStyle='#1d56a8';g.fillRect(0,0,384,512);g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=2;
+  for(let x=0;x<=384;x+=24){g.beginPath();g.moveTo(x,0);g.lineTo(x,512);g.stroke()}for(let y=0;y<=512;y+=24){g.beginPath();g.moveTo(0,y);g.lineTo(384,y);g.stroke()}
+  g.strokeStyle='#ffffff';g.lineWidth=5;g.strokeRect(14,14,356,484);
+  const dg=(x,y,r,n)=>{g.beginPath();for(let i=0;i<=n*4;i++){const a=i/(n*4)*Math.PI*2,q=i%4,rr=(q===1||q===2)?r:r*.8;i?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}g.stroke();g.beginPath();g.arc(x,y,r*.3,0,7);g.stroke()};
+  dg(170,210,92,12);dg(282,128,52,8);dg(270,312,40,7);
+  g.setLineDash([10,8]);g.beginPath();g.moveTo(40,420);g.lineTo(344,420);g.stroke();g.setLineDash([]);
+  g.fillStyle='#fff';g.font='700 30px monospace';g.fillText('GEARFOX · MK II',44,470);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
+ const BP=ON?blueprint():null;
+ function buildGearfox(){const root=new THREE.Group(),parts={};
+  /* mystery (before the reveal): two meshing gears */
+  const my=new THREE.Group();const g1=gear(.34,14,.08,MAT.brass),g2=gear(.2,9,.07,MAT.copper);g2.position.set(.42,.22,.02);my.add(g1,g2);parts.my=my;parts.g1=g1;parts.g2=g2;root.add(my);
+  /* rock: iron boulder + brass gear ring + rivets */
+  const rock=new THREE.Group();const geo=new THREE.IcosahedronGeometry(.3,1),pa=geo.attributes.position;
+  for(let i=0;i<pa.count;i++){const v=V3(pa.getX(i),pa.getY(i),pa.getZ(i));const k=1+Math.sin(v.x*11+v.y*7)*.08+Math.cos(v.z*9-v.y*5)*.07;v.multiplyScalar(k);pa.setXYZ(i,v.x,v.y*.92,v.z)}
+  geo.computeVertexNormals();const boulder=new THREE.Mesh(geo,MAT.iron);rock.add(boulder);
+  for(let i=0;i<7;i++){const r=new THREE.Mesh(new THREE.SphereGeometry(.03,8,6),MAT.brass);const a=i/7*Math.PI*2;r.position.set(Math.cos(a)*.27,Math.sin(a*2)*.12,Math.sin(a)*.27+.03);rock.add(r)}
+  const ring=gear(.44,22,.05,MAT.brass,.37);ring.rotation.x=1.15;rock.add(ring);parts.ring=ring;parts.boulder=boulder;
+  /* paper: blueprint sheet with a brass clip */
+  const paper=new THREE.Group();const pg=new THREE.PlaneGeometry(.54,.72,10,10),pp=pg.attributes.position;
+  for(let i=0;i<pp.count;i++){const x=pp.getX(i),y=pp.getY(i);pp.setZ(i,Math.max(0,x+y-.42)*.35+Math.sin(y*6)*.012)}pg.computeVertexNormals();
+  const sheet=new THREE.Mesh(pg,new THREE.MeshStandardMaterial({map:BP,emissive:0xffffff,emissiveMap:BP,emissiveIntensity:.35,roughness:.8,side:THREE.DoubleSide}));paper.add(sheet);
+  const clip=new THREE.Mesh(new THREE.BoxGeometry(.2,.06,.04),MAT.brass);clip.position.set(0,.37,.02);paper.add(clip);const cg=gear(.06,8,.03,MAT.copper);cg.position.set(0,.37,.05);paper.add(cg);parts.clipGear=cg;parts.sheet=sheet;
+  /* scissors: two steel blades + brass ring handles on a gear pivot */
+  const sc=new THREE.Group();const blades=[];
+  for(const s of[-1,1]){const arm=new THREE.Group();const sh=new THREE.Shape();sh.moveTo(-.035,0);sh.lineTo(0,.5);sh.lineTo(.045,0);sh.lineTo(.03,-.05);sh.lineTo(-.03,-.05);sh.closePath();
+   const bl=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:.02,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1}),MAT.steel);bl.position.z=s*.012;arm.add(bl);
+   const h=new THREE.Mesh(new THREE.TorusGeometry(.085,.022,8,18),MAT.brass);h.position.set(0,-.17,0);arm.add(h);
+   const st2=new THREE.Mesh(new THREE.BoxGeometry(.035,.09,.025),MAT.brass);st2.position.set(0,-.07,0);arm.add(st2);
+   arm.userData.s=s;sc.add(arm);blades.push(arm)}
+  const piv=gear(.07,10,.05,MAT.copper,.02);piv.position.z=.04;sc.add(piv);parts.blades=blades;parts.piv=piv;
+  rock.visible=paper.visible=sc.visible=false;root.add(rock,paper,sc);parts.rock=rock;parts.paper=paper;parts.scissors=sc;
+  const lab={rock:label('rock'),paper:label('paper'),scissors:label('scissors')};for(const k in lab){lab[k].position.y=.62;lab[k].visible=false;root.add(lab[k])}parts.lab=lab;
+  root.visible=false;scene.add(root);return {root,parts}}
+ const OBJ={};const BITS=[];
+ const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
+ const active=k=>ON&&!st.select&&!!HEROES[heroKey(k)];
+ function obj(k){const hk=heroKey(k);let o=OBJ[k];if(!o||o.hk!==hk){if(o)scene.remove(o.root);o=OBJ[k]=Object.assign(buildGearfox(),{hk,emoted:false,sparked:false,broken:false})}return o}
+ const CLIP={rock:'Victory_Fist_Pump',paper:'Combat_Strike_Pose',scissors:'Axe_Spin_Attack'};
+ function breakIt(k){const o=OBJ[k];if(!o)return;o.broken=true;const p=o.root.getWorldPosition(V3(0,0,0));
+  burst(p.clone(),[1,.72,.3],120,3.4);
+  for(let i=0;i<9;i++){const m=gear(.05+Math.random()*.09,7+Math.floor(Math.random()*6),.03,[MAT.brass,MAT.copper,MAT.steel][i%3]);m.position.copy(p);scene.add(m);
+   BITS.push({m,v:V3((Math.random()-.5)*3.2,1.2+Math.random()*2.2,(Math.random()-.2)*2),w:V3(Math.random()*12,Math.random()*12,Math.random()*12),age:0})}}
+ function updateBits(dt){for(let i=BITS.length-1;i>=0;i--){const b=BITS[i];b.age+=dt;b.v.y-=6*dt;b.m.position.addScaledVector(b.v,dt);b.m.rotation.x+=b.w.x*dt;b.m.rotation.y+=b.w.y*dt;b.m.rotation.z+=b.w.z*dt;b.m.scale.setScalar(Math.max(.01,1-Math.pow(b.age/1.3,3)));if(b.age>1.3){scene.remove(b.m);b.m.geometry.dispose();BITS.splice(i,1)}}}
+ /* called from updateCards for each side, after the card's position is known */
+ function update(k,c,p,revealed,T,res,sgn,dt){const on=active(k);const o=on?obj(k):OBJ[k];
+  if(!on){if(o)o.root.visible=false;return false}
+  c.g.visible=false;
+  const show=!stage.classList.contains('waiting-fight-ready');
+  if(!revealed||o.rs!==st.revStart){o.rs=revealed?st.revStart:null;o.broken=false;o.emoted=false;o.sparked=false}
+  o.root.visible=show&&!o.broken;if(!o.root.visible)return true;
+  const P=o.parts,kind=c.kind,u=c.u;
+  const home=V3(-sgn*1.5,-.25+Math.sin(TIME*2+sgn)*.05,1.05);
+  const tr=revealed?sstep(.28,.52,T):0;
+  const pos=home.clone().lerp(p,tr);o.root.position.copy(pos);o.root.lookAt(camera.position);
+  const sc=lerp(1.25,res==='win'?1.0+.06*Math.sin(TIME*6):res==='lose'?.8:.92,tr)*(st.shaking&&st.beatN?1+.05*st.beatN:1);o.root.scale.setScalar(sc);
+  /* mystery gears shrink away as the object builds */
+  const build=revealed?sstep(.02,.3,T):0;
+  P.my.visible=build<.98;P.my.scale.setScalar(Math.max(.001,1-build));P.g1.rotation.z+=dt*(1.2+build*14+(st.shaking?3:0));P.g2.rotation.z-=dt*(2.1+build*24+(st.shaking?5:0));
+  for(const kk of['rock','paper','scissors']){const g=P[kk];g.visible=revealed&&kk===kind&&build>.02;P.lab[kk].visible=g.visible&&build>.7}
+  if(revealed){const g=P[kind];g.scale.setScalar(Math.max(.001,build*(1+.25*Math.sin(build*Math.PI))));g.rotation.y=(1-build)*Math.PI*2;
+   if(!o.sparked&&T>.04){o.sparked=true;burst(pos.clone(),[1,.78,.35],70,2.2)}
+   if(!o.emoted&&T>.02){o.emoted=true;try{const e=API.emoteHero&&API.emoteHero(k);if(e&&!e.busy()&&e.has(CLIP[kind]))API.emote(k,CLIP[kind])}catch(err){}}
+   if(kind==='rock'){P.ring.rotation.z+=dt*(res==='win'?6:3);P.boulder.rotation.y+=dt*.6}
+   if(kind==='paper'){P.clipGear.rotation.z+=dt*4;P.paper.rotation.z=Math.sin(TIME*2.4)*.06}
+   if(kind==='scissors'){const op=.42+.3*Math.sin(TIME*(res==='win'?14:7));for(const a of P.blades)a.rotation.z=a.userData.s*op;P.piv.rotation.z+=dt*5}
+   P.lab[kind].material.opacity=res==='lose'&&T>.6?.55:1}
+  return true}
+ return{on:ON,active,update,breakIt,updateBits}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT;
  if(revealed&&!st.impacted&&T>=.55){st.impacted=true;st.camShake=.2;const r=st.res;
   if(r.g==='tie')burst(MID.clone(),[.55,.75,1],90,2.6);
-  else{shatter(CARD[r.g==='lose'?'g':'a']);burst(MID.clone(),r.g==='win'?[.3,1,.55]:[1,.28,.45],150,3.8)}}
- updateShards(dt);
+  else{const lk=r.g==='lose'?'g':'a';if(HREV.active(lk)){CARD[lk].broken=true;HREV.breakIt(lk)}else shatter(CARD[lk]);burst(MID.clone(),r.g==='win'?[.3,1,.55]:[1,.28,.45],150,3.8)}}
+ updateShards(dt);HREV.updateBits(dt);
  for(const[key,sgn,h]of[['g',1,HG],['a',-1,HA]]){const c=CARD[key];
   c.u=lerp(c.u,revealed?1:0,1-Math.exp(-dt*(revealed?9:6)));
   c.g.visible=!st.select&&!c.broken&&!stage.classList.contains('waiting-fight-ready');
@@ -2175,6 +2262,7 @@ function updateCards(dt,pulse){
    else dx=sgn*CLASH_IN*Math.exp(-(T-.55)*7)-sgn*.05*Math.sin((T-.55)*18)*Math.exp(-(T-.55)*5); // tie: recoil
    p.x+=dx;p.z+=dz}
   c.g.position.copy(p);c.g.lookAt(camera.position);
+  if(HREV.update(key,c,p,revealed,T,revealed?st.res[key]:null,sgn,dt))continue;
   const flip=Math.PI*(1-sstep(.35,.9,c.u));
   const res=revealed?st.res[key]:null;
   const wob=(st.shaking?Math.sin(TIME*9+sgn)*.18:Math.sin(TIME*1.5+sgn)*.06)*(1-c.u);
