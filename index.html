@@ -4610,7 +4610,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.11.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.12.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4934,5 +4934,42 @@ function show(r,online){clearTimeout(tT);clearInterval(mT);
 window.sdMatchLoad={busy:()=>on,after:f=>{if(on)wait.push(f);else f()},show};
 const wrap=()=>{const S=window.Scene3D;if(!S||!S.choose){setTimeout(wrap,300);return}if(S.choose.__ml)return;const orig=S.choose;
  const f=function(){const r=orig.apply(this,arguments);try{show(r,!!(typeof NET!=='undefined'&&NET)||!!window.SD_SPEC)}catch(e){on=false}return r};f.__ml=true;S.choose=f};wrap();
+})();</script>
+<!-- ===== SOCIAL LINKS (v1.12.0): follow buttons. Placeholder accounts — put the real links in SD_SOCIAL (empty url = "COMING SOON") ===== -->
+<style>
+.socRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:14px auto 4px;padding:10px 12px;border:1px solid var(--ln2,#785a28);border-radius:12px;background:rgba(255,255,255,.03);max-width:440px}
+.socRow .sT{width:100%;text-align:center;font:800 11px/1 Arial,sans-serif;letter-spacing:.18em;color:var(--gd,#ffb627);margin-bottom:2px}
+.socRow .sN{width:100%;text-align:center;font:600 10px/1.2 Arial,sans-serif;color:#8d939d;margin-top:2px}
+.socB{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--ln2,#785a28);background:#1b1e25;color:#fff;font:800 12px/1 Arial,sans-serif;letter-spacing:.06em;cursor:pointer;transition:transform .12s,border-color .12s}
+.socB:hover{transform:translateY(-1px);border-color:var(--gd,#ffb627)}
+.socB i{font-style:normal;font-size:15px;line-height:1}
+.socB[data-k=discord] i{color:#8f9cff}.socB[data-k=youtube] i{color:#ff5a5a}.socB[data-k=tiktok] i{color:#3ee6c5}
+.socB.soon::after{content:'COMING SOON';position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:6px;background:#000d;color:#ffc93c;font:800 10px/1 Arial,sans-serif;letter-spacing:.1em;pointer-events:none}
+#siteHdr{position:relative;z-index:30}
+#siteHdr .jjSoc{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:6px;pointer-events:auto}
+#siteHdr .jjSoc .socB{width:34px;height:34px;padding:0;justify-content:center;background:rgba(27,30,37,.75)}
+#siteHdr .jjSoc .socB b{display:none}
+#siteHdr .jjSoc .socB.soon::after{bottom:auto;top:calc(100% + 6px)}
+</style>
+<script>(()=>{
+/* Put the real links here when the accounts exist. Empty url = shows "COMING SOON". */
+const SOC=window.SD_SOCIAL=window.SD_SOCIAL||[
+ {k:'discord',name:'DISCORD',icon:'💬',url:''},
+ {k:'youtube',name:'YOUTUBE',icon:'▶',url:''},
+ {k:'tiktok',name:'TIKTOK',icon:'♪',url:''}];
+function btn(x){const b=document.createElement('button');b.type='button';b.className='socB';b.dataset.k=x.k;b.title=x.name.charAt(0)+x.name.slice(1).toLowerCase()+' — follow for updates (13+)';b.setAttribute('aria-label',b.title);
+ b.innerHTML='<i>'+x.icon+'</i><b>'+x.name+'</b>';
+ b.onclick=e=>{e.stopPropagation();if(x.url){window.open(x.url,'_blank','noopener')}else{b.classList.add('soon');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('soon'),1600)}};return b}
+function row(){const r=document.createElement('div');r.className='socRow';r.innerHTML='<div class="sT">FOLLOW FOR UPDATES</div>';SOC.forEach(x=>r.appendChild(btn(x)));const n=document.createElement('div');n.className='sN';n.textContent='Social media is for ages 13+ — younger players, ask a parent.';r.appendChild(n);return r}
+window.sdSocialRow=row;
+/* 1) small icons in the JOYJOY.GG header above the game (computer) */
+const h=document.getElementById('siteHdr');if(h&&!h.querySelector('.jjSoc')){const w=document.createElement('div');w.className='jjSoc';SOC.forEach(x=>w.appendChild(btn(x)));h.appendChild(w)}
+/* 2) WHAT'S NEW, 3) ? window, 4) ABOUT & FAQ — they are built later / re-rendered, so keep checking */
+function add(){
+ const u=document.querySelector('#updDlg .uBody');if(u&&!u.querySelector('.socRow'))u.appendChild(row());
+ const r=document.getElementById('rulesDialog');if(r&&!r.querySelector('.socRow'))r.appendChild(row());
+ const a=document.querySelector('#aboutDlg .aBody');if(a&&!a.querySelector('.socRow')){const f=a.querySelector('.aFoot');f?a.insertBefore(row(),f):a.appendChild(row())}}
+add();setInterval(add,1200);
+const ud=document.getElementById('updDlg');if(ud)new MutationObserver(add).observe(ud,{childList:true});
 })();</script>
 </html>
