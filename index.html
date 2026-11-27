@@ -876,6 +876,7 @@ async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent
     ch.on('broadcast',{event:'dbye'},({payload:p})=>{if(NET===net&&p&&p.id){delete net.bc[p.id];syncD()}});
     ch.on('broadcast',{event:'pick'},({payload})=>{if(NET!==net||!payload||typeof payload.hash!=='string'||net.oppHashes[payload.round])return;net.oppHashes[payload.round]=payload.hash;if(payload.round===net.round)oppReady();sendReveal(net,payload.round);const early=net.earlyReveal[payload.round];if(early){delete net.earlyReveal[payload.round];checkReveal(net,early)}});
     ch.on('broadcast',{event:'reveal'},({payload})=>{if(NET!==net||!payload)return;if(!net.oppHashes[payload.round]){net.earlyReveal[payload.round]=payload;return}checkReveal(net,payload)});
+    ch.on('broadcast',{event:'emo'},({payload})=>{if(NET!==net||!payload||typeof payload.c!=='string')return;window.sdEmoteIn&&window.sdEmoteIn(payload.c)});
     ch.on('broadcast',{event:'match-ready'},({payload})=>{if(NET!==net)return;net.remoteMatchReady[payload.round]=true;if(payload.round===net.round)releaseMatchReady()});
     ch.on('broadcast',{event:'rematch'},()=>{if(NET===net&&net.live)reset()});
     ch.subscribe(async st=>{if(NET!==net)return;if(st==='SUBSCRIBED'){net.sub=true;duelBeat(net);if(!net.hbT)net.hbT=setInterval(()=>{if(NET!==net){clearInterval(net.hbT);return}duelBeat(net);const now=Date.now();let gone=false;for(const k in net.bc)if(now-net.bc[k]._t>9000)gone=true;if(gone)syncD()},2000);await ch.track({char:onChar,name:dispName(),av:myAvKey(),...myStats(),host:net.host,ready:!!net.ready,map:net.map});if(!net.opp)roomUI()}
@@ -1228,10 +1229,10 @@ function poseSkinned(R,h,dt){
 
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 let CHARS=[
- {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'Champion_Dance',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand'}},
- {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=3',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance'}},
- {key:'frog',name:'FROG RONIN',url:'assets/frog-ronin.glb?v=1',voice:'m',anim:{idle:'Idle_Breathe_Look_Around',show:['Victory_Roundhouse_Kick','Victory_Double_Kick','Celebrate_Spin_Jump'],win:'Victory_Roundhouse_Kick',hit:'Hit_In_Back',champ:'Backflip_Jump',dead:'Tantrum_Sit_Defeat',select:'FunnyDancing_01'}},
- {key:'frost',name:'FROSTBOUND',url:'assets/frostbound.glb?v=1',voice:'m',anim:{idle:'Idle_Alert_Stance',show:['Victory_Leg_Sweep','Backflip_Sweep_Kick','Celebrate_Spin_Jump'],win:'Victory_Leg_Sweep',hit:'Hit_Slap_Reaction',champ:'Celebrate_Spin_Jump',dead:'Dead',select:'Hip_Hop_Dance'}}];
+ {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'Champion_Dance',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand',emotes:[['Wave_One_Hand','👋','WAVE'],['Combat_Flex_Muscles','💪','FLEX'],['ymca_dance','🕺','YMCA'],['Axe_Spin_Attack','🌀','SPIN ATTACK'],['All_Night_Dance','💃','PARTY'],['Backflip_inplace','🤸','BACKFLIP'],['Champion_Dance','🏆','VICTORY DANCE']]}},
+ {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=3',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance',emotes:[['Cheer_with_Both_Hands_1','🙌','CHEER'],['Combat_Seed_Throw','🌱','SEED THROW'],['Bubble_Dance','🫧','BUBBLE DANCE'],['Combat_Flip_Sweep','🌀','SWEEP'],['Cardio_Dance','💃','CARDIO'],['FunnyDancing_01','🤪','FUNNY DANCE'],['Backflip_and_Rise','🤸','BACKFLIP']]}},
+ {key:'frog',name:'FROG RONIN',url:'assets/frog-ronin.glb?v=1',voice:'m',anim:{idle:'Idle_Breathe_Look_Around',show:['Victory_Roundhouse_Kick','Victory_Double_Kick','Celebrate_Spin_Jump'],win:'Victory_Roundhouse_Kick',hit:'Hit_In_Back',champ:'Backflip_Jump',dead:'Tantrum_Sit_Defeat',select:'FunnyDancing_01',emotes:[['Big_Heart_Gesture','💚','HEART'],['Victory_Roundhouse_Kick','🦶','ROUNDHOUSE'],['Swing_Dance','🎷','SWING'],['Victory_Double_Kick','🥋','DOUBLE KICK'],['FunnyDancing_01','🤪','FUNNY DANCE'],['Celebrate_Spin_Jump','🌀','SPIN JUMP'],['Backflip_Jump','🤸','BACKFLIP']]}},
+ {key:'frost',name:'FROSTBOUND',url:'assets/frostbound.glb?v=1',voice:'m',anim:{idle:'Idle_Alert_Stance',show:['Victory_Leg_Sweep','Backflip_Sweep_Kick','Celebrate_Spin_Jump'],win:'Victory_Leg_Sweep',hit:'Hit_Slap_Reaction',champ:'Celebrate_Spin_Jump',dead:'Dead',select:'Hip_Hop_Dance',emotes:[['Cheer_with_Both_Hands_Up','🙌','CHEER'],['Hip_Hop_Dance','🎤','HIP HOP'],['Victory_Leg_Sweep','🦵','LEG SWEEP'],['FunnyDancing_03','🤪','FUNNY DANCE'],['Gangnam_Groove','🕺','GROOVE'],['Celebrate_Spin_Jump','🌀','SPIN JUMP'],['Backflip_Sweep_Kick','🤸','BACKFLIP KICK']]}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.68},a:{p:[2.35,FLOOR+.82,.35],r:-.68}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
@@ -1251,6 +1252,10 @@ function layoutSelect(){const SP=selSpot();setAstroVisible(false);for(const R of
 /* online room on the start screen: the friend's hero stands next to yours */
 API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
+/* MOVE buttons (v1.7.0): who = 'g' (you) | 'a' (opponent); plays a move once, to the end */
+API.emote=function(who,clip){const R=SL[who]&&SL[who].R;if(!R||!R.act[clip])return false;R.emote={c:clip,t:TIME,d:R.act[clip].getClip().duration/(R.act[clip].timeScale||1)};R.cur=null;R.phaseClip=null;return true};
+API.headPos=function(who){const S=SL[who];const R=S&&S.R;if(!R||!R.holder.visible)return null;const b=R.B.HeadTop_End||R.B.Head;if(!b)return null;const v=b.getWorldPosition(new THREE.Vector3());v.y+=.32;v.project(camera);if(v.z>1)return null;return {x:(v.x+1)/2,y:(1-v.y)/2}};
+API.emoteHero=function(who){const S=SL[who];return S&&S.R?{key:S.cfg.key,list:(S.cfg.anim&&S.cfg.anim.emotes)||[],has:c=>!!S.R.act[c],busy:()=>!!(S.R.emote&&TIME-S.R.emote.t<S.R.emote.d)}:null};
 API.heroPortrait=function(key){if(heroPortraits[key])return heroPortraits[key];const R=LOADED[key];if(!R)return '';const saved=Object.values(LOADED).map(o=>[o,o.holder.visible]);const pos=R.holder.position.clone(),scale=R.holder.scale.clone(),rot=R.holder.rotation.clone();try{saved.forEach(([o])=>o.holder.visible=false);R.holder.visible=true;R.holder.position.set(0,FLOOR+1.45,.2);R.holder.scale.setScalar(.82);R.holder.rotation.y=0;scene.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(R.holder);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());if(!Number.isFinite(size.y)||size.y<.01)return '';const pc=new THREE.PerspectiveCamera(35,1,.01,400);const y=center.y+size.y*.25;pc.position.set(center.x,y,center.z+Math.max(1.2,size.y*1.2));pc.lookAt(center.x,y,center.z);
 /* hero pictures: only the hero on a plain background (no space, planet or logo behind it) */
 const hid=[];scene.children.forEach(o=>{if(o!==R.holder&&!o.isLight&&o.visible){hid.push(o);o.visible=false}});const bg0=scene.background,fog0=scene.fog,cc0=renderer.getClearColor(new THREE.Color()),ca0=renderer.getClearAlpha();scene.background=null;scene.fog=null;renderer.setClearColor(0x252a37,1);
@@ -1288,12 +1293,14 @@ function mushroomDance(R){
 }
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
- const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='win'?'win':res==='lose'?'lose':'wait';
+ const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='lose'?'lose':'wait'; /* v1.7.0: no automatic round-win moves — the player picks moves with the MOVE buttons (R.emote) */
+ const emo=R.emote&&!st.select&&!mine&&R.act[R.emote.c]?(TIME-R.emote.t<R.emote.d?R.emote:(R.emote=null,null)):null;if(!emo&&R.emote&&(st.select||mine))R.emote=null;
  const names=Object.keys(R.act), reject=/walk|run|strut|march|sprint|break.?dance/i;
  const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
  const preferred={menu:A.select,fight:R.showNow,win:A.win,champ:A.champ,lose:A.hit,dead:A.dead};
  if(R.animPhase!==phase){R.animPhase=phase;R.phaseAt=TIME;R.phaseClip=null;R.waitFrozen=false;}
- if(phase==='menu'&&/mush/i.test(R.cfg.key+' '+R.cfg.name)&&mushroomDance(R))R.play('MushTVMenuDance',{fade:.25});
+ if(emo){R.play(emo.c,{loop:false,fade:.2});if(R.cur)R.cur.paused=false}
+ else if(phase==='menu'&&/mush/i.test(R.cfg.key+' '+R.cfg.name)&&mushroomDance(R))R.play('MushTVMenuDance',{fade:.25});
  else if(/cosmic/i.test(R.cfg.key+' '+R.cfg.name)&&(phase==='menu'||phase==='wait'||phase==='champ'||phase==='win')&&R.act.Arm_Circle_Shuffle){R.play('Arm_Circle_Shuffle',{fade:.3,loop:true});if(R.cur){R.cur.paused=false;R.cur.timeScale=phase==='wait'?.3:1;}}
  else if(phase==='wait')waitingPose(R);
  else {const cosmic=/cosmic/i.test(R.cfg.key+' '+R.cfg.name);const pool=names.filter(n=>(!cosmic||!/shuffle|arm.circle/i.test(n))&&patterns[phase].test(n)&&!reject.test(n)&&(phase!=='fight'||!/dance|hit.reaction|dead|defeat|victory/i.test(n)));
@@ -4588,7 +4595,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.6.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.7.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4824,5 +4831,45 @@ function fit(){const nav=document.getElementById('topNav'),t=nav&&nav.querySelec
  t.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.textContent.replace(/^\W+/,'').trim())});
  H.classList.remove('navT1','navT2');if(ok())return;H.classList.add('navT1');if(ok())return;H.classList.remove('navT1');H.classList.add('navT2')}
 window.sdNavFit=fit;addEventListener('resize',()=>setTimeout(fit,60));try{new ResizeObserver(()=>fit()).observe(document.getElementById('stage'))}catch(e){}setInterval(fit,2000);setTimeout(fit,300);addEventListener('sd-loaded',()=>setTimeout(fit,50));
+})();</script>
+<style>/* ===== MOVE BUTTONS (v1.7.0, #emoBar, window.sdEmoteIn): during a match the hero stands still; the player taps a move in this vertical column next to the card history and the hero does it to the end. Lists = anim.emotes in the roster ([clip, icon, NAME]); level 1 = 2 moves, +1 per hero level (guests: 2). Online the move is broadcast as 'emo' on the duel channel. ===== */
+#emoBar{position:absolute;top:16%;left:2%;z-index:6;display:none;flex-direction:column;align-items:center;gap:7px}
+/* the old card-history columns are replaced by one LAST CARD badge above each hero's head */
+#historyP,#historyC{display:none!important}
+.lastCard{position:absolute;z-index:6;display:none;flex-direction:column;align-items:center;gap:2px;transform:translate(-50%,-100%);pointer-events:none;transition:opacity .2s}
+.lastCard.on{display:flex}
+.lastCard b{font:900 8px/1 Arial,sans-serif;letter-spacing:.14em;color:#f2e7c9;text-shadow:0 1px 3px #000;background:#000a;padding:2px 5px;border-radius:5px}
+.lastCard img{width:clamp(26px,3vw,40px);aspect-ratio:.72;object-fit:contain;filter:drop-shadow(0 3px 6px #000c)}
+#emoBar.on{display:flex}
+#emoBar .emT{font:900 9px/1 Arial,sans-serif;letter-spacing:.14em;color:#f2e7c9cc;text-shadow:0 1px 3px #000;min-height:9px;white-space:nowrap}
+#emoBar .emB{position:relative;width:clamp(32px,3.4vw,42px);height:clamp(32px,3.4vw,42px);border-radius:50%;border:1px solid rgba(255,214,120,.45);background:rgba(15,17,22,.5);backdrop-filter:blur(3px);cursor:pointer;padding:0;display:grid;place-items:center;font-size:clamp(15px,1.7vw,20px);line-height:1;transition:transform .12s,background .15s,box-shadow .15s;color:#fff}
+#emoBar .emB:hover:not(.lock){background:rgba(40,34,18,.8);box-shadow:0 0 12px rgba(255,200,90,.45);transform:scale(1.08)}
+#emoBar .emB.fire{transform:scale(1.18);box-shadow:0 0 18px rgba(255,210,100,.9)}
+#emoBar .emB.lock{opacity:.45;cursor:not-allowed;filter:grayscale(.8)}
+#emoBar .emB.lock span{filter:blur(.4px)}
+#emoBar .emB i{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);font:900 8px/1 Arial,sans-serif;font-style:normal;background:#000c;color:#ffd27a;padding:1px 3px;border-radius:4px;white-space:nowrap}
+#emoBar.busy .emB{opacity:.35;cursor:wait;filter:grayscale(.6)}#emoBar.busy .emB:hover{transform:none;box-shadow:none}
+#emoBar .emB:focus-visible{outline:2px solid #ffd27a;outline-offset:2px}
+@media (orientation:portrait) and (max-width:820px){#emoBar{top:calc(env(safe-area-inset-top) + 92px);left:2%;gap:6px}#emoBar .emB{width:36px;height:36px;font-size:17px}.lastCard img{width:30px}}
+</style>
+<script>(()=>{const stage=document.getElementById('stage');if(!stage)return;
+const box=document.createElement('div');box.id='emoBar';box.setAttribute('role','toolbar');box.setAttribute('aria-label','Hero moves');stage.appendChild(box);
+let sig=null,last=0,hintT=0;
+const signedIn=()=>!!(window.sdAccount&&window.sdAccount.profile);
+const lvOf=k=>{try{const L=window.sdLV&&window.sdLV();const r=L&&(L[k]||(Array.isArray(L)&&L.find(x=>x.hero===k)));if(!r)return 1;return r.level||Math.floor(Math.sqrt((r.xp||0)/40))+1}catch(e){return 1}};
+function build(){const H=window.Scene3D&&Scene3D.emoteHero&&Scene3D.emoteHero('g');if(!H||!H.list.length){box.innerHTML='';sig=null;return}
+ const lv=signedIn()?lvOf(H.key):1,open=1+lv,list=H.list.filter(e=>H.has(e[0])),s=H.key+':'+open+':'+list.length;if(s===sig)return;sig=s;
+ box.innerHTML='<div class="emT">MOVES</div>'+list.map((e,i)=>{const lock=i>=open,need=Math.max(1,i);return '<button type="button" class="emB'+(lock?' lock':'')+'" data-c="'+e[0]+'" data-need="'+need+'" title="'+(lock?'🔒 '+e[2]+' — hero level '+need:e[2])+'" aria-label="'+e[2]+(lock?' (locked, hero level '+need+')':'')+'"><span>'+e[1]+'</span>'+(lock?'<i>LV '+need+'</i>':'')+'</button>'}).join('')}
+function hint(t){const h=box.querySelector('.emT');if(!h)return;h.textContent=t;clearTimeout(hintT);hintT=setTimeout(()=>{h.textContent='MOVES'},2200)}
+box.addEventListener('click',e=>{const b=e.target.closest('.emB');if(!b)return;e.stopPropagation();
+ if(b.classList.contains('lock')){hint(signedIn()?'LV '+b.dataset.need+' HERO':'LOG IN');return}
+ const H0=Scene3D.emoteHero&&Scene3D.emoteHero('g');if((H0&&H0.busy())||Date.now()-last<300)return;last=Date.now();const c=b.dataset.c;
+ if(Scene3D.emote('g',c)){b.classList.add('fire');setTimeout(()=>b.classList.remove('fire'),380);
+  try{if(typeof NET!=='undefined'&&NET&&NET.ch&&!window.SD_SPEC)NET.ch.send({type:'broadcast',event:'emo',payload:{c}})}catch(err){}}});
+window.sdEmoteIn=c=>{try{const H=Scene3D.emoteHero&&Scene3D.emoteHero('a');if(H&&H.busy())return;Scene3D.emote('a',c)}catch(e){}};
+/* LAST CARD badges above the heads */
+const LC={};for(const w of ['g','a']){const d=document.createElement('div');d.className='lastCard';d.innerHTML='<b>'+(w==='g'?'YOU':'RIVAL')+'</b><img alt="">';stage.appendChild(d);LC[w]=d}
+function lastCards(){const on=box.classList.contains('on');for(const [w,id] of [['g','historyP'],['a','historyC']]){const d=LC[w],sp=document.querySelector('#'+id+' span[data-move]'),p=on&&sp&&window.Scene3D&&Scene3D.headPos?Scene3D.headPos(w):null;if(!p){d.classList.remove('on');continue}const img=d.querySelector('img'),src=sp.querySelector('img')?.src||'';if(img.getAttribute('src')!==src)img.src=src;img.alt=sp.dataset.move;d.style.left=(p.x*100)+'%';d.style.top=(p.y*100)+'%';d.classList.add('on')}requestAnimationFrame(lastCards)}requestAnimationFrame(lastCards);
+setInterval(()=>{const on=stage.classList.contains('match-active')&&!stage.classList.contains('selecting')&&!window.SD_SPEC&&!document.querySelector('#over.show,.over.show');box.classList.toggle('on',on);if(on){build();try{const H=Scene3D.emoteHero('g');box.classList.toggle('busy',!!(H&&H.busy()))}catch(e){}}else sig=null},400);
 })();</script>
 </html>

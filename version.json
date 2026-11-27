@@ -1,6 +1,20 @@
 {
-  "current": "1.6.1",
+  "current": "1.7.0",
   "releases": [
+    {
+      "v": "1.7.0",
+      "date": "2026-11-27",
+      "title": "Hero moves you choose",
+      "new": [
+        "MOVES: during a match a column of move buttons sits on the left. Tap one and your hero does that move — a dance, a kick, a backflip. Online, your rival sees it too",
+        "Every hero starts with 2 moves and unlocks one more each time the hero levels up (log in to level up your heroes)",
+        "Above each hero you can now see the last card they played"
+      ],
+      "fixed": [
+        "Heroes no longer do moves on their own after every round — no more moves cut off halfway",
+        "A move always plays to the end before you can pick the next one"
+      ]
+    },
     {
       "v": "1.6.1",
       "date": "2026-11-27",
