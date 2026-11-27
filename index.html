@@ -1248,8 +1248,8 @@ let lobbyFriendKey=null;
 function selSpot(){const m=(document.getElementById('stage')||{}).dataset?.mode;if(!PT())return{y:.7,s:.82};return m==='gate'?{y:-.05,s:.82}:{y:.95,s:.72}}
 (()=>{const s=document.getElementById('stage');if(s)new MutationObserver(()=>{if(st.select)layoutSelect()}).observe(s,{attributes:true,attributeFilter:['data-mode']})})();
 function layoutSelect(){const SP=selSpot();setAstroVisible(false);for(const R of Object.values(LOADED))R.holder.visible=false;const fk=lobbyFriendKey,F=fk?(fk===previewHeroKey?LOADED[fk+'#2']:LOADED[fk]):null,R=LOADED[previewHeroKey],two=!!F,sp=PT()?.72:.95;
- if(R){R.holder.visible=true;R.holder.scale.setScalar(two?.72:SP.s);R.holder.position.set(two?-sp:(PT()?0:.15),FLOOR+SP.y,.2);R.holder.rotation.y=two?.35:-.05;R.cur=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}
- if(F){F.holder.visible=true;F.holder.scale.setScalar(.72);F.holder.position.set(sp,FLOOR+SP.y,.2);F.holder.rotation.y=-.35;F.cur=null;F.play(F.cfg.anim.select||F.cfg.anim.idle)}}
+ if(R){R.holder.visible=true;R.holder.scale.setScalar(two?.72:SP.s);R.holder.position.set(two?-sp:(PT()?0:.15),FLOOR+SP.y,.2);R.holder.rotation.y=two?.35:-.05;R.mixer.stopAllAction();R.cur=null;R.emote=null;R.play(R.cfg.anim.select||R.cfg.anim.idle)}
+ if(F){F.holder.visible=true;F.holder.scale.setScalar(.72);F.holder.position.set(sp,FLOOR+SP.y,.2);F.holder.rotation.y=-.35;F.mixer.stopAllAction();F.cur=null;F.emote=null;F.play(F.cfg.anim.select||F.cfg.anim.idle)}}
 /* online room on the start screen: the friend's hero stands next to yours */
 API.setLobbyFriend=function(key){lobbyFriendKey=key||null;if(key&&key===previewHeroKey&&!LOADED[key+'#2']&&API.prepareTwin)API.prepareTwin(key).then(()=>{if(st.select)layoutSelect()});if(st.select)layoutSelect()};
 API.selectHeroPreview=function(key){previewHeroKey=key;layoutSelect()};
@@ -1266,7 +1266,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.cur=null;R.waitFrozen=false;waitingPose(R)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.mixer.stopAllAction();R.cur=null;R.emote=null;R.waitFrozen=false;waitingPose(R)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})

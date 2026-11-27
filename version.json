@@ -7,7 +7,8 @@
       "title": "Your hero, your moves",
       "new": [],
       "fixed": [
-        "In a match your hero now only moves when you tap a move — no more moves by himself when a round is won or lost or the match ends"
+        "In a match your hero now only moves when you tap a move — no more moves by himself when a round is won or lost or the match ends",
+        "The start of a match no longer looks glitchy (the lobby dance doesn't mix into the hero's stance any more)"
       ]
     },
     {
