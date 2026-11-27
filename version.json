@@ -1,6 +1,15 @@
 {
-  "current": "1.10.2",
+  "current": "1.10.3",
   "releases": [
+    {
+      "v": "1.10.3",
+      "date": "2026-11-27",
+      "title": "Colourful motto",
+      "new": [
+        "Our motto under the logo is now colourful: En in yellow, joy in pink and Good Games in blue"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.10.2",
       "date": "2026-11-27",
