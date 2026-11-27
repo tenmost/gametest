@@ -1231,7 +1231,8 @@ function poseSkinned(R,h,dt){
 let CHARS=[
  {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'Champion_Dance',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand'}},
  {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=3',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance'}},
- {key:'frog',name:'FROG RONIN',url:'assets/frog-ronin.glb?v=1',voice:'m',anim:{idle:'Idle_Breathe_Look_Around',show:['Victory_Roundhouse_Kick','Victory_Double_Kick','Celebrate_Spin_Jump'],win:'Victory_Roundhouse_Kick',hit:'Hit_In_Back',champ:'Backflip_Jump',dead:'Tantrum_Sit_Defeat',select:'FunnyDancing_01'}}];
+ {key:'frog',name:'FROG RONIN',url:'assets/frog-ronin.glb?v=1',voice:'m',anim:{idle:'Idle_Breathe_Look_Around',show:['Victory_Roundhouse_Kick','Victory_Double_Kick','Celebrate_Spin_Jump'],win:'Victory_Roundhouse_Kick',hit:'Hit_In_Back',champ:'Backflip_Jump',dead:'Tantrum_Sit_Defeat',select:'FunnyDancing_01'}},
+ {key:'frost',name:'FROSTBOUND',url:'assets/frostbound.glb?v=1',voice:'m',anim:{idle:'Idle_Alert_Stance',show:['Victory_Leg_Sweep','Backflip_Sweep_Kick','Celebrate_Spin_Jump'],win:'Victory_Leg_Sweep',hit:'Hit_Slap_Reaction',champ:'Celebrate_Spin_Jump',dead:'Dead',select:'Hip_Hop_Dance'}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.68},a:{p:[2.35,FLOOR+.82,.35],r:-.68}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
@@ -4586,7 +4587,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.5.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.6.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};

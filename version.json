@@ -1,6 +1,15 @@
 {
-  "current": "1.5.0",
+  "current": "1.6.0",
   "releases": [
+    {
+      "v": "1.6.0",
+      "date": "2026-11-27",
+      "title": "New hero: Frostbound",
+      "new": [
+        "Meet FROSTBOUND: a crystal ice warrior in blue and gold armour. He does hip-hop dances, sweeps his rival's legs when he wins a round and spin-jumps when he wins the match"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.5.0",
       "date": "2026-11-27",
