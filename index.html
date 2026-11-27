@@ -446,7 +446,7 @@ window.__acTest={setClient:c=>{client=c},refreshProfile};
 <script>
 /* 3D scene placeholder until the Three.js module loads; the game works even if it never does */
 window.Scene3D={_s:{g:'rock',a:'scissors',shaking:false},setHands(g,a){this._s.g=g;this._s.a=a},setShaking(on){this._s.shaking=on},reveal(){},clear(){}};
-setTimeout(()=>{if(!Scene3D.ready){document.getElementById('nogl').textContent='3D scene could not load (check your connection) — you can still play.';if(selecting)choosePlayer('girl')}},12000);
+setTimeout(()=>{if(!Scene3D.ready){document.getElementById('nogl').textContent='3D scene could not load (check your connection) — you can still play.';if(selecting)choosePlayer('gearfox')}},12000);
 /* ===================== GAME LOGIC ===================== */
 const $=id=>document.getElementById(id);
 const stage=$('stage'),count=$('count'),statusEl=$('status'),hp=$('hp'),hc=$('hc'),flash=$('flash'),over=$('over');
@@ -525,7 +525,7 @@ function render(){for(const [id,moves] of [['historyP',historyP],['historyC',his
 }
 
 /* talking: speech bubbles + browser text-to-speech (free, no files) */
-const SEL={g:{name:'SPACE GIRL',voice:'f'},a:{name:'AZURE WANDERER',voice:'m'}};
+const SEL={g:{name:'GEARFOX',voice:'m'},a:{name:'VERDANT GUARDIAN',voice:'m'}};
 const LINES={
   start:{g:["Let's go!","You're going down!","Watch this!","Ready or not!","Eyes on the card!"],a:["Ready for liftoff!","Houston, prepare to lose!","Calculating your doom...","Countdown engaged!","Zero gravity, zero mercy!"]},
   gWin:{g:["Yes!","Too easy!","Boom!","Gotcha!","Who's the star now?"],a:["Oof!","Lucky shot!","Houston, we have a problem.","My helmet fogged up!","Not fair!"]},
@@ -874,7 +874,7 @@ function gotInvite(p){if(NET&&NET.live){LOBBY.ch.send({type:'broadcast',event:'a
   let left=20;$('invTimer').textContent=left+' s';clearInterval(invTick);invTick=setInterval(()=>{left--;$('invTimer').textContent=left+' s';if(left<=0)answerInvite(false)},1000)}
 function closeInvite(){clearInterval(invTick);incoming=null;$('invite').classList.remove('show')}
 function answerInvite(ok){const p=incoming;if(!p)return;closeInvite();LOBBY.ch.send({type:'broadcast',event:'answer',payload:{to:p.from,ok,code:p.code}});
-  if(ok){const pick=onChar||(Scene3D.roster&&(Scene3D.roster().find(c=>c.playable)||{}).key)||'girl';MODE='online';
+  if(ok){const pick=onChar||(Scene3D.roster&&(Scene3D.roster().find(c=>c.playable)||{}).key)||'gearfox';MODE='online';
     document.querySelectorAll('#modeBtns button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='online'));
     if(!selecting){stopPick();hush();token++;busy=false;over.classList.remove('show');if(!NET||!NET.live)openSelect()}
     if(pendingInvite)cancelInvite();onChar=pick;openOnline(null);joinRoom(p.code)}}
@@ -1161,10 +1161,8 @@ function poseSkinned(R,h,dt){
 
 /* ---------- character roster: pick a player, the computer gets one of the others ---------- */
 let CHARS=[
- {key:'girl',name:'SPACE GIRL',url:'assets/hero.glb?v=6',voice:'f',anim:{idle:'Idle_15',show:['Boxing_Practice','Confident_Strut','Finger_Wag_No'],win:'Backflip',hit:'Hit_Reaction',champ:'Victory_Cheer',dead:'Dead',select:'Victory_Cheer'}},
- {key:'azure',name:'AZURE WANDERER',url:'assets/azure.glb?v=3',voice:'m',anim:{idle:'Agree_Gesture',show:['Joyful_Dance_with_Hand_Sway','Bass_Beats','Boxing_Guard_Prep_Straight_Punch','Excited_Walk_M'],win:'Backflip',hit:'Angry_Ground_Stomp',champ:'victory',dead:'BeHit_FlyUp',select:'Joyful_Dance_with_Hand_Sway'}},
- {key:'tv',name:'TV HEAD',url:'assets/tv-head.glb?v=1',voice:'m',optional:true,height:2.8,anim:{idle:'Confused_Scratch',show:['Boom_Dance','Draw_and_Shoot_from_Back'],win:'Skill_01',hit:'Electrocution_Reaction',champ:'Boom_Dance',dead:'Angry_To_Tantrum_Sit',select:'Boom_Dance'}},
- {key:'cosmic',name:'COSMIC CHALLENGER',url:'assets/cosmic-challenger.glb?v=2',voice:'m',optional:true,anim:{idle:'Arm_Circle_Shuffle*0.3',show:['Charged_Axe_Chop','Arm_Circle_Shuffle'],win:'Arm_Circle_Shuffle',champ:'Arm_Circle_Shuffle',dead:'Charged_Axe_Chop*0.6',select:'Arm_Circle_Shuffle'}}];
+ {key:'gearfox',name:'GEARFOX',url:'assets/gearfox.glb?v=1',voice:'m',anim:{idle:'Agree_Gesture',show:['Axe_Spin_Attack','Combat_Flex_Muscles','Combat_Ready_Strike_Pose'],win:'Backflip_inplace',hit:'Angry_Ground_Stomp_1',champ:'victory',dead:'Shot_and_Fall_Backward',select:'Wave_One_Hand'}},
+ {key:'verdant',name:'VERDANT GUARDIAN',url:'assets/verdant-guardian.glb?v=1',voice:'m',anim:{idle:'Idle_15',show:['Combat_Flip_Sweep','Combat_Seed_Throw','Combat_Draw_Strike'],win:'Cheer_with_Both_Hands_1',hit:'Angry_Ground_Stomp',champ:'Backflip_and_Rise',dead:'Fall_Defeat',select:'Bubble_Dance'}}];
 const LOADED={},SL={g:null,a:null},TALK={g:0,a:0};let HS=null;
 const POS={g:{p:[-2.35,FLOOR+.82,.35],r:.68},a:{p:[2.35,FLOOR+.82,.35],r:-.68}};
 const available=()=>CHARS.filter(c=>c.proc||LOADED[c.key]);
@@ -4516,7 +4514,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.2.4';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.3.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
