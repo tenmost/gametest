@@ -4596,7 +4596,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.10.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.10.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4821,16 +4821,24 @@ html.navT1 #topNav .tnTabs button{font-size:8.5px!important;letter-spacing:.02em
 html.navT1 #topNav .tnSep{margin-left:2px!important;padding-left:.32em!important}
 html.navT2 #topNav .tnTabs button{font-size:0!important;letter-spacing:0!important;padding:.55em .6em!important;gap:0!important}
 html.navT2 #topNav .tnTabs button i{display:inline-block!important;font-size:17px!important;font-style:normal;line-height:1}
+/* v1.10.0 (Dainis): the tabs always stretch over the whole free part of the top bar, biggest text that fits (--tnF set by fit()) */
+html.tnFill #topNav .tnTabs{flex:1 1 auto!important;justify-content:space-between!important;min-width:0}
+html.tnFill:not(.navT1):not(.navT2) #topNav .tnTabs button{flex:1 1 auto!important;justify-content:center!important;text-align:center!important;font-size:var(--tnF,13px)!important;padding-left:.35em!important;padding-right:.35em!important;white-space:nowrap}
 </style>
 <script>(()=>{const H=document.documentElement;
 function fit(){const nav=document.getElementById('topNav'),t=nav&&nav.querySelector('.tnTabs');if(!t)return;const nr=nav.getBoundingClientRect();
- if(getComputedStyle(nav).display==='none'||nr.height<1||nr.top>innerHeight/2){t.style.removeProperty('margin-right');H.classList.remove('navT1','navT2');return}
+ if(getComputedStyle(nav).display==='none'||nr.height<1||nr.top>innerHeight/2){t.style.removeProperty('margin-right');t.style.removeProperty('margin-left');H.classList.remove('navT1','navT2','tnFill');return}
  const ic=[...document.querySelectorAll('#updBtn,#tutBtn,#rulesBtn,#mute,#fsBtn')].filter(e=>e.offsetParent).map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.top<nr.bottom&&r.bottom>nr.top);if(!ic.length)return;
  const left=Math.min(...ic.map(r=>r.left));t.style.setProperty('margin-right',Math.max(0,nr.right-left+8)+'px','important');
  const brand=nav.querySelector('.tnBrand'),bR=brand&&brand.offsetParent?brand.getBoundingClientRect().right:nr.left;
  const ok=()=>{const r=t.getBoundingClientRect();return r.left>=bR+4&&r.right<=left-4};
  t.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.textContent.replace(/^\W+/,'').trim())});
- H.classList.remove('navT1','navT2');if(ok())return;H.classList.add('navT1');if(ok())return;H.classList.remove('navT1');H.classList.add('navT2')}
+ H.classList.remove('navT1','navT2');
+ /* stretch the tabs over the free bar and pick the biggest text that fits */
+ H.classList.add('tnFill');t.style.setProperty('margin-left',Math.max(10,Math.min(40,(left-bR)*.03))+'px','important');
+ const fits=()=>t.scrollWidth<=t.clientWidth+1&&ok();const sk=parseFloat(getComputedStyle(document.getElementById('stage')).getPropertyValue('--sk'))||1;
+ for(let f=Math.round(Math.min(20,16.5*sk));f>=11;f--){H.style.setProperty('--tnF',f+'px');if(fits())return}
+ H.classList.remove('tnFill');H.style.removeProperty('--tnF');if(ok())return;H.classList.add('navT1');if(ok())return;H.classList.remove('navT1');H.classList.add('navT2')}
 window.sdNavFit=fit;addEventListener('resize',()=>setTimeout(fit,60));try{new ResizeObserver(()=>fit()).observe(document.getElementById('stage'))}catch(e){}setInterval(fit,2000);setTimeout(fit,300);addEventListener('sd-loaded',()=>setTimeout(fit,50));
 })();</script>
 <style>/* ===== MOVE BUTTONS (v1.7.0, #emoBar, window.sdEmoteIn): during a match the hero stands still; the player taps a move in this vertical column next to the card history and the hero does it to the end. Lists = anim.emotes in the roster ([clip, icon, NAME]); level 1 = 2 moves, +1 per hero level (guests: 2). Online the move is broadcast as 'emo' on the duel channel. ===== */
