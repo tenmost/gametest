@@ -2458,6 +2458,8 @@ const HREV=(()=>{
   for(const kk of['rock','paper','scissors'])P.lab[kk].visible=!!(ready&&kk===kind&&!inAir);
   P.lab[kind].material.opacity=res==='lose'&&T>Ti?.5:1;
   return true}
+ if(ON)window.__hrevDbg=()=>{const sc=v=>{if(!v)return null;const p=v.clone().project(camera);return[Math.round((p.x+1)*50),Math.round((1-p.y)*50)]};const out={plan:PLAN&&{Ti:PLAN.Ti,sides:PLAN.sides}};
+  for(const k of['g','a']){const o=OBJ[k];const R=SL[k]&&SL[k].R;out[k]={hand:sc(bonePos(k,'RightHand')),lhand:sc(bonePos(k,'LeftHand')),held:sc(heldPos(k)),obj:o?sc(o.root.getWorldPosition(V3(0,0,0))):null,vis:o&&o.root.visible,hips:sc(bonePos(k,'Hips')),bones:R?Object.keys(R.B).length:0}}return out};
  if(ON)window.__hrev=()=>{const o=OBJ.g;if(!o)return null;const P=o.P,vis=x=>x.visible;return{hero:o.hk,kind:CARD.g.kind,res:st.res,root:vis(o.root),my:vis(P.my),rock:vis(P.rock),paper:vis(P.paper),sc:vis(P.scissors)}};
  return{on:ON,get D(){return D},prep,hitPos,active,update,breakIt,updateBits}})();
 function updateCards(dt,pulse){
