@@ -2390,13 +2390,14 @@ const HREV=(()=>{
   for(const k of['g','a']){if(!active(k))continue;const o=obj(k),kind=CARD[k].kind,sp=(o.P.spec&&o.P.spec[kind])||{};
    const clip=sp.clip||(CLIP[o.hk]&&CLIP[o.hk][kind]),tc=sp.tc??null,mode=kind==='scissors'?'hold':'fly',fl=kind==='rock'?.34:.5,ready=sp.ready??.62;
    const need=mode==='fly'?Math.max(ready,tc!=null?.05+tc:0)+fl:Math.max(ready+.2,tc!=null?.05+tc:0);
-   sides[k]={kind,mode,fl,clip,tc,ready,kick:sp.kick};Ti=Math.max(Ti,need);n++}
+   sides[k]={kind,mode,fl,clip,tc,ready,kick:sp.kick};Ti=Math.max(Ti,need);n++;
+   if(mode==='hold'){/* hold in the hand that is nearer the opponent (the left hero's RIGHT hand is behind him) */const sg=k==='g'?1:-1,r=bonePos(k,'RightHand'),l=bonePos(k,'LeftHand');sides[k].hand=r&&l&&l.x*sg>r.x*sg?'LeftHand':'RightHand'}}
   if(!n)return;
   for(const k in sides){const x=sides[k];x.L=x.mode==='fly'?Ti-x.fl:Ti;x.cs=x.tc!=null?Math.max(.02,x.L-x.tc):.02}
   PLAN={Ti,sides,rs:st.revStart};D=Ti-.55;window.SD_HREV_D=D}
  const tmpV=V3(0,0,0);
  function bonePos(k,name){const R=SL[k]&&SL[k].R,b=R&&R.B&&R.B[name];return b?b.getWorldPosition(V3(0,0,0)):null}
- function heldPos(k){const h=bonePos(k,'RightHand');if(!h)return null;const L=bonePos(k,'RightHandMiddle1');if(L)h.lerp(L,.6);h.z+=.12;return h}
+ function heldPos(k,hand='RightHand'){const h=bonePos(k,hand);if(!h)return null;const L=bonePos(k,hand+'Middle1');if(L)h.lerp(L,.6);h.z+=.08;return h}
  function hitPos(){if(!PLAN)return null;for(const k of['g','a']){const x=PLAN.sides[k],o=OBJ[k];if(x&&x.mode==='hold'&&o&&PLAN.sides[k==='g'?'a':'g']&&PLAN.sides[k==='g'?'a':'g'].mode==='fly')return o.root.getWorldPosition(V3(0,0,0))}return null}
  /* paper cut in two: two clipped copies fall apart */
  let clipOn=false;const HALVES=[];
@@ -2434,7 +2435,8 @@ const HREV=(()=>{
    if(!o.sparked&&T>.04){o.sparked=true;burst(home.clone(),P.spark,70,2.2)}P.anim(kind,dt,res)}
   let pos=W,scl=1.25;
   if(pl.mode==='hold'){/* scissors fly into the hand and stay there */
-   const hp=heldPos(k)||home;const g=sstep(pl.ready-.3,pl.ready,T);pos=W.clone().lerp(hp,g);scl=lerp(1.25,.85,g);
+   const hp=heldPos(k,pl.hand)||home;const g=sstep(pl.ready-.3,pl.ready,T);scl=lerp(1.25,.8,g);
+   /* handle in the fist, blades tilted toward the opponent */const tilt=1.0*g,hl=.15*1.35*scl;hp.add(V3(sgn*Math.sin(tilt)*hl,Math.cos(tilt)*hl,0));pos=W.clone().lerp(hp,g);o.tilt=-sgn*tilt;
    const bl=P.blades||[];let op;
    if(T<Ti)op=.62+.06*Math.sin(TIME*8);                 // open, waiting
    else if(T<Ti+.09)op=.62*(1-(T-Ti)/.09);               // SNIP
@@ -2453,13 +2455,13 @@ const HREV=(()=>{
      else if(res==='tie'){pos=tgt0.clone().add(V3(-sgn*.55*sstep(0,.35,a),.15*sstep(0,.35,a),0))}
      else pos=tgt0}
     scl=lerp(1.25,1.0,Math.min(1,(T-pl.L)/pl.fl))}}
-  o.root.position.copy(pos);o.root.lookAt(camera.position);o.root.scale.setScalar(scl);
+  o.root.position.copy(pos);o.root.lookAt(camera.position);if(pl.mode==='hold'&&o.tilt)o.root.rotateZ(o.tilt);o.root.scale.setScalar(scl);
   const inAir=pl.mode==='fly'&&T>=pl.L&&T<Ti+.25;/* no label while it flies (labels piled up at the catcher's hand) */
   for(const kk of['rock','paper','scissors'])P.lab[kk].visible=!!(ready&&kk===kind&&!inAir);
   P.lab[kind].material.opacity=res==='lose'&&T>Ti?.5:1;
   return true}
  if(ON)window.__hrevDbg=()=>{const sc=v=>{if(!v)return null;const p=v.clone().project(camera);return[Math.round((p.x+1)*50),Math.round((1-p.y)*50)]};const out={plan:PLAN&&{Ti:PLAN.Ti,sides:PLAN.sides}};
-  for(const k of['g','a']){const o=OBJ[k];const R=SL[k]&&SL[k].R;out[k]={hand:sc(bonePos(k,'RightHand')),lhand:sc(bonePos(k,'LeftHand')),held:sc(heldPos(k)),obj:o?sc(o.root.getWorldPosition(V3(0,0,0))):null,vis:o&&o.root.visible,hips:sc(bonePos(k,'Hips')),bones:R?Object.keys(R.B).length:0}}return out};
+  for(const k of['g','a']){const o=OBJ[k];const R=SL[k]&&SL[k].R;out[k]={hand:sc(bonePos(k,'RightHand')),lhand:sc(bonePos(k,'LeftHand')),held:sc(heldPos(k,PLAN&&PLAN.sides[k]&&PLAN.sides[k].hand)),obj:o?sc(o.root.getWorldPosition(V3(0,0,0))):null,vis:o&&o.root.visible,hips:sc(bonePos(k,'Hips')),bones:R?Object.keys(R.B).length:0}}return out};
  if(ON)window.__hrev=()=>{const o=OBJ.g;if(!o)return null;const P=o.P,vis=x=>x.visible;return{hero:o.hk,kind:CARD.g.kind,res:st.res,root:vis(o.root),my:vis(P.my),rock:vis(P.rock),paper:vis(P.paper),sc:vis(P.scissors)}};
  return{on:ON,get D(){return D},prep,hitPos,active,update,breakIt,updateBits}})();
 function updateCards(dt,pulse){
