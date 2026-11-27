@@ -147,6 +147,74 @@ footer{text-align:center;color:#d7dadf;font-size:13px;margin-top:8px}
 .count{position:relative;top:auto;left:auto;width:clamp(26px,5.4vw,64px);height:auto;aspect-ratio:1;border-radius:5px;border:1px solid #fac04c;background:linear-gradient(145deg,#2b2f38b0,#191c21a0);box-shadow:0 0 10px #fab93644,inset 0 0 8px #fac04c22;font:900 clamp(17px,3.3vw,42px)/1 'Trebuchet MS',sans-serif;color:#eff0f2;text-shadow:0 0 8px #fac04c;box-sizing:border-box}#status{top:19%;font-family:'Trebuchet MS',Arial,sans-serif;font-size:clamp(10px,2vw,24px);font-weight:900;letter-spacing:.12em;color:#e7e9ec;text-shadow:0 0 9px #fac04c,0 2px 5px #000;opacity:.88}#status.win{color:#6dffa8;text-shadow:0 0 12px #29d98b,0 2px 5px #000}#status.lose{color:#ff7a90;text-shadow:0 0 12px #ff4768,0 2px 5px #000}#fightHUD{gap:3px}
 #fightReadyStatus{inset:0!important;width:100%!important;transform:none!important;display:block!important}.fightReadyBadge{position:absolute;top:23%;transform:translate(-50%,-50%);width:max-content;padding:5px 9px;background:#25283088;font-size:clamp(9px,1.2vw,15px);letter-spacing:.07em}.fightReadyBadge:first-child{left:25%}.fightReadyBadge:last-child{left:75%}#stage.waiting-fight-ready .controls{visibility:hidden}
 </style>
+<!-- ===== LOADING SCREEN (v1.4.0): covers the page from the first paint until the 3D scene, the theme background and every hero are loaded; shows connection problems. Pop-up windows (showModal) wait until it is gone. window.sdBoot ===== -->
+<div id="sdBoot" role="status" aria-live="polite"><style>
+#sdBoot{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2.2vh,22px);background:radial-gradient(ellipse at 50% 38%,#2a2f3b 0,#14171d 58%,#0b0d11 100%);color:#e9e3d2;font-family:Arial,sans-serif;text-align:center;padding:24px;box-sizing:border-box;transition:opacity .45s ease,visibility .45s;user-select:none}
+#sdBoot.gone{opacity:0;visibility:hidden;pointer-events:none}
+#sdBoot .bLogo{font:900 clamp(40px,9vw,96px)/1 'Cinzel','Lilita One',Georgia,serif;letter-spacing:.06em;color:#d9b45f;text-shadow:0 0 28px #d9b45f55,0 4px 0 #2b2418;white-space:nowrap}
+#sdBoot .bLogo b{color:#f4efe4;font-weight:900}
+#sdBoot .bSub{font-weight:900;letter-spacing:.32em;font-size:clamp(10px,1.6vw,15px);color:#cfd3da;margin-top:-4px}
+#sdBoot .bRps{display:flex;gap:clamp(14px,3vw,28px);font-size:clamp(30px,6vw,54px);margin:clamp(6px,2vh,18px) 0}
+#sdBoot .bRps span{display:inline-block;animation:sdHop 1.2s ease-in-out infinite;filter:drop-shadow(0 4px 8px #0008)}
+#sdBoot .bRps span:nth-child(2){animation-delay:.2s}#sdBoot .bRps span:nth-child(3){animation-delay:.4s}
+@keyframes sdHop{0%,60%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-14px) scale(1.12)}}
+#sdBoot .bBar{width:min(420px,78vw);height:14px;border-radius:999px;background:#0c0e12;border:1px solid #d9b45f66;box-shadow:inset 0 2px 6px #000a,0 0 18px #d9b45f22;overflow:hidden}
+#sdBoot .bFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#b8862f,#f2cf72,#b8862f);background-size:200% 100%;animation:sdShine 1.4s linear infinite;transition:width .35s ease}
+@keyframes sdShine{to{background-position:-200% 0}}
+#sdBoot .bMsg{font-weight:900;font-size:clamp(12px,1.7vw,16px);letter-spacing:.08em;color:#f2e7c9;min-height:1.3em}
+#sdBoot .bTip{font-size:clamp(11px,1.5vw,14px);color:#aeb4be;max-width:min(520px,86vw);line-height:1.45;min-height:2.9em}
+#sdBoot .bErr{display:none;flex-direction:column;align-items:center;gap:10px}
+#sdBoot.err .bErr{display:flex}#sdBoot.err .bRps span{animation:none;opacity:.5}
+#sdBoot .bErr p{margin:0;color:#ffb59c;font-weight:900;font-size:clamp(13px,1.8vw,17px);max-width:min(460px,86vw);line-height:1.45}
+#sdBoot .bErr div{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#sdBoot button{font:900 clamp(13px,1.7vw,16px) Arial,sans-serif;letter-spacing:.08em;padding:.75em 1.6em;border-radius:12px;cursor:pointer;border:1px solid #d9b45f;background:linear-gradient(#e7c46d,#b8862f);color:#231a0c}
+#sdBoot button.sec{background:#20242c;color:#e9e3d2;border-color:#6b7280}
+#sdBoot .bFoot{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;font-size:clamp(10px,1.3vw,12px);letter-spacing:.14em;color:#8d939d;font-weight:700}
+#sdBoot .bFoot b{color:#d9b45f}
+#sdNet{position:fixed;left:50%;top:10px;transform:translate(-50%,-150%);z-index:2147483001;background:#3a1d18f0;border:1px solid #ff8a6b;color:#ffe3d9;font:900 13px Arial,sans-serif;letter-spacing:.05em;padding:9px 16px;border-radius:12px;box-shadow:0 6px 22px #0009;transition:transform .3s ease;pointer-events:none;white-space:nowrap}
+#sdNet.on{transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#sdBoot .bRps span,#sdBoot .bFill{animation:none}}
+</style>
+<div class="bLogo"><b>RPS</b> RIVALS</div><div class="bSub">ROCK · PAPER · SCISSORS DUELS</div>
+<div class="bRps" aria-hidden="true"><span>✊</span><span>✋</span><span>✌️</span></div>
+<div class="bBar"><div class="bFill" id="sdBootFill"></div></div>
+<div class="bMsg" id="sdBootMsg">LOADING…</div>
+<div class="bTip" id="sdBootTip"></div>
+<div class="bErr"><p id="sdBootErr"></p><div><button type="button" id="sdBootRetry">↻ TRY AGAIN</button><button type="button" class="sec" id="sdBootGo">PLAY ANYWAY</button></div></div>
+<div class="bFoot">A <b>JOYJOY.GG</b> GAME</div>
+</div><div id="sdNet">⚠ NO CONNECTION — TRYING TO RECONNECT…</div>
+<script>(function(){
+var el=document.getElementById('sdBoot'),fill=document.getElementById('sdBootFill'),msg=document.getElementById('sdBootMsg'),tip=document.getElementById('sdBootTip'),errP=document.getElementById('sdBootErr');
+var T0=Date.now(),MIN=1200,LIMIT=25000,done=false,shown=0,fontsOk=false,queue=[];
+var TIPS=['Rock beats scissors, scissors beat paper, paper beats rock!','Win fights to take your rival’s health. First to win two fights wins the match.','Log in to earn crystals, level up your heroes and climb the weekly leaderboard.','Every arena has its own rules — some give you less time to pick your card!','Play with your friends online, or practise against the computer.','Tip: the computer can’t read your mind… or can it?'];
+tip.textContent=TIPS[Math.floor(Math.random()*TIPS.length)];
+var ti=setInterval(function(){if(done)return clearInterval(ti);tip.textContent=TIPS[Math.floor(Math.random()*TIPS.length)]},3500);
+try{(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){fontsOk=true})}catch(e){fontsOk=true}setTimeout(function(){fontsOk=true},3000);
+/* pop-up windows wait until the loading screen is gone */
+var P=window.HTMLDialogElement&&HTMLDialogElement.prototype;
+if(P){var sm=P.showModal;P.showModal=function(){if(!done){var d=this;if(queue.indexOf(d)<0)queue.push(d);return}return sm.apply(this,arguments)};P.__sdShowModal=sm}
+function step(){try{step2()}catch(e){console.warn('loading screen',e);finish()}}
+function step2(){
+ if(done)return;
+ var S=window.Scene3D||{},ready3d=!!S.ready,noGL=/could not load/i.test((document.getElementById('nogl')||{}).textContent||'');
+ var n=window.SD_HERO_N||0,have=0,bad=window.SD_HERO_FAIL||0;try{have=S.roster?S.roster().length:0}catch(e){}
+ var p=8+(fontsOk?10:0)+(ready3d?32:0)+(n?Math.min(1,have/n)*50:0);
+ if(p>shown)shown=p;fill.style.width=Math.min(100,shown)+'%';
+ msg.textContent=!navigator.onLine?'WAITING FOR INTERNET…':!ready3d?'BUILDING THE ARENA…':!n||have<n?'CALLING THE HEROES'+(n?' ('+have+'/'+n+')':'')+'…':'GET READY!';
+ var all=ready3d&&n>0&&have>=1&&have+bad>=n&&fontsOk;
+ if(all&&Date.now()-T0>=MIN){fill.style.width='100%';msg.textContent='GET READY!';setTimeout(finish,350);done=true;return}
+ if(noGL&&Date.now()-T0>4000){fail('The 3D arena could not load. Check your internet connection and try again.');return}
+ if(Date.now()-T0>LIMIT){fail(navigator.onLine?'This is taking too long — your connection may be slow or the game server is busy.':'No internet connection. Connect to the internet and try again.');return}
+ setTimeout(step,150)}
+function fail(t){if(el.classList.contains('err'))return setTimeout(step,1000);el.classList.add('err');errP.textContent=t;msg.textContent='CONNECTION PROBLEM';setTimeout(step,1000)}
+function finish(){done=true;el.classList.add('gone');setTimeout(function(){el.style.display='none'},500);var q=queue.slice();queue=[];q.forEach(function(d){try{if(!d.open&&d.isConnected)P.__sdShowModal.call(d)}catch(e){}});window.dispatchEvent(new Event('sd-loaded'))}
+document.getElementById('sdBootRetry').onclick=function(){location.reload()};
+document.getElementById('sdBootGo').onclick=function(){done=true;finish()};
+window.sdBoot={done:function(){return done},hide:function(){if(!done){done=true;finish()}}};
+var net=document.getElementById('sdNet');
+function netUI(){if(navigator.onLine)net.classList.remove('on');else if(done)net.classList.add('on')}
+window.addEventListener('offline',netUI);window.addEventListener('online',function(){netUI();if(!done&&el.classList.contains('err')){el.classList.remove('err');T0=Date.now()-MIN}});
+setTimeout(step,60)})();</script>
 <main><div class="stage" id="stage">
 <canvas id="gl"></canvas><div id="nogl">Loading 3D scene…</div>
 <div id="fightHUD"><div class="fightNumber" id="fightNumber">FIGHT 1</div><div class="fightTrack"><div class="fightMarks" id="fightP"></div><span class="fightVS">VS</span><div class="fightMarks" id="fightC"></div></div><div class="count" id="count">3</div></div>
@@ -1195,7 +1263,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
- .catch(e=>{if(!c.optional)console.warn(c.name+' failed to load',e)})}
+ .catch(e=>{window.SD_HERO_FAIL=(window.SD_HERO_FAIL||0)+1;if(!c.optional)console.warn(c.name+' failed to load',e)})}
 /* roster comes from the admin panel (Supabase table sd_characters); built-in list is the fallback */
 async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co',K='sb_publishable_DBNsVK-qmr0ojTpgZEP9ZQ_0bYg_Omw';
  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),4000);
@@ -1204,7 +1272,7 @@ async function fetchRoster(){const SBU='https://mrrqfrmgblbgrvkbrwvt.supabase.co
   const list=rows.filter(x=>x.url&&x.anim&&x.anim.idle).map((x,i)=>({key:x.key,name:x.name,url:x.url,voice:x.voice||'m',height:x.height||3.4,optional:i>=2,
    anim:{...x.anim,show:(Array.isArray(x.anim.show)&&x.anim.show.length?x.anim.show:[x.anim.idle])}}));
   return list.length>=1?list:null}catch(e){console.warn('roster: using built-in list',e);return null}finally{clearTimeout(t)}}
-fetchRoster().then(list=>{if(list)CHARS=list;for(const c of CHARS)if(!c.proc)loadChar(c)});
+fetchRoster().then(list=>{if(list)CHARS=list;window.SD_HERO_N=CHARS.filter(c=>!c.proc).length;for(const c of CHARS)if(!c.proc)loadChar(c)});
 function waitingPose(R){const names=Object.keys(R.act),bad=/walk|run|strut|march|sprint|locomotion|shuffle|jump|kick|hit|dead|defeat|fall|break/i;const configured=String(R.cfg.anim.idle).split('*')[0];const safe=names.find(n=>/idle|stand|breath|rest/i.test(n)&&!bad.test(n))||names.find(n=>/guard|ready|stance/i.test(n)&&!bad.test(n))||(!bad.test(configured)&&names.includes(configured)?configured:null)||names.find(n=>/dance|gesture|scratch|sway/i.test(n)&&!bad.test(n));if(safe){R.play(safe,{fade:.3});if(R.cur)R.cur.paused=false;}else{if(!R.waitFrozen){R.mixer.stopAllAction();R.cur=null;R.waitFrozen=true;}}}
 function mushroomDance(R){
  if(R.act.MushTVMenuDance)return true;
@@ -4517,7 +4585,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.3.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.4.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -4699,4 +4767,42 @@ const set=()=>{const w=st.getBoundingClientRect().width||1084;const k=Math.max(1
 try{new ResizeObserver(set).observe(st)}catch(e){addEventListener('resize',set)}document.addEventListener('fullscreenchange',()=>setTimeout(set,60));set();
 })();
 </script>
+<style>/* ===== ABOUT & FAQ (v1.4.0): 📖 button in the ? window → #aboutDlg (window.sdOpenAbout). Facts only — keep in sync with the game. ===== */
+#aboutDlg{max-width:min(600px,92vw);width:600px;max-height:86vh;padding:0;border:1px solid var(--ln2,#785a28);border-radius:14px;background:var(--pnl,#14161c);color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+#aboutDlg::backdrop{background:rgba(0,0,0,.6)}
+#aboutDlg .aHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln,#3a2f1a);position:sticky;top:0;background:inherit;z-index:1}
+#aboutDlg .aHead h3{margin:0;flex:1;font:700 20px/1.1 Cinzel,serif;color:var(--gd,#ffb627);letter-spacing:.04em}
+#aboutDlg .aX{background:none;border:1px solid var(--ln2,#785a28);color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px}
+#aboutDlg .aBody{padding:8px 16px 18px;overflow:auto;max-height:calc(86vh - 64px)}
+#aboutDlg .aCard{margin:10px 0 14px;padding:14px;border:1px solid var(--gd,#ffb627);border-radius:12px;background:rgba(255,182,39,.06);font:14px/1.5 system-ui;color:#e6e6ea}
+#aboutDlg .aCard b{color:var(--gd,#ffb627)}
+#aboutDlg details{border:1px solid var(--ln,#3a2f1a);border-radius:10px;margin:8px 0;background:rgba(255,255,255,.03)}
+#aboutDlg summary{cursor:pointer;padding:11px 14px;font:800 14px system-ui;color:#f1ead8;list-style:none;display:flex;gap:8px;align-items:center}
+#aboutDlg summary::-webkit-details-marker{display:none}
+#aboutDlg summary::after{content:'+';margin-left:auto;color:var(--gd,#ffb627);font-size:18px;line-height:1}
+#aboutDlg details[open] summary::after{content:'–'}
+#aboutDlg details p{margin:0;padding:0 14px 12px;font:14px/1.5 system-ui;color:#d9dbe2}
+#aboutDlg .aFoot{text-align:center;margin-top:14px;font:700 11px system-ui;letter-spacing:.12em;color:#8d939d}
+#rulesDialog .rAbout{display:block;margin:6px auto 0;background:none;border:1px solid var(--ln2,#785a28);color:var(--gd,#ffb627);border-radius:8px;padding:6px 14px;font:700 12px system-ui;cursor:pointer}
+</style>
+<script>(()=>{
+const QA=[
+['🎮','What is RPS Rivals?','A 3D rock-paper-scissors battle game. Pick a hero, pick an arena and play your card: rock beats scissors, scissors beat paper, paper beats rock. Every lost round costs a piece of health — win two fights to win the match.'],
+['👨‍👦','Who made it?','RPS Rivals is made by two brothers, for joyjoy.gg. It started on 23 November 2026 under the name "Space Duel" and later got its new name, RPS Rivals. We keep adding heroes, arenas and new features — see 📰 WHAT\'S NEW for every update.'],
+['💰','Is it free?','Yes, the game is free to play. Everything you can unlock right now — arenas, avatars, card skins and themes — is unlocked with crystals that you earn by playing.'],
+['👤','Do I need an account?','No. You can play straight away as a guest. With a free account your crystals, wins, hero levels and unlocks are saved, you can add friends, and you can get on the weekly leaderboard.'],
+['💎','What are crystals?','Blue crystals 💎 are earned by playing matches (wins give more), daily missions and login rewards. Pink crystals are rare: you get them by inviting friends, from social missions and from special events.'],
+['⭐','How do heroes level up?','Every match you finish with a hero (logged in) gives that hero XP. Wins give more XP than losses.'],
+['🗺️','Why do arenas have different rules?','Each arena changes the match a little: some give you less time to pick your card, Forgotten Graveyard is sudden death (one fight decides it) and Crystal Nebula is best of five.'],
+['🌐','How do I play with my friends?','Open ONLINE and choose PLAY WITH FRIENDS or HOST A ROOM, then invite your friends. You can also pick RANDOM PLAYER to play someone new.'],
+['🛡️','Is chatting safe?','In a room, everyone in that room can read the short room chat. Private messages only work between players who both accepted each other as friends, and links are removed from them. Never share your password or where you live. If a player is mean or cheats, report them with 🐞 REPORT A BUG (choose "player").'],
+['🐞','Something is broken. What do I do?','Log in and use 🐞 REPORT A BUG in the ACCOUNT menu or in the ? window. You can see when the game team has read or fixed your report.'],
+['📱','Where can I play?','In the web browser on a computer, tablet or phone — no download needed. Just open joyjoy.gg.']];
+const d=document.createElement('dialog');d.id='aboutDlg';
+d.innerHTML='<div class="aHead"><h3>📖 ABOUT &amp; FAQ</h3><button type="button" class="aX" aria-label="Close">✕</button></div><div class="aBody"><div class="aCard"><b>RPS Rivals</b> — rock · paper · scissors duels in 3D. A game by two brothers, made for joyjoy.gg.</div>'+QA.map((q,i)=>'<details'+(i<2?' open':'')+'><summary><span>'+q[0]+'</span>'+q[1]+'</summary><p>'+q[2]+'</p></details>').join('')+'<div class="aFoot">A JOYJOY.GG GAME · v'+(window.SD_VERSION||'')+'</div></div>';
+(document.querySelector('.stage')||document.body).appendChild(d);
+d.querySelector('.aX').onclick=()=>d.close();d.addEventListener('click',e=>{if(e.target===d)d.close()});
+function open(){try{d.showModal()}catch(e){d.show()}}window.sdOpenAbout=open;
+setInterval(()=>{const r=document.getElementById('rulesDialog');if(!r||r.querySelector('.rAbout'))return;const b=document.createElement('button');b.type='button';b.className='rAbout';b.textContent='📖 ABOUT & FAQ';b.onclick=()=>{try{r.close()}catch(e){}open()};const t=r.querySelector('.rUpd')||r.querySelector('.rTut');if(t)t.after(b);else r.insertBefore(b,r.firstChild.nextSibling||null)},1500);
+})();</script>
 </html>
