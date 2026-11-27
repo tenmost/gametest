@@ -1294,7 +1294,7 @@ function mushroomDance(R){
 }
 function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:null,e=x=>1-Math.exp(-dt*x);
  const mine=st.match?(key==='g'?st.match:(st.match==='win'?'lose':'win')):null;
- const phase=st.select?'menu':mine==='win'?'champ':mine==='lose'?'dead':st.shaking?'fight':res==='lose'?'lose':'wait'; /* v1.7.0: no automatic round-win moves — the player picks moves with the MOVE buttons (R.emote) */
+ const phase=st.select?'menu':'wait'; /* v1.8.2 (Dainis): in a match the hero ONLY moves when the player taps a MOVE — no automatic moves for round won/lost, match end or talking */ /* v1.7.0: no automatic round-win moves — the player picks moves with the MOVE buttons (R.emote) */
  /* a chosen move always plays to the end (even if the next round starts or the match ends) */const emo=R.emote&&!st.select&&R.act[R.emote.c]?(TIME-R.emote.t<R.emote.d?R.emote:(R.emote=null,null)):null;if(!emo&&R.emote&&st.select)R.emote=null;
  const names=Object.keys(R.act), reject=/walk|run|strut|march|sprint|break.?dance/i;
  const patterns={menu:/dance|wave|cheer|gesture|pose|idle/i,fight:/box|punch|guard|jab|fight|kick|combat|dodge|axe.chop|attack/i,win:/victory|cheer|celebrat|backflip|triumph/i,champ:/victory|cheer|celebrat|backflip|triumph|dance/i,lose:/hit|hurt|stagger|pain|defeat|stomp|electrocution/i,dead:/dead|death|defeat|fall|behit|knock|tantrum/i};
@@ -1310,7 +1310,7 @@ function animChar(R,key,dt,anyRes){const A=R.cfg.anim,res=anyRes?st.res[key]:nul
  if(!R.phaseClip||(rotate&&TIME-R.phaseAt>Math.max(1.6,R.cur?.getClip().duration||2))){const choices=pool.filter(n=>n!==R.lastPhaseClip);R.phaseClip=(choices.length?choices:pool)[Math.floor(Math.random()*(choices.length||pool.length))]||null;R.phaseAt=TIME;if(R.phaseClip)R.lastPhaseClip=R.phaseClip;}
  if(cosmic&&phase==='fight'&&R.phaseClip){R.play(R.phaseClip,{loop:false,fade:.25});if(R.cur)R.cur.timeScale=.85;}else if(R.phaseClip)R.play(R.phaseClip,{loop:phase!=='lose'&&phase!=='dead',fade:.25});else waitingPose(R);
  }
- R.headDown=lerp(R.headDown,!emo&&(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt);}
+ R.headDown=lerp(R.headDown,!emo&&(phase==='lose'||phase==='dead')&&!R.phaseClip?1:0,e(6));R.nod=st.select&&TALK[key]>0?Math.sin(TIME*13)*.09:0;R.mixer.update(dt);}
 function poseLite(R){if(R.headDown>.001||R.nod)rotWorld(R.B.Head,V3(1,0,0).applyQuaternion(R.holder.quaternion),R.headDown*.45+(R.nod||0))}
 
 
@@ -4596,7 +4596,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.8.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.8.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
