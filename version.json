@@ -1,6 +1,17 @@
 {
-  "current": "1.14.2",
+  "current": "1.14.3",
   "releases": [
+    {
+      "v": "1.14.3",
+      "date": "2026-11-28",
+      "title": "Tidier match screen",
+      "new": [],
+      "fixed": [
+        "No more cards floating above the heroes' heads — your rival's last moves are on the left side",
+        "The exit button is now a tiny ✕ in the bottom-left corner, so you can't press it by mistake when starting a round (it only works between rounds)",
+        "The timer, the fight result text and the rival's cards are no longer too big when the game is not in full screen, and the result text no longer hides under the timer"
+      ]
+    },
     {
       "v": "1.14.2",
       "date": "2026-11-28",
