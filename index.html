@@ -1281,7 +1281,7 @@ function assign(playerKey,oppKey){const me=CHARS.find(c=>c.key===playerKey)||CHA
  const twin=opp.key===me.key&&LOADED[me.key+'#2'];
  SL.g={cfg:me,R:LOADED[me.key]};SL.a={cfg:opp,R:opp.proc?null:(twin?LOADED[me.key+'#2']:LOADED[opp.key])};HS=SL.g.R;
  for(const R of Object.values(LOADED))R.holder.visible=false;
- for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar(.87);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.mixer.stopAllAction();R.cur=null;R.emote=null;R.waitFrozen=false;waitingPose(R)}
+ for(const k of['g','a']){const R=SL[k].R;if(!R)continue;R.holder.visible=true;R.holder.scale.setScalar((window.SD_FIGHT&&window.SD_FIGHT.s)??.8);R.holder.position.set(...POS[k].p);R.holder.rotation.y=POS[k].r;R.mixer.stopAllAction();R.cur=null;R.emote=null;R.waitFrozen=false;waitingPose(R)}
  setAstroVisible(!!opp.proc);return{g:{name:me.name,voice:me.voice,key:me.key},a:{name:opp.name,voice:opp.voice,key:opp.key}}}
 function loadChar(c){return loadSkinned(c.url,{height:c.height||3.4,pos:[0,FLOOR,-60],rotY:0,side:'Right',idle:c.anim.idle})
  .then(R=>{R.cfg=c;R.holder.visible=false;LOADED[c.key]=R;if(st.select)layoutSelect();API.onRoster&&API.onRoster(rosterInfo())})
@@ -2609,7 +2609,7 @@ function update(dt){
  let n=0;for(let i=plist.length-1;i>=0;i--){const q=plist[i];q.age+=dt;if(q.age>q.life){plist.splice(i,1);continue}q.v.y-=dt*1.2;q.v.multiplyScalar(Math.exp(-dt*1.5));q.p.addScaledVector(q.v,dt)}
  for(const q of plist){const f=1-q.age/q.life;pPos.set([q.p.x,q.p.y,q.p.z],n*3);pCol.set(q.c.map(v=>v*f),n*3);n++}
  pGeo.setDrawRange(0,n);pGeo.attributes.position.needsUpdate=pGeo.attributes.color.needsUpdate=true;
- const tf=anyRes&&st.revT<1.5?37:st.shaking?39.5:42;st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
+ /* v1.14.4 (Dainis): fights are zoomed out a bit so the heroes' feet and hands stay on screen (window.SD_FIGHT.fov = extra degrees) */const tf=(anyRes&&st.revT<1.5?37:st.shaking?39.5:42)+(st.select?0:((window.SD_FIGHT&&window.SD_FIGHT.fov)??6));st.fov=lerp(st.fov,tf,1-Math.exp(-dt*4));
  const s=st.camShake;camera.position.set(st.smx*.6+(Math.random()-.5)*s,.3-st.smy*.3+(Math.random()-.5)*s,6.0);camera.lookAt(st.smx*.1,PT()?(st.select?PTC.lys:PTC.ly):(st.select&&window.sdStrips?.()?(window.SD_SEL?.ly??-.9):0),0);
  /* portrait phone: keep the 16:9 horizontal view so both fighters fit, the taller picture shows more sky/floor */
  camera.fov=PT()?Math.atan(Math.tan(st.fov*Math.PI/360)*(16/9)*(st.select?PTC.ks:PTC.k)/camera.aspect)*360/Math.PI:st.fov;
@@ -4971,7 +4971,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.14.3';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.14.4';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
