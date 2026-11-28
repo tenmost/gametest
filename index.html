@@ -5533,7 +5533,9 @@ const tab=k=>tabs.querySelector('[data-tab="'+k+'"]');
 const PAGE_DLG={rankDialog:'rank',shopDialog:'shop',dailyDialog:'daily',themeDlg:'theme',accountDialog:'account',inboxDlg:'inbox'};
 let page=null;
 const DESK=matchMedia('(min-width:701px) and (orientation:landscape),(min-width:821px)');const SIDE=new Set(['heroes','arenas','rank','daily','theme','inbox']);
-const isSide=k=>DESK.matches&&SIDE.has(k);
+/* the right column is 25 % of the game: on small games (sideways phones) it is too narrow for these windows, so they open as full pages there */
+const WIDE_DLG=new Set(['rank','daily','theme','inbox']);
+const isSide=k=>DESK.matches&&SIDE.has(k)&&!(WIDE_DLG.has(k)&&stage.getBoundingClientRect().width*.25<230);
 function area(side){const s=stage.getBoundingClientRect(),n=nav.getBoundingClientRect(),vis=n.height>0&&getComputedStyle(nav).display!=='none';
  let top=s.top,bot=s.bottom;if(vis){if(n.top<s.top+s.height/2)top=n.bottom;else bot=n.top}
  if(side){const gap=Math.round(s.height*.016),W=Math.round(s.width*.25),pad=Math.round(s.width*.016),sb=stage.dataset.mode==='gate'?parseFloat(getComputedStyle(stage).getPropertyValue('--sideBotPx'))||0:0;if(sb)bot=s.bottom-sb+gap;return {left:s.right-pad-W,top:top+gap,width:W,height:Math.max(100,bot-top-2*gap),s}}
@@ -5713,6 +5715,8 @@ html.xhat #topNav .tnBrand::before{content:'';position:absolute;left:-.2em;top:-
 #dailyDialog.sdSide .dItem button{padding:5px 8px!important;font-size:10.5px!important}
 #dailyDialog.sdSide .dMsg{font-size:11px!important;min-height:0!important;margin:2px 0!important}
 #dailyDialog.sdSide .dClose{margin-top:4px!important;padding:6px 18px!important;font-size:12px!important}
+#dailyDialog{container-type:inline-size}
+@container (max-width:200px){#dailyDialog .dItem{grid-template-columns:minmax(0,1fr)!important}#dailyDialog .dItem button,#dailyDialog .dItem .dAct{grid-row:auto!important;grid-column:1!important;width:100%}#dailyDialog .dTitle{overflow-wrap:break-word!important}}
 </style>
 <script>/* ===== PRESENCE LIMITER (Nov 2026): Supabase Realtime allows each browser connection only 5 presence updates (track/untrack) per 30 s; more and it logs ClientPresenceRateLimitReached and SHUTS THE CHANNEL — then nobody sees you, your room or your quick-match search. So every channel's track() goes through one shared budget (max 4 per 30 s for the whole page): identical data is never re-sent, extra calls wait and only the newest data per channel is sent, the duel channel goes first. ===== */
 (()=>{let done=false;const WIN=30000,MAX=5,sent=[],queue=new Map();let timer=null,force=false;
@@ -6128,7 +6132,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.20.1';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.20.2';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
