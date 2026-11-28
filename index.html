@@ -2533,23 +2533,25 @@ const SIG=(()=>{
  const texSmoke=()=>SMOKE||(SMOKE=canvasTex(128,128,g=>{const R=seeded(7);for(let i=0;i<26;i++){const x=36+R()*56,y=36+R()*56,r=16+R()*28,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.2)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill()}}));
  const VS='attribute float aSize;attribute vec4 aCol;uniform float uScale;varying vec4 vC;void main(){vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=aSize*uScale/max(0.05,-mv.z);gl_Position=projectionMatrix*mv;}';
  const FS='uniform sampler2D uTex;varying vec4 vC;void main(){vec4 t=texture2D(uTex,gl_PointCoord);gl_FragColor=vec4(vC.rgb*t.rgb,vC.a*t.a);}';
- function pool(n,additive,tex){const pos=new Float32Array(n*3),col=new Float32Array(n*4),sz=new Float32Array(n),geo=new THREE.BufferGeometry();
+ /* rotating sprites (leaves): aRot turns the point sprite */
+ const VSR=VS.replace('varying vec4 vC;','varying vec4 vC;attribute float aRot;varying float vR;').replace('vC=aCol;','vC=aCol;vR=aRot;'),FSR='uniform sampler2D uTex;varying vec4 vC;varying float vR;void main(){vec2 c=gl_PointCoord-0.5;float s=sin(vR),k=cos(vR);c=vec2(k*c.x-s*c.y,s*c.x+k*c.y)+0.5;if(c.x<0.0||c.x>1.0||c.y<0.0||c.y>1.0)discard;vec4 t=texture2D(uTex,c);if(t.a<0.05)discard;gl_FragColor=vec4(vC.rgb*t.rgb,vC.a*t.a);}';
+ function pool(n,additive,tex,rot){const pos=new Float32Array(n*3),col=new Float32Array(n*4),sz=new Float32Array(n),ra=rot?new Float32Array(n):null,geo=new THREE.BufferGeometry();if(ra)geo.setAttribute('aRot',new THREE.BufferAttribute(ra,1));
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('aCol',new THREE.BufferAttribute(col,4));geo.setAttribute('aSize',new THREE.BufferAttribute(sz,1));geo.setDrawRange(0,0);
-  const mat=new THREE.ShaderMaterial({uniforms:{uTex:{value:tex},uScale:{value:600}},vertexShader:VS,fragmentShader:FS,transparent:true,depthWrite:false,blending:additive?THREE.AdditiveBlending:THREE.NormalBlending});
+  const mat=new THREE.ShaderMaterial({uniforms:{uTex:{value:tex},uScale:{value:600}},vertexShader:rot?VSR:VS,fragmentShader:rot?FSR:FS,transparent:true,depthWrite:false,blending:additive?THREE.AdditiveBlending:THREE.NormalBlending});
   const pts=new THREE.Points(geo,mat);pts.frustumCulled=false;pts.renderOrder=additive?16:15;scene.add(pts);const L=[];
   return{L,add(o){o.age=0;if(L.length>=n)L.shift();L.push(o)},
    update(dt,scale){mat.uniforms.uScale.value=scale;
     for(let i=L.length-1;i>=0;i--){const q=L[i];q.age+=dt;if(q.age>=q.life){L.splice(i,1);continue}
      const d=Math.exp(-(q.drag||0)*dt);q.vx*=d;q.vy*=d;q.vz*=d;q.vy+=(q.gy||0)*dt;
      if(q.sw){q.vx+=Math.sin(TIME*q.sw+q.ph)*q.swA*dt;q.vz+=Math.cos(TIME*q.sw*1.3+q.ph)*q.swA*dt}
-     q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt}
+     q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(ra)q.r=(q.r||0)+(q.vr||0)*dt}
     let k=0;for(const q of L){const t=q.age/q.life,c0=q.c0,c1=q.c1||c0;
      pos[k*3]=q.x;pos[k*3+1]=q.y;pos[k*3+2]=q.z;
      col[k*4]=c0[0]+(c1[0]-c0[0])*t;col[k*4+1]=c0[1]+(c1[1]-c0[1])*t;col[k*4+2]=c0[2]+(c1[2]-c0[2])*t;
      col[k*4+3]=(q.a??1)*Math.min(1,t*(q.fin||12))*Math.pow(1-t,q.fo||1.3);
-     sz[k]=q.s0+((q.s1??q.s0)-q.s0)*t;k++}
-    geo.setDrawRange(0,k);geo.attributes.position.needsUpdate=geo.attributes.aCol.needsUpdate=geo.attributes.aSize.needsUpdate=true}}}
- let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke())});
+     sz[k]=q.s0+((q.s1??q.s0)-q.s0)*t;if(ra)ra[k]=q.r||0;k++}
+    geo.setDrawRange(0,k);geo.attributes.position.needsUpdate=geo.attributes.aCol.needsUpdate=geo.attributes.aSize.needsUpdate=true;if(ra)geo.attributes.aRot.needsUpdate=true}}}
+ let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke()),leaf:pool(260,false,leafSprite(),true)});
  const P=(pl,x,y,z,o)=>pl.add(Object.assign({x,y,z,vx:0,vy:0,vz:0},o));
  const dirRnd=()=>{const u=Math.random()*2-1,a=Math.random()*TAU,r=Math.sqrt(1-u*u);return[Math.cos(a)*r,u,Math.sin(a)*r]};
  /* ember / spark / smoke presets (colours above 1 = bloom glow) */
@@ -2905,7 +2907,193 @@ const SIG=(()=>{
     saw.position.x+=dt*.9;saw.position.y-=dt*t*2.6;saw.rotation.z-=dt*20;washer.visible=hub.visible=t<.15;
     if(Math.random()<.5){const v=A.localToWorld(tmpV.set(.3,0,0));zap(v.x,v.y,v.z,{n:2})}return t>1.2},
    hideTrails(){TR.forEach(t=>t.reset())}}}
- const SIGNATURES={frog:buildFox,gearfox:buildGear};/* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
+ /* ======================= VERDANT GUARDIAN — living forest magic (v1.17.0): bark, roots, moss, leaves, emerald energy and golden highlights ======================= */
+ const EM0=[.55,3.2,1.25],EM1=[.06,.7,.2],GLD0=[2.8,2.2,.8],GLD1=[1.2,.7,.1],DUST=[.42,.34,.24];
+ const mote=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:EM0,c1:EM1,sp:.2,vy:.12,s:.026,gy:.03,swA:.4},o));
+ const gold=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:GLD0,c1:GLD1,sp:.2,vy:.1,s:.02,gy:.02,swA:.4},o));
+ const dust=(x,y,z,o={})=>smoke(x,y,z,Object.assign({c:DUST,a:.34,s:.14},o));
+ function leaf(x,y,z,o={}){const g=.75+Math.random()*.5;P(fx().leaf,x,y,z,{vx:o.vx??rnd(-.25,.25),vy:o.vy??rnd(-.05,.3),vz:o.vz??0,life:rnd(1.4,2.6)*(o.l||1),c0:o.c||[.85*g,1*g,.8*g],s0:o.s||.075,s1:(o.s||.075)*.85,a:1,drag:o.drag??.9,gy:o.gy??-.18,sw:2.2,swA:o.swA??.9,ph:Math.random()*9,r:Math.random()*6.3,vr:rnd(-4,4),fin:8,fo:.7})}
+ let LFS=null,BRK=null,HRT=null,BIGL=null,SPLG=null;
+ const leafPath=(g,cx,top,bot,w)=>{g.beginPath();g.moveTo(cx,bot);g.bezierCurveTo(cx-w*1.05,bot-(bot-top)*.3,cx-w*1.1,top+(bot-top)*.32,cx,top);g.bezierCurveTo(cx+w*1.1,top+(bot-top)*.32,cx+w*1.05,bot-(bot-top)*.3,cx,bot);g.closePath()};
+ /* small leaf for the particle pool (turned by the shader) */
+ function leafSprite(){return LFS||(LFS=canvasTex(64,64,g=>{g.translate(32,32);g.rotate(.6);g.translate(-32,-32);leafPath(g,32,4,60,15);const gr=g.createLinearGradient(0,4,0,60);gr.addColorStop(0,'#7ccf55');gr.addColorStop(1,'#2f7a2c');g.fillStyle=gr;g.fill();
+  g.strokeStyle='rgba(220,255,170,.7)';g.lineWidth=1.6;g.beginPath();g.moveTo(32,58);g.lineTo(32,8);g.stroke();g.strokeStyle='rgba(30,70,20,.6)';g.lineWidth=1;leafPath(g,32,4,60,15);g.stroke()}))}
+ /* bark: wavy vertical grain, deep fissures and moss patches (tiles) */
+ function barkTex(){if(BRK)return BRK;const W=256,H=256,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),im=g.createImageData(W,H),R=seeded(21);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const w=x+9*Math.sin(y*.045)+4*Math.sin(y*.13+x*.02),gr=.5+.5*Math.sin(w*.28),fis=Math.pow(Math.max(0,Math.sin(w*.098+Math.sin(y*.03)*1.4)),18),
+   fu=x*TAU/W,fv=y*TAU/H,ms=.5+.5*Math.sin(fu*2+Math.sin(fv*2)*1.5+1.3)*Math.sin(fv*3+Math.sin(fu*3)*1.2)+.15*Math.sin(fu*5+fv*4),moss=Math.max(0,(ms-.66)*3)*(.6+.4*R()),n=R()*.18,i=(y*W+x)*4,
+   r=(72+38*gr)*(1-fis*.8)*(.9+n),gg=(46+24*gr)*(1-fis*.8)*(.9+n),b=(26+12*gr)*(1-fis*.8)*(.9+n);
+   im.data[i]=r*(1-moss)+58*moss;im.data[i+1]=gg*(1-moss)+104*moss;im.data[i+2]=b*(1-moss)+38*moss;im.data[i+3]=255}
+  g.putImageData(im,0,0);return BRK=c}
+ const barkMap=(rep)=>{const t=new THREE.CanvasTexture(barkTex());t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);t.anisotropy=4;return t};
+ /* heartwood: bark + mossy stone with emerald cracks (Voronoi) and glowing runes */
+ function heartMaps(){if(HRT)return HRT;const W=256,H=128,R=seeded(77),pts=[];for(let i=0;i<22;i++)pts.push([R()*W,R()*H]);
+  const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c},cb=mk(),ce=mk(),gb=cb.getContext('2d'),ge=ce.getContext('2d'),ib=gb.createImageData(W,H),ie=ge.createImageData(W,H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){let d1=1e9,d2=1e9;for(const p of pts){let dx=Math.abs(x-p[0]);dx=Math.min(dx,W-dx);const dy=y-p[1],d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d}else if(d<d2)d2=d}
+   const e=Math.sqrt(d2)-Math.sqrt(d1),crack=Math.max(0,1-e/3),core=Math.max(0,1-e/1.2),i=(y*W+x)*4,
+    w=x+10*Math.sin(y*.06+x*.01)+4*Math.sin(y*.17),gr=.5+.5*Math.sin(w*.32),fu=x*TAU/W,sn=Math.sin(fu*2+Math.sin(y*.06)*1.6)*Math.sin(y*.085+Math.sin(fu*3)*1.2)+.35*Math.sin(fu*5+y*.13),stone=Math.min(1,Math.max(0,(sn-.25)*4)),
+    ms=Math.min(.85,Math.max(0,(Math.sin(fu*3+Math.cos(y*.05)*2)*Math.cos(y*.07+Math.sin(fu*2))+.3*Math.sin(fu*7+y*.2)-.35)*2.4)),n=R()*.2;
+   let r=(70+34*gr)*(.85+n),g=(44+20*gr)*(.85+n),b=(24+10*gr)*(.85+n);const sv=(78+26*Math.sin(fu*9+y*.3)+40*n);r=r*(1-stone)+sv*1.02*stone;g=g*(1-stone)+sv*stone;b=b*(1-stone)+sv*.94*stone;r=r*(1-ms)+46*ms;g=g*(1-ms)+78*ms;b=b*(1-ms)+30*ms;
+   ib.data[i]=r*(1-crack*.75);ib.data[i+1]=g*(1-crack*.75);ib.data[i+2]=b*(1-crack*.75);ib.data[i+3]=255;
+   const v=Math.min(1,Math.pow(crack,1.6)+core*.5);ie.data[i]=(30+120*core*core)*v;ie.data[i+1]=255*v;ie.data[i+2]=(80+80*core)*v;ie.data[i+3]=255}
+  gb.putImageData(ib,0,0);ge.putImageData(ie,0,0);
+  ge.save();ge.strokeStyle='#7dffb0';ge.shadowColor='#3dff8a';ge.shadowBlur=6;ge.lineWidth=1.6;ge.lineCap='round';const Q=seeded(5);
+  for(let k=0;k<9;k++){const x=14+k*28+Q()*8,y=34+Q()*60,s=9;ge.beginPath();ge.arc(x,y,s,0,TAU);ge.stroke();ge.beginPath();ge.moveTo(x,y-s);ge.lineTo(x,y+s);ge.moveTo(x,y);ge.lineTo(x+(Q()-.5)*s*1.4,y-s*.6);ge.moveTo(x,y+s*.2);ge.lineTo(x+(Q()-.5)*s*1.4,y+s*.7);ge.stroke()}ge.restore();
+  const t1=new THREE.CanvasTexture(cb),t2=new THREE.CanvasTexture(ce);for(const t of[t1,t2]){t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping}return HRT={map:t1,em:t2}}
+ /* the big leaf: green blade, light veins, golden edge; glow map = emerald veins + gold rim */
+ function bigLeaf(){if(BIGL)return BIGL;const W=256,H=384,cx=128,top=10,bot=374,hw=112;
+  const veins=(g)=>{g.beginPath();g.moveTo(cx,bot-6);g.lineTo(cx,top+14);g.stroke();for(let k=0;k<10;k++){const y=bot-40-k*32,len=(1-Math.abs(k-4)/8)*hw*.9,side=[-1,1];for(const s of side){g.beginPath();g.moveTo(cx,y);g.quadraticCurveTo(cx+s*len*.45,y-14,cx+s*len,y-38-k*1.5);g.stroke();
+   g.beginPath();g.moveTo(cx+s*len*.5,y-18);g.lineTo(cx+s*len*.62,y-4);g.stroke()}}};
+  const map=canvasTex(W,H,g=>{leafPath(g,cx,top,bot,hw);g.save();g.clip();const gr=g.createLinearGradient(0,top,0,bot);gr.addColorStop(0,'#5fb847');gr.addColorStop(.6,'#2f8a37');gr.addColorStop(1,'#1d5a26');g.fillStyle=gr;g.fillRect(0,0,W,H);
+   const R=seeded(13);for(let i=0;i<500;i++){g.fillStyle=`rgba(${R()<.5?20:120},${R()<.5?60:170},${R()<.5?20:70},.07)`;g.fillRect(R()*W,R()*H,2+R()*4,2+R()*4)}
+   const hl=g.createRadialGradient(cx-30,top+120,10,cx-30,top+120,160);hl.addColorStop(0,'rgba(220,255,180,.25)');hl.addColorStop(1,'rgba(220,255,180,0)');g.fillStyle=hl;g.fillRect(0,0,W,H);
+   g.strokeStyle='rgba(205,245,160,.85)';g.lineWidth=3;veins(g);g.lineWidth=7;g.strokeStyle='rgba(205,245,160,.6)';g.beginPath();g.moveTo(cx,bot-6);g.lineTo(cx,top+14);g.stroke();g.restore();
+   g.strokeStyle='#d8b44a';g.lineWidth=5;leafPath(g,cx,top,bot,hw);g.stroke()});
+  const em=canvasTex(W,H,g=>{g.fillStyle='#000';g.fillRect(0,0,W,H);g.save();leafPath(g,cx,top,bot,hw);g.clip();g.strokeStyle='#45ff94';g.shadowColor='#1aff6a';g.shadowBlur=10;g.lineWidth=3.4;veins(g);g.lineWidth=7;g.beginPath();g.moveTo(cx,bot-6);g.lineTo(cx,top+14);g.stroke();g.restore();
+   g.strokeStyle='#ffd55a';g.shadowColor='#ffb020';g.shadowBlur=10;g.lineWidth=5;leafPath(g,cx,top,bot,hw);g.stroke()});
+  return BIGL={map,em}}
+ /* a root / vine tube that tapers towards its end; grow it with geometry.setDrawRange(0, growIdx(geo,f)) */
+ function rootGeo(points,r,tub=40,rad=6,t0=1,t1=.3){const curve=new THREE.CatmullRomCurve3(points),g=new THREE.TubeGeometry(curve,tub,r,rad,false),p=g.attributes.position,c=new THREE.Vector3(),v=new THREE.Vector3();
+  for(let i=0;i<=tub;i++){curve.getPointAt(i/tub,c);const k=t0+(t1-t0)*(i/tub);for(let j=0;j<=rad;j++){const id=i*(rad+1)+j;v.fromBufferAttribute(p,id).sub(c).multiplyScalar(k).add(c);p.setXYZ(id,v.x,v.y,v.z)}}
+  g.computeVertexNormals();g.userData={tub,rad};return g}
+ const growIdx=(g,f)=>6*g.userData.rad*Math.max(0,Math.min(g.userData.tub,Math.round(g.userData.tub*f)));
+ /* flying wood splinters */
+ function splinters(H,n,mat,q,sp=1){const g=new THREE.Group();g.position.copy(H);const geo=SPLG||(SPLG=new THREE.BoxGeometry(.07,.014,.018));
+  for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,mat),d=dirRnd(),v=rnd(1.2,3)*sp;m.userData.v=new THREE.Vector3(d[0]*v,d[1]*v+1.1,d[2]*v*.6);m.userData.w=new THREE.Vector3(rnd(-12,12),rnd(-12,12),rnd(-12,12));m.scale.setScalar(rnd(.6,1.7));m.rotation.set(rnd(0,6),rnd(0,6),rnd(0,6));g.add(m)}
+  oneShot(g,1.15,(t,dt,gg)=>{for(const m of gg.children){const u=m.userData;u.v.y-=6*dt;m.position.addScaledVector(u.v,dt);m.rotation.x+=u.w.x*dt;m.rotation.y+=u.w.y*dt;if(t>.75)m.scale.multiplyScalar(.92)}})}
+
+ function buildVerdant(){const root=new THREE.Group(),parts={},S={acc:0,acc2:0,acc3:0,lastOpen:.3,dOpen:0};
+  const barkM=new THREE.MeshStandardMaterial({map:barkMap(2),roughness:.92,metalness:0,color:0xd8d0c0});barkM.userData.keep=true;
+  const vineM=new THREE.MeshStandardMaterial({color:0x3d7a2a,roughness:.7,emissive:0x0c3a10,emissiveIntensity:.6});
+  const rootM=new THREE.MeshStandardMaterial({map:barkMap(4),roughness:.9,color:0xb8a890,emissive:0x0a5a24,emissiveIntensity:.25});
+  const smallLeafM=new THREE.MeshStandardMaterial({map:leafSprite(),alphaTest:.4,side:THREE.DoubleSide,roughness:.6,emissive:0x0a3a0c,emissiveIntensity:.5});
+  const emerald=new THREE.MeshBasicMaterial({color:new THREE.Color(.5,3,1.2)}),emGlow=new THREE.MeshBasicMaterial({color:0x2aff7a,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false});
+  const glowSpr=(c,o)=>new THREE.Sprite(new THREE.SpriteMaterial({map:texGlow(),color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false}));
+  const leafGeo=new THREE.PlaneGeometry(.06,.06);
+  const sprout=(parent,pos,s,rz)=>{const m=new THREE.Mesh(leafGeo,smallLeafM);m.position.copy(pos);m.rotation.z=rz;m.scale.setScalar(s);m.userData.s=s;m.userData.ph=Math.random()*6;parent.add(m);return m};
+  /* ---- ROCK: ANCIENT HEARTWOOD — bark + mossy stone boulder, emerald runes, roots wrapped around it, twigs that keep growing ---- */
+  const HM=heartMaps();
+  const heartM=new THREE.MeshStandardMaterial({map:HM.map,emissive:0xffffff,emissiveMap:HM.em,emissiveIntensity:1.3,roughness:.95,metalness:0,flatShading:true});
+  const rock=new THREE.Group(),body=new THREE.Group();rock.add(body);const heart=new THREE.Mesh(rockGeo(.25,4,3.7),heartM);body.add(heart);
+  const hglow=glowSpr(0x2aff7a,.4);hglow.scale.setScalar(.95);hglow.position.z=-.12;rock.add(hglow);
+  const roots=new THREE.Group();body.add(roots);
+  for(let r=0;r<6;r++){const pts=[],ph0=r/6*TAU+rnd(0,.4);for(let k=0;k<=9;k++){const t=k/9,th=2.75-t*2.45,ph=ph0+t*2.3*(r%2?1:-1),R=.262+.012*Math.sin(k*2.1+r);pts.push(new THREE.Vector3(Math.sin(th)*Math.cos(ph)*R,Math.cos(th)*R*.9,Math.sin(th)*Math.sin(ph)*R))}
+   const g=rootGeo(pts,.024,44,7,1.15,.35);roots.add(new THREE.Mesh(g,rootM))}
+  const tw=[];for(let i=0;i<6;i++){const d=new THREE.Vector3(rnd(-1,1),rnd(-.2,1),rnd(.2,1)).normalize(),p0=d.clone().multiplyScalar(.24),side=new THREE.Vector3(-d.y,d.x,0).normalize().multiplyScalar(rnd(-.06,.06));
+   const pts=[p0,p0.clone().addScaledVector(d,.06).add(side),p0.clone().addScaledVector(d,.13).addScaledVector(side,-.5),p0.clone().addScaledVector(d,.19).addScaledVector(side,.6)];
+   const g=rootGeo(pts,.009,24,5,1,.25),m=new THREE.Mesh(g,rootM);body.add(m);const lf=sprout(body,pts[3],1.1,rnd(0,6));tw.push({g,lf,ph:i*1.13,sp:rnd(.25,.4)})}
+  root.add(rock);parts.rock=rock;
+  /* ---- PAPER: EMERALD LEAF — grows from a golden seed, unfolds, veins fill with energy (shader), vines + small leaves around it ---- */
+  const BL=bigLeaf(),FILL={value:0};
+  const leafM=new THREE.MeshStandardMaterial({map:BL.map,emissive:0xffffff,emissiveMap:BL.em,emissiveIntensity:1.5,alphaMap:scrollTex().noise,alphaTest:.5,side:THREE.DoubleSide,roughness:.55,metalness:0});
+  leafM.onBeforeCompile=sh=>{sh.uniforms.uFill=FILL;sh.fragmentShader='uniform float uFill;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#ifdef USE_EMISSIVEMAP\n vec4 emC=texture2D(emissiveMap,vEmissiveMapUv);float flv=smoothstep(uFill+0.06,uFill-0.03,vEmissiveMapUv.y);totalEmissiveRadiance*=emC.rgb*(0.12+0.88*flv);\n#endif')};
+  leafM.customProgramCacheKey=()=>'sigLeafFill';
+  const lg=new THREE.PlaneGeometry(.4,.58,14,18),lp=lg.attributes.position,lox=new Float32Array(lp.count),loy=new Float32Array(lp.count);for(let i=0;i<lp.count;i++){lox[i]=lp.getX(i);loy[i]=lp.getY(i)}
+  const bigLeafMesh=new THREE.Mesh(lg,leafM);const leafG=new THREE.Group();leafG.add(bigLeafMesh);leafG.rotation.z=.12;bigLeafMesh.position.y=.29;
+  const stem=new THREE.Mesh(rootGeo([new THREE.Vector3(0,0,0),new THREE.Vector3(.01,-.05,.01),new THREE.Vector3(-.01,-.11,0)],.012,10,6,1,.5),vineM);leafG.add(stem);
+  const seedM=new THREE.MeshStandardMaterial({color:0xc8952e,metalness:.6,roughness:.35,emissive:0xffb040,emissiveIntensity:1.2}),seed=new THREE.Mesh(new THREE.SphereGeometry(.045,18,12),seedM);seed.scale.set(1,1.25,1);
+  const sglow=glowSpr(0xffd060,.8);sglow.scale.setScalar(.3);
+  const pvines=[];for(let v=0;v<3;v++){const pts=[];for(let k=0;k<=12;k++){const t=k/12,a=v/3*TAU+t*5.5,r=.17+.06*Math.sin(t*3+v);pts.push(new THREE.Vector3(Math.cos(a)*r,-.12+t*.52,Math.sin(a)*r*.45+.02))}
+   const g=rootGeo(pts,.008,60,5,1,.35),m=new THREE.Mesh(g,vineM),ls=[];for(let k=2;k<12;k+=3)ls.push(sprout(leafG,pts[k],.9,rnd(0,6)));leafG.add(m);pvines.push({g,ls})}
+  const paper=new THREE.Group();paper.add(leafG,seed,sglow);paper.position.y=-.18;root.add(paper);parts.paper=paper;
+  function shapeLeaf(fold,curl){const th=fold*1.4;for(let i=0;i<lp.count;i++){const x0=lox[i],y0=loy[i],t=(y0+.29)/.58,ax=Math.abs(x0);
+   lp.setXYZ(i,x0*Math.cos(th),y0,ax*Math.sin(th)+curl*t*t*.12+Math.sin(TIME*2.1+y0*6)*.006+Math.sin(TIME*1.3+x0*9)*.004)}lp.needsUpdate=true;lg.computeVertexNormals()}
+  /* ---- SCISSORS: THORNFANG BLADES — curved enchanted-wood blades with thorns, emerald edges, a living root-knot pivot and vines ---- */
+  const bladeBark=new THREE.MeshStandardMaterial({map:barkMap(7),roughness:.85,color:0xc9b89a,emissive:0x062a10,emissiveIntensity:.3});bladeBark.userData.keep=true;
+  const bs=new THREE.Shape();bs.moveTo(-.035,-.034);bs.quadraticCurveTo(.17,-.1,.46,.03);bs.quadraticCurveTo(.25,.012,.03,.032);bs.lineTo(-.035,.032);bs.closePath();
+  const bladeGeo=new THREE.ExtrudeGeometry(bs,{depth:.022,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:2,curveSegments:24});bladeGeo.translate(0,0,-.011);
+  const edgeC=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.455,.03,0),new THREE.Vector3(.25,.013,0),new THREE.Vector3(.03,.033,0)),eCore=new THREE.TubeGeometry(edgeC,28,.005,6),eGl=new THREE.TubeGeometry(edgeC,28,.016,8);
+  const spine=new THREE.QuadraticBezierCurve3(new THREE.Vector3(-.035,-.034,0),new THREE.Vector3(.17,-.1,0),new THREE.Vector3(.46,.03,0)),thornGeo=new THREE.ConeGeometry(.011,.06,6);thornGeo.translate(0,.03,0);
+  const handleG=rootGeo([new THREE.Vector3(-.02,-.01,0),new THREE.Vector3(-.09,-.045,.008),new THREE.Vector3(-.16,-.05,0),new THREE.Vector3(-.2,-.075,0)],.017,20,7,1,.7),loopG=new THREE.TorusGeometry(.048,.013,8,24);
+  const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.034,.011,72,8,2,3),rootM);knot.position.z=.02;const kglow=glowSpr(0x2aff7a,.7);kglow.scale.setScalar(.16);kglow.position.z=.04;
+  const Y=new THREE.Vector3(0,1,0);
+  function blade(){const g=new THREE.Group();g.add(new THREE.Mesh(bladeGeo,bladeBark),new THREE.Mesh(eCore,emerald),new THREE.Mesh(eGl,emGlow),new THREE.Mesh(handleG,rootM));
+   const lo=new THREE.Mesh(loopG,rootM);lo.position.set(-.235,-.08,0);g.add(lo);const thorns=[];
+   for(let k=0;k<7;k++){const t=.12+k*.11,p=spine.getPoint(t),tg=spine.getTangent(t),n=new THREE.Vector3(tg.y,-tg.x,0).normalize();const th=new THREE.Mesh(thornGeo,bladeBark);th.position.copy(p);th.quaternion.setFromUnitVectors(Y,n.add(new THREE.Vector3(.25,0,0)).normalize());g.add(th);thorns.push(th)}
+   const vp=[];for(let k=0;k<=14;k++){const t=k/14,p=spine.getPoint(.05+t*.75).lerp(edgeC.getPoint(1-(.05+t*.75)),.5);vp.push(new THREE.Vector3(p.x,p.y+Math.sin(t*16)*.02,Math.cos(t*16)*.02))}
+   const vg=rootGeo(vp,.005,50,5,1,.5);g.add(new THREE.Mesh(vg,vineM));const ls=[sprout(g,vp[4],.85,.6),sprout(g,vp[9],.75,-.4)];
+   const pulse=glowSpr(0x5aff9a,.9);pulse.scale.setScalar(.09);g.add(pulse);return{g,thorns,ls,pulse}}
+  const A=blade(),B=blade();B.g.scale.y=-1;B.g.position.z=-.03;
+  const blades=new THREE.Group();blades.add(A.g,B.g,knot,kglow);blades.position.x=-.1;
+  const sciss=new THREE.Group();sciss.add(blades);root.add(sciss);parts.scissors=sciss;
+  const home={A:A.g.position.clone(),B:B.g.position.clone()};
+  const TR=[makeTrail([.5,3,1.2],[.05,.6,.15]),makeTrail([.5,3,1.2],[.05,.6,.15])],TIP=new THREE.Vector3(.45,.03,0),MIDP=new THREE.Vector3(.2,-.01,0);
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));lab.scale.set(.6,.15,1);lab.position.y=-.43;lab.renderOrder=20;root.add(lab);
+  const LT={rock:['✊ ROCK','ANCIENT HEARTWOOD'],paper:['✋ PAPER','EMERALD LEAF'],scissors:['✌️ SCISSORS','THORNFANG BLADES']};
+  const charge=T=>T<.3?.15+.08*Math.sin(TIME*2.5):T<.55?sstep(.3,.55,T):.6;
+  const sway=(list,dt)=>list.forEach(l=>{l.rotation.y=.5*Math.sin(TIME*2+l.userData.ph);l.rotation.x=.3*Math.sin(TIME*1.6+l.userData.ph)});
+  return{root,
+   show(kind){for(const k in parts)parts[k].visible=k===kind;lab.material.map=labelTex(kind,LT[kind][0],LT[kind][1],'#7dff9a');lab.material.needsUpdate=true;lab.visible=true;
+    rootM.emissiveIntensity=.25;paper.position.y=-.18;leafG.rotation.z=.12;body.visible=true;heart.visible=true;hglow.visible=true;roots.scale.setScalar(1.08);roots.visible=true;heartM.emissiveIntensity=1.3;body.position.set(0,0,0);
+    FILL.value=0;leafM.alphaTest=.5;leafM.color.setRGB(1,1,1);leafM.emissiveIntensity=1.5;leafG.scale.setScalar(.01);leafG.visible=true;seed.visible=sglow.visible=true;seed.scale.set(1,1.25,1);pvines.forEach(v=>v.g.setDrawRange(0,0));
+    for(const b of[A,B]){b.g.rotation.set(0,0,0);b.thorns.forEach(t=>t.scale.setScalar(.5))}A.g.position.copy(home.A);B.g.position.copy(home.B);knot.visible=kglow.visible=true;emGlow.opacity=.45;
+    TR.forEach(t=>t.reset());S.acc=S.acc2=S.acc3=0},
+   appear(kind,ctx){const p=ctx.wp;for(let i=0;i<10;i++)leaf(p.x+rnd(-.2,.2),p.y+rnd(-.15,.2),p.z+.05,{vy:rnd(.2,.6)});for(let i=0;i<16;i++){const d=dirRnd();mote(p.x+d[0]*.2,p.y+d[1]*.2,p.z+d[2]*.1,{sp:.6})}
+    if(kind==='rock'){for(let i=0;i<6;i++)dust(p.x+rnd(-.2,.2),p.y-.2,p.z,{s:.12});st.camShake+=.06}},
+   update(kind,Tm,dt,ctx){const p=ctx.wp,s=root.scale.x,c=charge(Tm);
+    if(kind==='rock'){/* heavy: slow turn, tiny bob; roots tighten and glow as the forest magic gathers */
+     body.rotation.y+=dt*(.25+.4*c);body.rotation.x=.12*Math.sin(TIME*.6);body.position.y=.008*Math.sin(TIME*1.4);
+     roots.scale.setScalar(1.08-.1*c+.006*Math.sin(TIME*3));rootM.emissiveIntensity=.25+1.2*c;
+     const pl=Math.sin(TIME*(2.4+c*7));heartM.emissiveIntensity=1+.35*pl+1.4*c;hglow.material.opacity=.25+.15*pl+.35*c;hglow.scale.setScalar(.9+.25*c);
+     tw.forEach(w=>{const f=((TIME*w.sp+w.ph)%1.6)/1.2,gro=Math.min(1,f)*(f>1.25?Math.max(0,1-(f-1.25)*3):1);w.g.setDrawRange(0,growIdx(w.g,gro));w.lf.scale.setScalar(Math.max(.01,sstep(.7,1,gro)*1.1));w.lf.rotation.z+=dt*.3});
+     S.acc+=dt*(6+10*c);while(S.acc>=1){S.acc--;if(c>.4){/* energy spirals into the core */const d=dirRnd(),r=.5;P(fx().add,p.x+d[0]*r,p.y+d[1]*r,p.z+d[2]*r*.4,{vx:-d[0]*r*2.2,vy:-d[1]*r*2.2,vz:-d[2]*r*.8,life:.45,c0:EM0,c1:[2,3.4,1.6],s0:.02,s1:.035,drag:0,fo:.6})}else{const d=dirRnd();mote(p.x+d[0]*.3*s,p.y+d[1]*.25*s,p.z+d[2]*.12*s)}}
+     S.acc2+=dt*1.6;while(S.acc2>=1){S.acc2--;leaf(p.x+rnd(-.3,.3)*s,p.y+rnd(.1,.3)*s,p.z+.04,{vy:rnd(-.05,.15),s:.06})}}
+    else if(kind==='paper'){const gro=sstep(0,.3,Tm)*.62+.38*sstep(.3,.55,Tm),fold=1-.9*sstep(.22,.55,Tm);
+     leafG.scale.setScalar(Math.max(.01,gro));shapeLeaf(fold,1-.5*gro);FILL.value=Tm>=.55?1.1:sstep(.06,.55,Tm)*1.08;leafM.emissiveIntensity=1.3+.4*Math.sin(TIME*3)+.6*c;
+     const sd=1-sstep(.25,.4,Tm);seed.visible=sglow.visible=sd>.02;seed.scale.set(sd,sd*1.25,sd);seed.rotation.y+=dt*2;sglow.material.opacity=.8*sd;sglow.scale.setScalar(.3+.2*Math.sin(TIME*8));
+     pvines.forEach((v,i)=>{const f=sstep(.05+i*.05,.5+i*.05,Tm);v.g.setDrawRange(0,growIdx(v.g,f));v.ls.forEach((l,k)=>l.scale.setScalar(Math.max(.01,sstep(.3+k*.08,.5+k*.08,f*.9)*.9)))});sway(pvines.flatMap(v=>v.ls),dt);
+     leafG.rotation.y=.12*Math.sin(TIME*1.1);
+     S.acc+=dt*(8+14*c);while(S.acc>=1){S.acc--;const v=bigLeafMesh.localToWorld(tmpV.set(rnd(-.15,.15),rnd(-.25,.25),.02));Math.random()<.5?gold(v.x,v.y,v.z):mote(v.x,v.y,v.z)}
+     S.acc2+=dt*(1.2+2*c);while(S.acc2>=1){S.acc2--;const a=Math.random()*TAU;leaf(p.x+Math.cos(a)*.35*s,p.y+rnd(-.2,.3)*s,p.z+Math.sin(a)*.1,{vx:-Math.sin(a)*.5,vy:rnd(0,.25),s:.055})}}
+    else{const res=ctx.res;let o;
+     if(Tm<.3)o=.28+.2*Math.sin(TIME*6);else if(Tm<.42)o=.28+.5*sstep(.3,.42,Tm);else if(Tm<.55){const k=(Tm-.42)/.13;o=.78*(1-k*k)}else o=res==='lose'?.15:0;
+     const d=o-S.lastOpen;if(S.dOpen<0&&d>=0&&Tm<.3){const v=blades.localToWorld(tmpV.set(0,0,.03));mote(v.x,v.y,v.z,{sp:.6});leaf(v.x,v.y,v.z,{s:.05})}S.dOpen=d;S.lastOpen=o;
+     A.g.rotation.z=-o;B.g.rotation.z=o;sciss.scale.x=ctx.dir;blades.rotation.z=.05*Math.sin(TIME*1.4);knot.rotation.z+=dt*(.6+3*c);kglow.material.opacity=.4+.5*c;
+     for(const b of[A,B]){b.thorns.forEach((t,i)=>t.scale.setScalar(.5+.75*c+.05*Math.sin(TIME*4+i)));const f=((TIME*(.9+2.6*c))%1);b.pulse.position.copy(edgeC.getPoint(1-f));b.pulse.material.opacity=(.3+.7*c)*Math.sin(f*Math.PI)}
+     emGlow.opacity=.3+.15*Math.sin(TIME*5)+c*.4;sway([...A.ls,...B.ls],dt);
+     for(let i=0;i<2;i++){const bl=i?B.g:A.g;TR[i].push(bl.localToWorld(TIP.clone()),bl.localToWorld(MIDP.clone()))}
+     S.acc+=dt*(4+14*c);while(S.acc>=1){S.acc--;const v=(Math.random()<.5?A.g:B.g).localToWorld(tmpV.set(rnd(.05,.45),.02,0));mote(v.x,v.y,v.z,{sp:.15,s:.02,l:.7})}
+     S.acc2+=dt*.8;while(S.acc2>=1){S.acc2--;leaf(p.x+rnd(-.2,.2),p.y+rnd(-.1,.1),p.z,{s:.05})}}},
+   attack(kind,ctx){const H=ctx.HP,q=root.quaternion,dir=ctx.dir;
+    if(kind==='rock'){/* the forest erupts: emerald shockwave, roots bursting outward, splinters, leaves and dust */
+     for(const [c,sc0,sc1,life,op] of[[new THREE.Color(.4,2.6,1),.15,2.6,.55,1],[0xeaffc0,.08,1.6,.3,.85],[0x2a8a30,.2,3.4,.75,.45]]){const m=new THREE.Mesh(ringGeo(),addMat(null,c,op));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;
+      oneShot(m,life,(t,_,mm)=>{const e=1-Math.pow(1-t,3);mm.scale.setScalar(sc0+(sc1-sc0)*e);mm.material.opacity=op*Math.pow(1-t,1.4)})}
+     const fl=glowSpr(0x7dff9a,1);fl.position.copy(H);fl.renderOrder=18;oneShot(fl,.32,(t,_,s2)=>{s2.scale.setScalar(.4+2.2*Math.min(1,t*6));s2.material.opacity=Math.pow(1-t,1.6)});
+     const rg=new THREE.Group();rg.position.copy(H);rg.quaternion.copy(q);const rm=rootM.clone();rm.transparent=true;rm.emissiveIntensity=1.2;
+     for(let i=0;i<8;i++){const a=i/8*TAU+rnd(-.2,.2),L=rnd(.5,.8),pts=[];for(let k=0;k<=6;k++){const t=k/6,w=Math.sin(t*7+i)*.05*t;pts.push(new THREE.Vector3(Math.cos(a)*L*t-Math.sin(a)*w,Math.sin(a)*L*t+Math.cos(a)*w,.02))}
+      const m=new THREE.Mesh(rootGeo(pts,.022,30,6,1.2,.15),rm);m.userData.ownGeo=true;m.geometry.setDrawRange(0,0);rg.add(m)}
+     oneShot(rg,.9,(t,_,g)=>{const f=sstep(0,.3,t);for(const m of g.children)m.geometry.setDrawRange(0,growIdx(m.geometry,f));g.children[0].material.opacity=1-sstep(.6,1,t)});
+     splinters(H,16,barkM,q);for(let i=0;i<24;i++){const d=dirRnd();leaf(H.x,H.y,H.z,{vx:d[0]*rnd(1,2.4),vy:d[1]*2+.8,vz:d[2],s:.07,gy:-1.2,drag:1.6})}
+     blast(H.x,H.y,H.z,60,{c0:EM0,c1:EM1,v0:1.4,v1:3.4,s:.035,gy:-2});for(let i=0;i<12;i++)dust(H.x+rnd(-.2,.2),H.y-.1,H.z,{s:.2,v:1.4});st.camShake+=.22}
+    else if(kind==='paper'){/* the leaf flares and releases twisting vines that wrap the rival's object; a storm of leaves + gold */
+     const won=ctx.res==='win',st0=ctx.wp.clone();
+     if(won){const vm=vineM.clone();vm.transparent=true;vm.emissiveIntensity=1.4;const g=new THREE.Group();
+      for(let v=0;v<3;v++){const pts=[st0.clone().add(new THREE.Vector3(0,rnd(-.1,.1),.03))],mid=st0.clone().lerp(H,.5).add(new THREE.Vector3(0,.18*(v-1),.08));pts.push(mid);
+       for(let k=0;k<=14;k++){const t=k/14,a=v/3*TAU+t*TAU*2.2,r=.2-.08*t;pts.push(new THREE.Vector3(H.x+Math.cos(a)*r,H.y+(t-.5)*.36,H.z+Math.sin(a)*r*.6))}
+       const m=new THREE.Mesh(rootGeo(pts,.014,90,6,1,.4),vm);m.userData.ownGeo=true;m.geometry.setDrawRange(0,0);m.frustumCulled=false;g.add(m)}
+      oneShot(g,1.05,(t,_,gg)=>{const f=sstep(0,.45,t);for(const m of gg.children)m.geometry.setDrawRange(0,growIdx(m.geometry,f));gg.children[0].material.opacity=1-sstep(.75,1,t);
+       if(Math.random()<.5)gold(H.x+rnd(-.2,.2),H.y+rnd(-.2,.2),H.z+.05,{sp:.4})})}
+     for(let i=0;i<34;i++){const a=Math.random()*TAU,r=rnd(.15,.45);leaf(H.x+Math.cos(a)*r,H.y+rnd(-.2,.25),H.z+Math.sin(a)*r*.4,{vx:-Math.sin(a)*2.2,vz:Math.cos(a)*.8,vy:rnd(.2,.9),s:.065,drag:1.4,gy:-.4})}
+     blast(H.x,H.y,H.z,40,{c0:GLD0,c1:GLD1,v0:.8,v1:2.2,s:.028,gy:-.6});blast(H.x,H.y,H.z,30,{c0:EM0,c1:EM1,v0:.8,v1:2.2,s:.03,gy:-.6});st.camShake+=.08}
+    else{/* Thornfang snap: emerald cut, sparks, splinters and leaves */
+     for(const [w,h,col,life,rz] of[[1.9,.18,new THREE.Color(.4,2.6,1),.45,-.5],[1.5,.06,0xf4ffd8,.3,-.5],[1.2,.12,new THREE.Color(.2,1.6,.6),.5,.38]]){const m=new THREE.Mesh(planeGeo(),addMat(slashW(),col,1));m.position.copy(H);m.quaternion.copy(q);m.rotateZ(rz);m.renderOrder=18;
+      oneShot(m,life,(t,_,mm)=>{mm.scale.set(w*Math.min(1,t*7),h*(1+t*.6),1);mm.material.opacity=t<.25?1:Math.pow(1-(t-.25)/.75,1.5)})}
+     blast(H.x,H.y,H.z,70,{c0:EM0,c1:EM1,v0:2,v1:4.2,s:.03,gy:-3,drag:1.3});splinters(H,10,bladeBark,q,.8);for(let i=0;i<16;i++){const d=dirRnd();leaf(H.x,H.y,H.z,{vx:d[0]*2,vy:d[1]*1.6+.6,s:.06,gy:-1,drag:1.5})}st.camShake+=.12}},
+   brk(kind,ctx){const p=ctx.wp;
+    if(kind==='rock'){heart.visible=hglow.visible=false;roots.visible=false;splinters(p,22,barkM,root.quaternion,1.1);
+     const cm=heartM;const ch=new THREE.Group();ch.position.copy(p);for(let i=0;i<9;i++){const m=new THREE.Mesh(rockGeo(.06+(i%3)*.025,1,i*1.9+2),cm),d=dirRnd();m.userData.ownGeo=true;m.position.set(d[0]*.1,d[1]*.1,d[2]*.06);m.userData.v=new THREE.Vector3(d[0]*rnd(1,2),Math.abs(d[1])*1.5+1,d[2]);ch.add(m)}
+     cm.userData.keep=true;oneShot(ch,1.2,(t,dt,g)=>{for(const m of g.children){m.userData.v.y-=6*dt;m.position.addScaledVector(m.userData.v,dt);m.rotation.x+=dt*6;m.rotation.y+=dt*4;if(t>.75)m.scale.multiplyScalar(.93)}});
+     for(let i=0;i<14;i++)leaf(p.x,p.y,p.z,{vx:rnd(-1.5,1.5),vy:rnd(.5,1.8),gy:-1.4});for(let i=0;i<10;i++)dust(p.x,p.y,p.z,{s:.18,v:1.3})}
+    else if(kind==='paper'){for(let i=0;i<10;i++)leaf(p.x+rnd(-.15,.15),p.y+rnd(-.1,.3),p.z,{c:[.75,.55,.25],gy:-.6})}
+    else{S.bv=[new THREE.Vector3(-1.3,1.7,.5),new THREE.Vector3(1.1,1.5,-.4)];S.bw=[rnd(6,10),-rnd(6,10)];splinters(p,12,bladeBark,root.quaternion);knot.visible=false;mote(p.x,p.y,p.z,{sp:1})}},
+   brkUpd(kind,t,dt,ctx){const p=ctx.wp;lab.visible=false;
+    if(kind==='rock')return t>.1;
+    if(kind==='paper'){/* withers to brown and crumbles */const w=Math.min(1,t*1.6);leafM.color.setRGB(1-.25*w,1-.55*w,1-.75*w);leafM.emissiveIntensity=Math.max(0,1.5-t*2.5);leafM.alphaTest=Math.min(.999,.5+Math.max(0,t-.2)*.6);
+     leafG.rotation.z=.12+t*.6;paper.position.y=-.18-t*t*.25;if(Math.random()<.5){const v=bigLeafMesh.localToWorld(tmpV.set(rnd(-.15,.15),rnd(-.25,.25),0));leaf(v.x,v.y,v.z,{c:[.7,.5,.22],s:.045,gy:-.8,vy:0})}if(Math.random()<.2)dust(p.x,p.y,p.z,{s:.1,a:.2});return t>1.15}
+    [A,B].forEach((b,i)=>{S.bv[i].y-=5*dt;b.g.position.addScaledVector(S.bv[i],dt);b.g.rotation.z+=S.bw[i]*dt});emGlow.opacity=Math.max(0,.45-t*.5);kglow.visible=t<.1;
+    if(Math.random()<.3)leaf(p.x,p.y,p.z,{c:[.7,.55,.25],s:.045});return t>1.2},
+   hideTrails(){TR.forEach(t=>t.reset())}}}
+ const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant};/* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
  const OBJ={};const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>!OFF&&!FAIL&&!HREV.on&&!st.select&&!!SIGNATURES[heroKey(k)];
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(o&&o.hk===hk)return o;if(o)o.root.visible=false;
@@ -2930,7 +3118,7 @@ const SIG=(()=>{
    o.sig.update(o.kind,T,dt,Object.assign(ctx(o,k,sgn),{res}));return true}catch(e){fail(e);return false}}
  function breakIt(k){try{const o=OBJ[k];if(!o||!o.kind)return false;o.broken=true;o.done=false;o.bt=0;o.sig.brk(o.kind,ctx(o,k,k==='g'?-1:1));return true}catch(e){fail(e);return false}}
  function impact(HP,r){for(const k of['g','a']){try{const o=OBJ[k];if(!active(k)||!o||!o.kind||r[k]==='lose')continue;o.sig.attack(o.kind,Object.assign(ctx(o,k,k==='g'?-1:1),{HP:HP.clone(),res:r[k]}))}catch(e){fail(e)}}}
- function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
+ function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc);FXP.leaf.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
  return{active,update,breakIt,impact,updateFx,SIGNATURES,get on(){return!OFF&&!FAIL}}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT-HREV.D;
@@ -5389,7 +5577,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.16.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.17.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};

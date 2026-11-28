@@ -1,6 +1,16 @@
 {
-  "current": "1.16.0",
+  "current": "1.17.0",
   "releases": [
+    {
+      "v": "1.17.0",
+      "date": "2026-11-28",
+      "title": "Verdant Guardian's living forest",
+      "new": [
+        "Verdant Guardian now shows his own forest magic when the cards are revealed: the Ancient Heartwood rock, the Emerald Leaf paper and the Thornfang Blades scissors — with growing roots, glowing runes, swirling leaves and vines that wrap around the rival's card",
+        "It only changes how it looks — rock, paper and scissors still win and lose exactly the same way"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.16.0",
       "date": "2026-11-28",
