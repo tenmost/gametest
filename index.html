@@ -888,7 +888,7 @@ async function joinRoom(code,host=false){leaveOnline();$('onStatus').textContent
     const syncD=()=>{if(NET!==net)return;const ps0=ch.presenceState(),ps={};for(const k in ps0)if(!(ps0[k][0]&&ps0[k][0].spec))ps[k]=ps0[k];
       {const now=Date.now();for(const k in net.bc){const b=net.bc[k];if(now-b._t>9000){delete net.bc[k];continue}const x={...b};delete x._t;delete x.id;ps[k]=[{...(ps[k]&&ps[k][0]||{}),...x}]}}const ids=Object.keys(ps).sort();
       const others=ids.filter(k=>k!==myId).map(k=>({id:k,...ps[k][0]}));
-      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
+      if(others.length&&!net.live&&!net.starting){if(ids.indexOf(myId)>1){$('onStatus').textContent='This room is full.';return}const o=others[0];if(o.uid&&window.sdAccount?.userId&&o.uid===window.sdAccount.userId){leaveOnline();window.sdSelfBlock&&window.sdSelfBlock();return}if(!net.opp)sfx.match?.();net.opp=o;showOppCard(o);const isHost=net.host!==!!o.host?net.host:myId<o.id;net.isHost=isHost;if(!maps.includes(net.map)){net.map=resolveMap($('arenaChoice').value);setTimeout(trackRoom,0)}/* both joined by link: the tie-break host had no arena yet */
         if(net.friendChar!==(o.char||null)){net.friendChar=o.char||null;Scene3D.setLobbyFriend?.(net.friendChar)}roomUI();
         if(net.ready&&o.ready){if(isHost){net.starting=true;const a=maps.includes(net.map)?net.map:'temple',b=maps.includes(o.map)?o.map:a,fin=a===b?a:(Math.random()<.5?a:b);net.final=fin;net.flip=a!==b;window.arenaMap=fin;trackRoom();startOnline(o)}
           else if(o.go&&maps.includes(o.final)){window.arenaMap=o.final;net.flip=o.flip;net.starting=true;startOnline(o)}}}
@@ -941,7 +941,7 @@ function showMe(){$('lobMe').textContent='You: '+dispName()+(window.sdAccount?.p
 window.addEventListener('sd-profile',()=>{showMe();lobbyTrack()});
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function myStatus(){return NET&&NET.live?'playing':'free'}
-function lobbyTrack(){if(LOBBY&&LOBBY.joined)LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:!!window.sdAccount?.profile}).catch(()=>{})}
+function lobbyTrack(){if(LOBBY&&LOBBY.joined)LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:!!window.sdAccount?.profile,ak:(window.sdAK?window.sdAK():'')}).catch(()=>{})}
 async function joinLobby(){try{const client=await sbClient();const ch=client.channel('spaceduel-lobby',{config:{presence:{key:myId},broadcast:{self:false}}});LOBBY={ch,joined:false};
   ch.on('presence',{event:'sync'},()=>{const ps=ch.presenceState();lobbyUsers=Object.keys(ps).filter(k=>k!==myId).map(k=>({id:k,...ps[k][ps[k].length-1]}));renderLobby()});
   ch.on('broadcast',{event:'invite'},({payload:p})=>{if(p.to===myId)gotInvite(p)});
@@ -4731,7 +4731,7 @@ let QM=null;
 {const _lt=lobbyTrack;lobbyTrack=function(){if(!(LOBBY&&LOBBY.joined))return;LOBBY.ch.track({name:dispName(),av:myAvKey(),char:onChar,status:myStatus(),acc:signed(),lvl:lvOf(onChar),q:QM?QM.t:0}).catch(()=>{})}}
 /* READY FIX (Nov 2026): presence is limited (5 updates / 30 s), so READY and the host's match state were stuck in the queue and nothing happened.
    Now every room member also BROADCASTS its state (`rhb`) right away and every 2.5 s; presence is only a backup. Your own entry is always taken from memory. */
-function roomMe(R){const hero=onChar||favHero();const me={name:dispName(),av:myAvKey(),hero,lvl:lvOf(hero),acc:signed(),ready:R.ready,t:R.t};
+function roomMe(R){const hero=onChar||favHero();const me={name:dispName(),av:myAvKey(),hero,lvl:lvOf(hero),acc:signed(),ak:(window.sdAK?window.sdAK():''),ready:R.ready,t:R.t};
  if(R.host)Object.assign(me,{host:true,set:R.set,st:R.st,order:R.order,wins:R.wins});return me}
 function roomBeat(R){if(!R||!R.subscribed)return;try{R.ch.send({type:'broadcast',event:'rhb',payload:{id:myId,...roomMe(R)}})}catch(e){}}
 function roomSelf(R,mem){const me={id:myId,...roomMe(R)},i=mem.findIndex(m=>m.id===myId);if(i>=0)mem[i]={...mem[i],...me};else mem.push(me);return mem}
@@ -4763,7 +4763,7 @@ function roomSync(){const R=ROOM;if(!R)return;const ps=R.ch.presenceState();cons
  if(R.subscribed)roomSelf(R,mem);
  if(!R.host){const h=mem.find(m=>m.host);if(!h){if(R.hostSeen){leaveRoomR();hubMsg('The host closed the room.')}return}
   R.hostSeen=true;R.set=h.set||R.set;R.st=h.st||{playing:null};R.order=h.order||[];R.wins=h.wins||{};
-  if(!R.joinedOk){const idx=mem.slice().sort(memSort).findIndex(m=>m.id===myId);if(idx>=(R.set&&R.set.max||2)){leaveRoomR();hubMsg('That room is full.');return}R.joinedOk=true;$('rmMsg').textContent='';addLog('You joined '+(R.set?R.set.name:'the room')+' — press READY to play.')}}
+  if(!R.joinedOk){{const _ak=(window.sdAK?window.sdAK():'');if(_ak&&mem.some(m=>m.id!==myId&&m.ak===_ak)){leaveRoomR();hubMsg('You are already in this room on another tab or device. You can\'t play against yourself.');return}}const idx=mem.slice().sort(memSort).findIndex(m=>m.id===myId);if(idx>=(R.set&&R.set.max||2)){leaveRoomR();hubMsg('That room is full.');return}R.joinedOk=true;$('rmMsg').textContent='';addLog('You joined '+(R.set?R.set.name:'the room')+' — press READY to play.')}}
  const before=new Map(R.members.map(m=>[m.id,m]));if(R.members.length){mem.forEach(m=>{if(!before.has(m.id)&&m.id!==myId)addLog('👋 '+(m.name||'Player')+' joined')});R.members.forEach(m=>{if(!mem.some(x=>x.id===m.id))addLog('🚪 '+(m.name||'Player')+' left')})}
  R.members=mem;if(R.host)hostTick();else checkMyMatch();renderRoom();lobbyTrack()}
 const mName=id=>((ROOM&&ROOM.members.find(m=>m.id===id))||{}).name||'Player';
@@ -4772,9 +4772,9 @@ function hostTick(){const R=ROOM;if(!R||!R.host)return;let changed=false;if(R.su
  const ord=R.order.filter(id=>ids.includes(id));ids.forEach(id=>{if(!ord.includes(id))ord.push(id)});if(ord.join()!==R.order.join()){R.order=ord;changed=true}
  if(R.st.playing&&!R.st.playing.every(id=>ids.includes(id))&&Date.now()>R.st.at+25000){addLog('Match cancelled — a player left.');R.st={...R.st,playing:null};changed=true}
  if(!R.st.playing&&!(R.st.cool>Date.now())){const ready=R.order.filter(id=>{const m=R.members.find(x=>x.id===id);return m&&m.ready});
-  if(ready.length>=2){const w=R.st.lastWinner;let a,b;if(w&&ready.includes(w)){a=w;b=ready.find(id=>id!==w)}else{a=ready[0];b=ready[1]}
-   const pool=R.set.maps&&R.set.maps.length?R.set.maps:['temple'],map=pool[Math.floor(Math.random()*pool.length)];
-   R.st={...R.st,playing:[a,b],names:[mName(a),mName(b)],code:newCode(),map,at:Date.now()+5600,n:(R.st.n||0)+1};R.live=null;changed=true;addLog('⚔ Match '+R.st.n+': '+mName(a)+' vs '+mName(b)+' — '+mapLabel(map))}}
+  if(ready.length>=2){const w=R.st.lastWinner;let a,b;const akOf=id=>((R.members.find(m=>m.id===id)||{}).ak||'');const pick=x=>ready.find(id=>id!==x&&!(akOf(x)&&akOf(id)===akOf(x)));if(w&&ready.includes(w)){a=w;b=pick(w)}else{a=ready[0];b=pick(a)}if(!b){a=null}
+   if(a&&b){const pool=R.set.maps&&R.set.maps.length?R.set.maps:['temple'],map=pool[Math.floor(Math.random()*pool.length)];
+   R.st={...R.st,playing:[a,b],names:[mName(a),mName(b)],code:newCode(),map,at:Date.now()+5600,n:(R.st.n||0)+1};R.live=null;changed=true;addLog('⚔ Match '+R.st.n+': '+mName(a)+' vs '+mName(b)+' — '+mapLabel(map))}}}
  if(changed){roomTrack();lobbyTrack()}checkMyMatch();renderRoom()}
 function applyResult(p){const R=ROOM;if(!R||!R.host||!R.st.playing||R.st.code!==p.code||R.st.done===p.code)return;if(!R.st.playing.includes(p.winner)||!R.st.playing.includes(p.loser))return;
  R.wins[p.winner]=(R.wins[p.winner]||0)+1;R.order=R.order.filter(id=>id!==p.loser).concat(p.loser);
@@ -4833,7 +4833,7 @@ $('hGo').onclick=()=>{const own=ownedMaps(),pool=[...hostSel].filter(k=>own.incl
 function startSearch(){leaveRoomR(true);QM={t:Date.now(),pairing:null};view('search');lobbyTrack();qmTick()}
 function stopSearch(){if(!QM)return;QM=null;lobbyTrack();if(hub.dataset.v==='search')view('menu')}
 $('qmCancel').onclick=stopSearch;
-function qmTick(){if(!QM)return;const s=Math.round((Date.now()-QM.t)/1000);const others=lobbyUsers.filter(u=>u.q&&u.status!=='playing');
+function qmTick(){if(!QM)return;const s=Math.round((Date.now()-QM.t)/1000);const _ak=(window.sdAK?window.sdAK():''),others=lobbyUsers.filter(u=>u.q&&u.status!=='playing'&&!(_ak&&u.ak===_ak));
  $('qmTxt').textContent=(others.length?'Found '+others.length+' searching player'+(others.length>1?'s':'')+'… connecting':'Waiting for another player… '+s+' s')+(s>40&&!others.length?' — tip: invite a friend or host a room!':'');
  if(QM.pairing&&Date.now()>QM.pairing.until)QM.pairing=null;
  if(!QM.pairing&&others.length){const c=others.slice().sort((a,b)=>(a.q||0)-(b.q||0))[0];if(myId<c.id){const code=newCode(),map=maps[Math.floor(Math.random()*maps.length)];QM.pairing={to:c.id,code,map,name:c.name,until:Date.now()+4000};
@@ -4841,7 +4841,7 @@ function qmTick(){if(!QM)return;const s=Math.round((Date.now()-QM.t)/1000);const
 setInterval(qmTick,1000);
 function qmStart(code,map,host,opp){QM=null;lobbyTrack();view('menu');preMatch({title:'MATCH FOUND!',opp,map,until:Date.now()+5200,onGo:hero=>duel(code,host,map,hero,{qm:true})})}
 function hookLobby(){if(!LOBBY||!LOBBY.ch||LOBBY.ch.__qm)return;LOBBY.ch.__qm=1;
- LOBBY.ch.on('broadcast',{event:'qm'},({payload:p})=>{if(!p||p.to!==myId)return;if(!QM||(QM.pairing&&QM.pairing.to!==p.from&&myId<p.from))return;LOBBY.ch.send({type:'broadcast',event:'qmok',payload:{to:p.from,code:p.code}});qmStart(p.code,p.map,false,p.name||'Player')});
+ LOBBY.ch.on('broadcast',{event:'qm'},({payload:p})=>{if(!p||p.to!==myId)return;{const _ak=(window.sdAK?window.sdAK():''),su=lobbyUsers.find(u=>u.id===p.from);if(_ak&&su&&su.ak===_ak)return}if(!QM||(QM.pairing&&QM.pairing.to!==p.from&&myId<p.from))return;LOBBY.ch.send({type:'broadcast',event:'qmok',payload:{to:p.from,code:p.code}});qmStart(p.code,p.map,false,p.name||'Player')});
  LOBBY.ch.on('broadcast',{event:'qmok'},({payload:p})=>{if(!p||p.to!==myId||!QM||!QM.pairing||QM.pairing.code!==p.code)return;const pr=QM.pairing;qmStart(pr.code,pr.map,true,pr.name||'Player')})}
 /* Realtime lets us add broadcast listeners to the lobby channel after joinLobby() subscribed it */
 {const w=setInterval(()=>{if(LOBBY&&LOBBY.ch){clearInterval(w);hookLobby()}},100)}
@@ -6132,7 +6132,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.21.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.21.3';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -6682,4 +6682,14 @@ function fit(){const ib=document.getElementById('inboxBtn'),db=document.getEleme
  const g=h<80?3:6,B=Math.max(18,Math.min(34,Math.floor((h-g*3)/2))),k=B+'/'+g+'/'+n;if(fit.k===k)return;fit.k=k;c.style.setProperty('--pcB',B+'px');c.style.setProperty('--pcG',g+'px');c.classList.add('pcFit');c.classList.toggle('pcBtns2',n>0)}
 try{new ResizeObserver(fit).observe(c)}catch(e){}addEventListener('resize',()=>setTimeout(fit,60));
 [document.getElementById('inboxBtn'),document.getElementById('dailyCardBtn')].forEach(e=>{if(e)new MutationObserver(()=>fit()).observe(e,{attributes:true,attributeFilter:['hidden','class']})});fit();setTimeout(fit,500);})();</script>
+<script>/* ===== NO PLAYING AGAINST YOURSELF (v1.21.3): the same account in two tabs / devices can't be matched or play itself.
+   window.sdAK() = short hash of your account id (empty for guests), sent in lobby + room presence as `ak`: quick match skips players with your `ak`,
+   a second tab can't join a room where your account already is, the room host never pairs the same account, and a duel whose rival has your
+   `uid` is stopped at once (window.sdSelfBlock). The server also refuses rewards for it (sd_online_report: p_opp = auth.uid()). ===== */
+(()=>{window.sdAK=function(){const a=window.sdAccount;const u=a&&a.profile&&a.userId;if(!u)return '';let h=0x811c9dc5;for(let i=0;i<u.length;i++){h^=u.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)};
+window.sdSelfBlock=function(){if(window.sdSelfBlock._t&&Date.now()-window.sdSelfBlock._t<4000)return;window.sdSelfBlock._t=Date.now();
+ const st=document.getElementById('onStatus');if(st)st.textContent='That is your own account — you can\'t play against yourself.';
+ const t=document.createElement('div');t.className='sdToast';t.textContent='🚫 You can\'t play against yourself — the other player is your own account.';
+ t.style.cssText='position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:9999;background:#3a1016;border:1px solid #ff6b81;color:#fff;font:700 14px Arial,sans-serif;padding:10px 16px;border-radius:12px;box-shadow:0 6px 24px #000a;max-width:90vw;text-align:center';
+ document.body.appendChild(t);setTimeout(()=>t.remove(),4500)};})();</script>
 </html>
