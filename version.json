@@ -1,6 +1,17 @@
 {
-  "current": "1.19.0",
+  "current": "1.20.0",
   "releases": [
+    {
+      "v": "1.20.0",
+      "date": "2026-11-28",
+      "title": "Neon Oni Warlord's cursed techniques",
+      "new": [
+        "Neon Oni Warlord now shows his own demon samurai magic when the cards are revealed: the Oni's Wrath mask rock, the Cursed Seal paper and the Phantom Katanas scissors — with glowing magenta eyes, ghostly afterimages, chains and shadow smoke",
+        "When Neon Oni Warlord wins, his rival's object is crushed, sealed in a glowing circle by chains, or sliced into strips that vanish into shadow",
+        "Every hero now has their own rock, paper and scissors! It only changes how it looks — the rules are exactly the same"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.19.0",
       "date": "2026-11-28",

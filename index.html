@@ -3439,7 +3439,203 @@ const SIG=(()=>{
     [A,B].forEach((j,i)=>{S.bv[i].y-=5.5*dt;j.g.position.addScaledVector(S.bv[i],dt);j.g.rotation.z+=S.bw[i]*dt;j.ln.update(j.g)});between.material.opacity=0;
     if(Math.random()<.3)pebble(p.x,p.y,p.z,{v0:.4,v1:1.2,s:.03});return t>1.2},
    hideTrails(){TR.forEach(t=>t.reset())}}}
- const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant,frost:buildFrost,stone:buildStone};/* v1.19.0: Stone Sentinel's earth set *//* v1.18.0: Frostbound's ice set *//* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
+ /* ======================= NEON ONI WARLORD — cursed demonic samurai magic (v1.20.0): black obsidian, dark steel, violet + neon magenta, silver highlights, shadow smoke, ghosts ======================= */
+ const MG0=[3.2,.6,2.8],MG1=[.7,.1,1.3],VI0=[1.4,.6,3.4],SHADOW=[.07,.03,.1];
+ const neon=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:MG0,c1:MG1,sp:.2,vy:.1,s:.024,gy:.02,swA:.4},o));
+ const violet=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:VI0,c1:[.3,.1,1],sp:.2,vy:.08,s:.022,gy:.02,swA:.4},o));
+ const shade=(x,y,z,o={})=>smoke(x,y,z,Object.assign({c:SHADOW,a:.5,s:.13},o));
+ let OBS=null,TALI=null,SEAL=null,CRES=null,WRAP=null,GLY=null;
+ /* brush-like calligraphy stroke set (made-up glyphs) */
+ function brushGlyph(g,x,y,s,R){const n=3+(R()*3|0);for(let i=0;i<n;i++){const t=R();g.lineWidth=s*(.12+R()*.1);g.beginPath();
+   if(t<.35){const yy=y+(R()-.5)*s;g.moveTo(x-s*.45,yy);g.quadraticCurveTo(x,yy-s*.08,x+s*.45,yy+s*.04)}else if(t<.65){const xx=x+(R()-.5)*s*.6;g.moveTo(xx,y-s*.5);g.quadraticCurveTo(xx+s*.06,y,xx-s*.04,y+s*.5)}
+   else{const d=R()<.5?1:-1;g.moveTo(x-d*s*.4,y-s*.4);g.quadraticCurveTo(x,y,x+d*s*.45,y+s*.45)}g.stroke()}
+  if(R()<.5){g.beginPath();g.arc(x+(R()-.5)*s*.4,y+(R()-.5)*s*.4,s*.08,0,TAU);g.fill()}}
+ /* obsidian: glossy black-violet with silver streaks, purple Voronoi cracks + engraved swirl patterns (glow map) */
+ function obsMaps(){if(OBS)return OBS;const W=256,H=128,R=seeded(66),pts=[];for(let i=0;i<24;i++)pts.push([R()*W,R()*H]);
+  const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c},cb=mk(),ce=mk(),gb=cb.getContext('2d'),ge=ce.getContext('2d'),ib=gb.createImageData(W,H),ie=ge.createImageData(W,H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){let d1=1e9,d2=1e9;for(const p of pts){let dx=Math.abs(x-p[0]);dx=Math.min(dx,W-dx);const dy=y-p[1],d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d}else if(d<d2)d2=d}
+   const e=Math.sqrt(d2)-Math.sqrt(d1),crack=Math.max(0,1-e/2.4),core=Math.max(0,1-e/1),fu=x*TAU/W,streak=Math.pow(.5+.5*Math.sin(fu*3+y*.13+Math.sin(y*.035+fu)*3+Math.sin(fu*7+y*.02)*.8),26)*(.5+.5*Math.sin(fu*2+y*.07)),n=R(),i=(y*W+x)*4;
+   const v=16+10*n+80*streak;ib.data[i]=v*1.05;ib.data[i+1]=v*.9;ib.data[i+2]=v*1.25+6;ib.data[i+3]=255;
+   const q=Math.min(1,Math.pow(crack,1.5)+core*.5);ie.data[i]=(170+80*core)*q;ie.data[i+1]=(30+150*core*core)*q;ie.data[i+2]=255*q;ie.data[i+3]=255}
+  gb.putImageData(ib,0,0);ge.putImageData(ie,0,0);
+  ge.save();ge.strokeStyle='rgba(190,90,255,.55)';ge.shadowColor='#a040ff';ge.shadowBlur=4;ge.lineWidth=1.4;const Q=seeded(9);
+  for(let k=0;k<10;k++){const x=12+k*25+Q()*6,y=20+Q()*88;ge.beginPath();for(let a=0;a<TAU*1.6;a+=.2){const r=1+a*2.6;ge.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}ge.stroke()}ge.restore();
+  const t1=new THREE.CanvasTexture(cb),t2=new THREE.CanvasTexture(ce);for(const t of[t1,t2]){t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping}return OBS={map:t1,em:t2}}
+ /* ofuda talisman: dark enchanted parchment, torn edges, a column of glowing calligraphy, a seal with three tomoe, border */
+ function taliTex(){if(TALI)return TALI;const W=256,H=512,R=seeded(23),top=[],bot=[];for(let x=0;x<=W;x+=12){top.push([x,8+R()*18]);bot.push([x,H-8-R()*18])}
+  const path=g=>{g.beginPath();top.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));for(let i=bot.length-1;i>=0;i--)g.lineTo(bot[i][0],bot[i][1]);g.closePath()};
+  const G=[];const Rg=seeded(29);for(let k=0;k<6;k++)G.push(k);
+  const art=(g,glow)=>{g.save();g.lineCap='round';g.strokeStyle=glow?'#ff4fe0':'#d43cbf';g.fillStyle=g.strokeStyle;g.shadowColor=glow?'#ff20c0':'transparent';g.shadowBlur=glow?10:0;
+   g.lineWidth=3;g.strokeRect(22,42,W-44,H-84);g.lineWidth=1.2;g.strokeRect(30,50,W-60,H-100);const Rr=seeded(29);for(let k=0;k<6;k++)brushGlyph(g,W/2,96+k*46,34,Rr);
+   const cx=W/2,cy=H-120;g.lineWidth=3;g.beginPath();g.arc(cx,cy,40,0,TAU);g.stroke();for(let i=0;i<3;i++){const a=i/3*TAU;g.beginPath();g.arc(cx+Math.cos(a)*14,cy+Math.sin(a)*14,9,0,TAU);g.fill();g.beginPath();g.arc(cx,cy,14,a,a+1.6);g.stroke()}
+   g.lineWidth=1.5;for(const sx of[48,W-48])for(let k=0;k<5;k++){g.beginPath();g.arc(sx,110+k*56,5,0,TAU);g.stroke()}g.restore()};
+  const map=canvasTex(W,H,g=>{path(g);g.save();g.clip();const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#3a2040');gr.addColorStop(.5,'#2a1630');gr.addColorStop(1,'#1c0e22');g.fillStyle=gr;g.fillRect(0,0,W,H);
+   for(let i=0;i<300;i++){g.strokeStyle=`rgba(${120+R()*60|0},${60+R()*40|0},${130+R()*60|0},.06)`;g.beginPath();const x=R()*W,y=R()*H;g.moveTo(x,y);g.lineTo(x+(R()-.5)*20,y+R()*30);g.stroke()}
+   art(g,false);g.restore();g.strokeStyle='rgba(10,4,14,.9)';g.lineWidth=8;g.shadowColor='#000';g.shadowBlur=10;path(g);g.stroke()});
+  const em=canvasTex(W,H,g=>{g.fillStyle='#000';g.fillRect(0,0,W,H);path(g);g.save();g.clip();art(g,true);g.restore();g.strokeStyle='#a020ff';g.shadowColor='#7a10ff';g.shadowBlur=8;g.lineWidth=3;path(g);g.stroke()});
+  return TALI={map,em}}
+ /* sealing circle: double ring, three tomoe in the middle, brush glyphs around */
+ const sealTex=()=>SEAL||(SEAL=canvasTex(256,256,g=>{g.strokeStyle='#ff7af0';g.fillStyle='#ff7af0';g.shadowColor='#ff20c0';g.shadowBlur=10;g.lineCap='round';g.lineWidth=4;g.beginPath();g.arc(128,128,118,0,TAU);g.stroke();g.lineWidth=2;g.beginPath();g.arc(128,128,92,0,TAU);g.stroke();
+  g.beginPath();for(let i=0;i<=5;i++){const a=i/5*TAU*2-Math.PI/2;i?g.lineTo(128+Math.cos(a)*88,128+Math.sin(a)*88):g.moveTo(128+Math.cos(a)*88,128+Math.sin(a)*88)}g.stroke();
+  for(let i=0;i<3;i++){const a=i/3*TAU;g.beginPath();g.arc(128+Math.cos(a)*18,128+Math.sin(a)*18,11,0,TAU);g.fill();g.beginPath();g.arc(128,128,18,a,a+1.7);g.stroke()}
+  const R=seeded(41);for(let i=0;i<12;i++){const a=i/12*TAU;g.save();g.translate(128+Math.cos(a)*105,128+Math.sin(a)*105);g.rotate(a+Math.PI/2);brushGlyph(g,0,0,13,R);g.restore()}}));
+ const crescentTex=()=>CRES||(CRES=canvasTex(256,256,g=>{const r=g.createRadialGradient(40,128,70,40,128,200);r.addColorStop(0,'rgba(255,255,255,0)');r.addColorStop(.6,'rgba(255,255,255,0)');r.addColorStop(.72,'rgba(255,255,255,.7)');r.addColorStop(.78,'#fff');r.addColorStop(.85,'rgba(255,255,255,.45)');r.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=r;g.fillRect(0,0,256,256);g.globalCompositeOperation='destination-in';const m=g.createLinearGradient(0,0,0,256);m.addColorStop(0,'rgba(0,0,0,0)');m.addColorStop(.3,'rgba(0,0,0,1)');m.addColorStop(.7,'rgba(0,0,0,1)');m.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=m;g.fillRect(0,0,256,256)}));
+ const wrapTex=()=>WRAP||(WRAP=(()=>{const t=canvasTex(64,64,g=>{g.fillStyle='#140a18';g.fillRect(0,0,64,64);g.fillStyle='#6a1a6a';for(const [x,y] of[[0,0],[32,32],[0,64],[64,0],[64,64]]){g.beginPath();g.moveTo(x,y-14);g.lineTo(x+14,y);g.lineTo(x,y+14);g.lineTo(x-14,y);g.closePath();g.fill()}
+  g.strokeStyle='#c050c0';g.lineWidth=1.5;for(const [x,y] of[[32,32]]){g.beginPath();g.moveTo(x,y-14);g.lineTo(x+14,y);g.lineTo(x,y+14);g.lineTo(x-14,y);g.closePath();g.stroke()}});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,5);return t})());
+ const glyphTex=()=>GLY||(GLY=canvasTex(128,32,g=>{g.strokeStyle='#ff6af0';g.fillStyle='#ff6af0';g.shadowColor='#ff20c0';g.shadowBlur=5;g.lineCap='round';const R=seeded(52);for(let i=0;i<4;i++)brushGlyph(g,18+i*31,16,22,R)}));
+ /* chain of glowing links along a curve; show(f) reveals links up to fraction f */
+ function chain(curve,n,mat){const g=new THREE.Group(),geo=new THREE.TorusGeometry(.016,.0055,6,12),tmpQ=new THREE.Quaternion(),Z=new THREE.Vector3(0,0,1);
+  for(let i=0;i<n;i++){const t=i/(n-1),m=new THREE.Mesh(geo,mat);m.position.copy(curve.getPointAt(t));const tg=curve.getTangentAt(t);m.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),tg);if(i%2)m.rotateX(Math.PI/2);m.visible=false;g.add(m)}
+  g.children[0].userData.ownGeo=true;return{g,show(f){const k=Math.floor(f*n);g.children.forEach((m,i)=>m.visible=i<k)}}}
+
+ function buildOni(){const root=new THREE.Group(),parts={},S={acc:0,acc2:0,acc3:0,lastOpen:0,ghostT:0};
+  const OB=obsMaps(),NOISE=scrollTex().noise;
+  const obsM=new THREE.MeshStandardMaterial({map:OB.map,emissive:0xffffff,emissiveMap:OB.em,emissiveIntensity:1.2,roughness:.16,metalness:.4,alphaMap:NOISE,alphaTest:.5,side:THREE.DoubleSide});obsM.userData.keep=true;
+  const obsPlain=new THREE.MeshStandardMaterial({color:0x1a1222,roughness:.14,metalness:.5,emissive:0x2a0a3a,emissiveIntensity:.5,flatShading:true});obsPlain.userData.keep=true;
+  const boneM=new THREE.MeshStandardMaterial({color:0xe6dcef,roughness:.35,metalness:.1,emissive:0x3a1040,emissiveIntensity:.4});
+  const silver=new THREE.MeshStandardMaterial({color:0xc8c8d8,metalness:1,roughness:.22});
+  const eyeM=new THREE.MeshBasicMaterial({color:new THREE.Color(3.2,.5,2.6)});
+  const glowSpr=(c,o)=>new THREE.Sprite(new THREE.SpriteMaterial({map:texGlow(),color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false}));
+  /* ---- ROCK: ONI'S WRATH — a sculpted obsidian demon mask: brow, cheeks, nose, open mouth, fangs, horns, burning eyes ---- */
+  const fg=new THREE.SphereGeometry(.2,48,36),fp=fg.attributes.position,v=new THREE.Vector3();
+  const ex=(a)=>Math.exp(-a);
+  for(let i=0;i<fp.count;i++){v.fromBufferAttribute(fp,i).normalize();const x=v.x,y=v.y,z=v.z,ax=Math.abs(x),front=z>0?1:0;
+   let b=front*(.07*ex(((y-.36)**2)/.008)*(ax<.55?1:.3)+.035*ex(((ax-.45)**2+(y+.06)**2)/.02)+.07*ex(x*x/.006+((y-.05)**2)/.018)-.075*ex(x*x/.09+((y+.4)**2)/.007)-.045*ex(((ax-.33)**2)/.012+((y-.17)**2)/.007)+.03*ex(x*x/.05+((y+.75)**2)/.03));
+   const r=.2*(1+b);fp.setXYZ(i,x*r,y*r*1.15,z*r*(z>0?.78:.3))}
+  fg.computeVertexNormals();
+  const rock=new THREE.Group(),mask=new THREE.Group();rock.add(mask);const face=new THREE.Mesh(fg,obsM);mask.add(face);
+  const al=new THREE.Shape();al.moveTo(-.035,0);al.quadraticCurveTo(0,.024,.035,.006);al.quadraticCurveTo(0,-.016,-.035,0);const eyeG=new THREE.ExtrudeGeometry(al,{depth:.01,bevelEnabled:false});
+  const eyes=[-1,1].map(s=>{const m=new THREE.Mesh(eyeG,eyeM);m.position.set(s*.068,.04,.128);m.rotation.set(-.15,s*.3,s*.32);m.scale.x=s;mask.add(m);const gl=glowSpr(0xff40e0,.7);gl.scale.setScalar(.12);gl.position.set(s*.068,.04,.15);mask.add(gl);return gl});
+  const bw=new THREE.Shape();bw.moveTo(-.05,0);bw.lineTo(.05,.02);bw.lineTo(.045,-.012);bw.lineTo(-.05,-.02);bw.closePath();const browG=new THREE.ExtrudeGeometry(bw,{depth:.025,bevelEnabled:true,bevelThickness:.005,bevelSize:.004,bevelSegments:1});
+  const brows=[-1,1].map(s=>{const m=new THREE.Mesh(browG,obsPlain);m.position.set(s*.07,.088,.13);m.rotation.set(-.3,s*.25,-s*.42);m.scale.x=-s;mask.add(m);return m});
+  const mouth=new THREE.Mesh(new THREE.CircleGeometry(.07,24),new THREE.MeshBasicMaterial({color:new THREE.Color(.6,.06,.8)}));mouth.scale.set(1.15,.42,1);mouth.position.set(0,-.088,.118);mask.add(mouth);
+  const teeth=[];const tooth=(x,y,len,up)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(.009,len,6),boneM);m.position.set(x,y,.128);m.rotation.z=up?0:Math.PI;mask.add(m);teeth.push(m)};
+  for(let k=0;k<6;k++)tooth(-.05+k*.02,-.072,.026,false);for(let k=0;k<5;k++)tooth(-.04+k*.02,-.104,.022,true);tooth(-.068,-.092,.05,true);tooth(.068,-.092,.05,true);
+  const horns=[-1,1].map(s=>{const g=rootGeo([new THREE.Vector3(s*.12,.13,.03),new THREE.Vector3(s*.2,.21,0),new THREE.Vector3(s*.215,.32,-.05),new THREE.Vector3(s*.16,.4,-.08)],.034,30,8,1,.12);const m=new THREE.Mesh(g,obsPlain);mask.add(m);
+   const tip=glowSpr(0xc040ff,.6);tip.scale.setScalar(.07);tip.position.set(s*.16,.4,-.08);mask.add(tip);return m});
+  const frags=[];for(let i=0;i<16;i++){const m=new THREE.Mesh(rockGeo(.025+(i%3)*.01,1,i*1.9),obsPlain);const d=new THREE.Vector3(rnd(-1,1),rnd(-1,1),rnd(.2,1)).normalize();m.userData.home=d.clone().multiplyScalar(.17);m.userData.from=d.clone().multiplyScalar(rnd(.55,.8)).add(new THREE.Vector3(0,rnd(-.3,.1),0));rock.add(m);frags.push(m)}
+  const mglow=glowSpr(0x8a20ff,.35);mglow.scale.setScalar(.8);mglow.position.z=-.12;rock.add(mglow);
+  root.add(rock);parts.rock=rock;
+  /* ---- PAPER: CURSED SEAL — a tall ofuda talisman (calligraphy lights up from the top, shader), small seals orbit, a sealing circle turns behind ---- */
+  const TT=taliTex(),FILL={value:0};
+  const taliM=new THREE.MeshStandardMaterial({map:TT.map,emissive:0xffffff,emissiveMap:TT.em,emissiveIntensity:1.4,alphaMap:NOISE,alphaTest:.5,side:THREE.DoubleSide,roughness:.8});
+  taliM.onBeforeCompile=sh=>{sh.uniforms.uFill=FILL;sh.fragmentShader='uniform float uFill;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#ifdef USE_EMISSIVEMAP\n vec4 emC=texture2D(emissiveMap,vEmissiveMapUv);float flv=smoothstep(1.0-uFill-0.05,1.0-uFill+0.02,vEmissiveMapUv.y);totalEmissiveRadiance*=emC.rgb*(0.08+0.92*flv);\n#endif')};
+  taliM.customProgramCacheKey=()=>'sigOniTali';
+  const tg=new THREE.PlaneGeometry(.3,.56,6,16),tp=tg.attributes.position,tox=new Float32Array(tp.count),toy=new Float32Array(tp.count);for(let i=0;i<tp.count;i++){tox[i]=tp.getX(i);toy[i]=tp.getY(i)}
+  const tali=new THREE.Mesh(tg,taliM);
+  const smallM=new THREE.MeshStandardMaterial({map:TT.map,emissive:0xffffff,emissiveMap:TT.em,emissiveIntensity:1,alphaTest:.5,side:THREE.DoubleSide,roughness:.8});const sGeo=new THREE.PlaneGeometry(.09,.17);
+  const smalls=[];for(let i=0;i<6;i++){const m=new THREE.Mesh(sGeo,smallM);smalls.push({m,a:i/6*TAU});}
+  const circ=new THREE.Mesh(planeGeo(),new THREE.MeshBasicMaterial({map:sealTex(),color:new THREE.Color(1.6,.4,1.6),transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));circ.position.z=-.05;circ.renderOrder=1;
+  const paper=new THREE.Group();paper.add(circ,tali,...smalls.map(s=>s.m));root.add(paper);parts.paper=paper;
+  /* ---- SCISSORS: PHANTOM KATANAS — two curved katanas (dark steel, magenta hamon edge, silver habaki, tsuba, wrapped tsuka) on an energy pivot ---- */
+  const ks=new THREE.Shape();ks.moveTo(0,-.011);ks.quadraticCurveTo(.25,-.013,.47,.008);ks.quadraticCurveTo(.51,.013,.528,.03);ks.quadraticCurveTo(.49,.032,.46,.032);ks.quadraticCurveTo(.25,.023,0,.011);ks.closePath();
+  const bladeG=new THREE.ExtrudeGeometry(ks,{depth:.006,bevelEnabled:true,bevelThickness:.002,bevelSize:.002,bevelSegments:1,curveSegments:18});bladeG.translate(0,0,-.003);
+  const steel=new THREE.MeshStandardMaterial({color:0x22202c,metalness:1,roughness:.18,emissive:0x1a0626,emissiveIntensity:.5,alphaMap:NOISE,alphaTest:.5});steel.userData.keep=true;
+  const edgeC=new THREE.CatmullRomCurve3([new THREE.Vector3(.0,.0115,0),new THREE.Vector3(.25,.0225,0),new THREE.Vector3(.46,.032,0),new THREE.Vector3(.526,.029,0)]);
+  const eCore=new THREE.TubeGeometry(edgeC,30,.0028,5),eGl=new THREE.TubeGeometry(edgeC,30,.011,8);
+  const edgeM=new THREE.MeshBasicMaterial({color:new THREE.Color(3.4,.5,2.8)}),edgeGl=new THREE.MeshBasicMaterial({color:0xff30d0,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false});
+  const ts=new THREE.Shape();ts.absarc(0,0,.042,0,TAU,false);for(let i=0;i<4;i++){const h=new THREE.Path(),a=i/4*TAU+.78;h.absarc(Math.cos(a)*.024,Math.sin(a)*.024,.008,0,TAU,true);ts.holes.push(h)}
+  const tsubaG=new THREE.ExtrudeGeometry(ts,{depth:.008,bevelEnabled:true,bevelThickness:.002,bevelSize:.002,bevelSegments:1,curveSegments:16});tsubaG.translate(0,0,-.004);
+  const handM=new THREE.MeshStandardMaterial({map:wrapTex(),roughness:.7,metalness:.1,alphaMap:NOISE,alphaTest:.5});
+  const glyM=new THREE.MeshBasicMaterial({map:glyphTex(),color:new THREE.Color(1.6,.5,1.6),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+  function katana(){const g=new THREE.Group(),bm=new THREE.Mesh(bladeG,steel);g.add(bm,new THREE.Mesh(eCore,edgeM),new THREE.Mesh(eGl,edgeGl));
+   const hab=new THREE.Mesh(new THREE.BoxGeometry(.026,.03,.012),silver);hab.position.x=-.004;const tsu=new THREE.Mesh(tsubaG,silver);tsu.rotation.y=Math.PI/2;tsu.position.x=-.02;
+   const tsuka=new THREE.Mesh(new THREE.CylinderGeometry(.0125,.0115,.17,10),handM);tsuka.rotation.z=Math.PI/2;tsuka.position.x=-.11;const kas=new THREE.Mesh(new THREE.CylinderGeometry(.013,.011,.014,10),silver);kas.rotation.z=Math.PI/2;kas.position.x=-.198;
+   const gl=new THREE.Mesh(new THREE.PlaneGeometry(.11,.028),glyM);gl.position.set(.12,.001,.0045);g.add(hab,tsu,tsuka,kas,gl);return{g,bm}}
+  const A=katana(),B=katana();B.g.scale.y=-1;B.g.position.z=-.02;
+  const piv=glowSpr(0xff40e0,.9);piv.scale.setScalar(.13);piv.position.z=.02;const pring=new THREE.Mesh(new THREE.TorusGeometry(.026,.004,6,24),silver);pring.position.z=.012;
+  const blades=new THREE.Group();blades.add(A.g,B.g,piv,pring);blades.position.x=-.12;
+  const sciss=new THREE.Group();sciss.add(blades);root.add(sciss);parts.scissors=sciss;
+  const home={A:A.g.position.clone(),B:B.g.position.clone()};
+  const TR=[makeTrail([3.2,.5,2.8],[.6,.05,1]),makeTrail([3.2,.5,2.8],[.6,.05,1])],TIP=new THREE.Vector3(.52,.03,0),MIDP=new THREE.Vector3(.26,.02,0);
+  /* ghostly afterimage of a blade: a fading magenta copy left behind in world space */
+  function ghost(src){const m=new THREE.Mesh(bladeG,new THREE.MeshBasicMaterial({color:new THREE.Color(1.6,.3,1.6),transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));m.matrixAutoUpdate=false;m.matrix.copy(src.matrixWorld);m.matrixWorldNeedsUpdate=true;m.renderOrder=13;
+   oneShot(m,.28,(t,_,mm)=>{mm.material.opacity=.5*(1-t)})}
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));lab.scale.set(.6,.15,1);lab.position.y=-.43;lab.renderOrder=20;root.add(lab);
+  const LT={rock:["✊ ROCK","ONI'S WRATH"],paper:['✋ PAPER','CURSED SEAL'],scissors:['✌️ SCISSORS','PHANTOM KATANAS']};
+  const charge=T=>T<.3?.15+.08*Math.sin(TIME*2.5):T<.55?sstep(.3,.55,T):.6;
+  return{root,
+   show(kind){for(const k in parts)parts[k].visible=k===kind;lab.material.map=labelTex(kind,LT[kind][0],LT[kind][1],'#ff5ae6');lab.material.needsUpdate=true;lab.visible=true;
+    mask.visible=true;mask.position.set(0,0,0);mask.scale.setScalar(1);obsM.alphaTest=.999;frags.forEach(f=>{f.visible=true;f.position.copy(f.userData.from)});[...teeth,...brows,...horns].forEach(m=>m.scale.setScalar(.01));mglow.visible=true;
+    FILL.value=0;taliM.alphaTest=.5;taliM.emissiveIntensity=1.4;tali.scale.setScalar(.01);tali.visible=true;circ.visible=true;paper.position.set(0,0,0);
+    steel.alphaTest=.999;handM.alphaTest=.999;for(const k of[A,B])k.g.rotation.set(0,0,0);A.g.position.copy(home.A);B.g.position.copy(home.B);piv.visible=pring.visible=true;edgeGl.opacity=.45;
+    TR.forEach(t=>t.reset());S.acc=S.acc2=S.acc3=0;S.lastOpen=0},
+   appear(kind,ctx){const p=ctx.wp;for(let i=0;i<10;i++)shade(p.x+rnd(-.2,.2),p.y+rnd(-.2,.2),p.z,{s:.16});for(let i=0;i<16;i++){const d=dirRnd();neon(p.x+d[0]*.25,p.y+d[1]*.25,p.z+d[2]*.1,{sp:.6})}},
+   update(kind,Tm,dt,ctx){const p=ctx.wp,s=root.scale.x,c=charge(Tm),dir=ctx.dir;
+    if(kind==='rock'){/* fragments fly in, the mask forms from them, the eyes burn brighter; it winds back then lunges with a roar */
+     const as=sstep(0,.35,Tm);frags.forEach((f,i)=>{const k=sstep(i*.012,.25+i*.012,Tm);f.position.lerpVectors(f.userData.from,f.userData.home,k);f.rotation.x+=dt*4;f.visible=as<.97});
+     obsM.alphaTest=Math.max(.5,.999-as*.5);[...brows,...horns].forEach((m,i)=>m.scale.setScalar(Math.max(.01,sstep(.2+i*.03,.4+i*.03,Tm))));teeth.forEach((m,i)=>m.scale.setScalar(Math.max(.01,sstep(.3+i*.01,.42+i*.01,Tm))));
+     const back=Tm<.3?0:Tm<.42?-sstep(.3,.42,Tm)*.1:Tm<.55?-.1+.32*Math.pow((Tm-.42)/.13,2):Math.max(0,.22-(Tm-.55)*1.2);mask.position.x=back*dir;
+     mask.rotation.y=dir*.25+.1*Math.sin(TIME*.9);mask.rotation.x=.05*Math.sin(TIME*1.3);mask.position.y=.01*Math.sin(TIME*1.7);
+     const pl=Math.sin(TIME*(3+c*14));eyeM.color.setRGB(2.4+2*c+.4*pl,.4+.3*c,2+1.6*c);eyes.forEach(e=>{e.material.opacity=.4+.6*c;e.scale.setScalar(.1+.12*c+.02*pl)});obsM.emissiveIntensity=.8+1.4*c;mglow.material.opacity=.25+.35*c;
+     S.acc+=dt*(6+12*c);while(S.acc>=1){S.acc--;const d=dirRnd();Math.random()<.55?neon(p.x+d[0]*.3*s,p.y+d[1]*.28*s,p.z+d[2]*.1):violet(p.x+d[0]*.3*s,p.y+d[1]*.28*s,p.z+d[2]*.1)}
+     S.acc2+=dt*(3+4*c);while(S.acc2>=1){S.acc2--;shade(p.x+rnd(-.25,.25)*s,p.y+rnd(-.25,.1)*s,p.z-.05,{s:.12,v:.5})}}
+    else if(kind==='paper'){/* small seals spiral in and merge into the big talisman; the calligraphy ignites from the top */
+     const merge=sstep(.02,.35,Tm),gro=sstep(.15,.4,Tm);tali.scale.setScalar(Math.max(.01,gro));
+     for(let i=0;i<tp.count;i++)tp.setZ(i,Math.sin(toy[i]*7+TIME*2.4)*.012+Math.sin(tox[i]*12+TIME*1.6)*.004);tp.needsUpdate=true;tg.computeVertexNormals();
+     smalls.forEach((sm,i)=>{const back=sstep(.45,.65,Tm),r=(.34*(1-merge)+.34*back)*(1+.05*Math.sin(TIME*2+i)),a=sm.a+TIME*(1.2+2*(1-merge))+merge*3;sm.m.position.set(Math.cos(a)*r,Math.sin(a)*r*.8,.05+Math.sin(a)*.05);sm.m.rotation.z=a*.5;sm.m.scale.setScalar(Math.max(.01,(1-merge)+back*.8))});
+     FILL.value=Tm>=.55?1.1:sstep(.25,.55,Tm)*1.06;taliM.emissiveIntensity=1.1+.4*Math.sin(TIME*4)+.6*c;circ.rotation.z+=dt*(.5+1.5*c);circ.scale.setScalar(.6+.3*gro+.08*c);circ.material.opacity=(.2+.5*c)*gro;
+     paper.position.y=.008*Math.sin(TIME*1.5);
+     S.acc+=dt*(8+12*c);while(S.acc>=1){S.acc--;const v=tali.localToWorld(tmpV.set(rnd(-.14,.14),rnd(-.27,.27),.02));Math.random()<.6?neon(v.x,v.y,v.z,{s:.02}):violet(v.x,v.y,v.z,{s:.02})}
+     S.acc2+=dt*2.5;while(S.acc2>=1){S.acc2--;shade(p.x+rnd(-.2,.2),p.y-.3,p.z-.04,{s:.1,v:.6})}}
+    else{const res=ctx.res;let o;/* materialise from shadow, cross, then a lightning double slash */
+     const mat=sstep(0,.3,Tm);steel.alphaTest=handM.alphaTest=Math.max(.5,.999-mat*.5);
+     if(Tm<.3)o=.05+.12*mat+.03*Math.sin(TIME*3);else if(Tm<.38)o=.2+.6*sstep(.3,.38,Tm);else if(Tm<.46)o=.8*(1-sstep(.38,.46,Tm));else if(Tm<.5)o=.55*sstep(.46,.5,Tm);else if(Tm<.55)o=.55*(1-sstep(.5,.55,Tm));else o=res==='lose'?.12:0;
+     const d=Math.abs(o-S.lastOpen)/Math.max(dt,1e-3);S.lastOpen=o;
+     A.g.rotation.z=-o;B.g.rotation.z=o;sciss.scale.x=ctx.dir;blades.rotation.z=.04*Math.sin(TIME*1.3);piv.material.opacity=.5+.5*c;piv.scale.setScalar(.1+.08*c);pring.rotation.z+=dt*3;
+     edgeGl.opacity=.3+.15*Math.sin(TIME*9)+c*.45;
+     S.ghostT-=dt;if((d>3||(Tm<.3&&Math.random()<dt*3))&&S.ghostT<=0&&mat>.5){S.ghostT=.035;ghost(A.bm);ghost(B.bm)}
+     for(let i=0;i<2;i++){const bl=i?B.g:A.g;TR[i].push(bl.localToWorld(TIP.clone()),bl.localToWorld(MIDP.clone()))}
+     if(Tm<.3){S.acc3+=dt*30;while(S.acc3>=1){S.acc3--;const dd=dirRnd(),r=.45;P(fx().smoke,p.x+dd[0]*r,p.y+dd[1]*r*.6,p.z,{vx:-dd[0]*r*2,vy:-dd[1]*r*1.2,vz:0,life:.5,c0:SHADOW,s0:.1,s1:.04,a:.55,drag:0,fin:6,fo:1})}}
+     S.acc+=dt*(5+12*c);while(S.acc>=1){S.acc--;const v=(Math.random()<.5?A.g:B.g).localToWorld(tmpV.set(rnd(.05,.5),.02,0));Math.random()<.6?neon(v.x,v.y,v.z,{s:.018,sp:.12}):violet(v.x,v.y,v.z,{s:.018,sp:.12})}
+     S.acc2+=dt*2;while(S.acc2>=1){S.acc2--;shade(p.x+rnd(-.2,.25),p.y+rnd(-.1,.1),p.z-.03,{s:.09,a:.4})}}},
+   attack(kind,ctx){const H=ctx.HP,q=root.quaternion,dir=ctx.dir,won=ctx.res==='win';
+    const boom=(big)=>{for(const [c,sc0,sc1,life,op] of[[new THREE.Color(2.4,.4,2.2),.15,2.6,.55,1],[0xffd8ff,.08,1.6,.3,.85],[0x5a10c0,.2,3.4,.75,.55]]){const m=new THREE.Mesh(ringGeo(),addMat(null,c,op));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;
+      oneShot(m,life,(t,_,mm)=>{const e=1-Math.pow(1-t,3);mm.scale.setScalar(sc0+(sc1-sc0)*e);mm.material.opacity=op*Math.pow(1-t,1.4)})}
+     const fl=glowSpr(0xff60f0,1);fl.position.copy(H);fl.renderOrder=18;oneShot(fl,.32,(t,_,s2)=>{s2.scale.setScalar(.4+2.2*Math.min(1,t*6));s2.material.opacity=Math.pow(1-t,1.6)});
+     blast(H.x,H.y,H.z,big?70:40,{c0:MG0,c1:MG1,v0:1.4,v1:3.6,s:.035,gy:-1.5});for(let i=0;i<(big?14:8);i++)shade(H.x+rnd(-.2,.2),H.y,H.z,{s:.2,v:1.6,a:.55})};
+    if(kind==='rock'){/* ghostly roar: the Oni spirit surges from the mask, then the purple explosion; beats scissors = the blades are crushed */
+     const sp=new THREE.Mesh(fg,new THREE.MeshBasicMaterial({color:new THREE.Color(1.8,.3,1.8),transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}));const st0=ctx.wp.clone();sp.quaternion.copy(q);sp.renderOrder=16;
+     oneShot(sp,.55,(t,_,mm)=>{mm.position.set(st0.x+dir*t*1.4,st0.y+t*.05,st0.z+.05);mm.scale.setScalar(1+1.6*t);mm.material.opacity=.7*Math.pow(1-t,1.5)});
+     for(let k=0;k<3;k++){const m=new THREE.Mesh(ringGeo(),addMat(null,new THREE.Color(1.2,.4,2.4),.6));m.quaternion.copy(q);m.renderOrder=17;oneShot(m,.5,(t,_,mm)=>{const tt=Math.max(0,t-k*.15);mm.position.set(st0.x+dir*.1,st0.y,st0.z);mm.scale.setScalar(.1+1.4*tt);mm.material.opacity=tt>0?.6*(1-tt):0})}
+     boom(true);rockBits(H,14,obsPlain,1.1,.9);st.camShake+=.22;
+     if(won){const g=new THREE.Group(),sm=new THREE.MeshStandardMaterial({color:0x8a8a9a,metalness:.9,roughness:.3,transparent:true});for(const [r,y] of[[.25,.03],[-.2,-.03]]){const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.045,.01),sm);b.userData.ownGeo=true;b.rotation.z=r;b.position.y=y;g.add(b)}
+      g.position.copy(H);g.quaternion.copy(q);oneShot(g,.9,(t,dt,gg)=>{gg.scale.set(1+t*.4,Math.max(.12,1-t*4),1);gg.children.forEach((b,i)=>{b.position.y-=dt*t*2.5;b.rotation.z+=(i?-1:1)*dt*2});sm.opacity=1-sstep(.6,1,t);if(Math.random()<.5)neon(H.x+rnd(-.2,.2),H.y,H.z,{sp:1})})}}
+    else if(kind==='paper'){/* chains + shadow burst out of the seal; beats rock = chains wrap the rock inside a glowing sealing circle, then it implodes */
+     const st0=ctx.wp.clone(),cm=new THREE.MeshStandardMaterial({color:0x2a2232,metalness:1,roughness:.3,emissive:0xff30d0,emissiveIntensity:.9});
+     const chains=[];for(let v=0;v<3;v++){const pts=[st0.clone().add(new THREE.Vector3(0,(v-1)*.12,.03)),st0.clone().lerp(H,.5).add(new THREE.Vector3(0,(v-1)*.2,.1))];
+      if(won)for(let k=0;k<=12;k++){const t=k/12,a=v/3*TAU+t*TAU*1.8,r=.2-.04*t;pts.push(new THREE.Vector3(H.x+Math.cos(a)*r,H.y+(t-.5)*.3,H.z+Math.sin(a)*r*.6))}else pts.push(H.clone().add(new THREE.Vector3(0,(v-1)*.08,0)));
+      const cv=new THREE.CatmullRomCurve3(pts),ch=chain(cv,won?70:34,cm);scene.add(ch.g);chains.push(ch)}
+     const hold=won?1.25:.6;const holder=new THREE.Object3D();
+     oneShot(holder,hold,(t)=>{const f=sstep(0,won?.3:.45,t),bk=won?1:1-sstep(.6,1,t);chains.forEach(c=>c.show(f*bk));cm.emissiveIntensity=.9+.6*Math.sin(t*30);
+      if(Math.random()<.4)shade(H.x+rnd(-.2,.2),H.y+rnd(-.2,.2),H.z,{s:.12,a:.45});if(t>=.99){chains.forEach(c=>{scene.remove(c.g);c.g.children[0].geometry.dispose()});cm.dispose()}});
+     if(won){const sc=new THREE.Mesh(planeGeo(),addMat(sealTex(),new THREE.Color(2.2,.5,2.2),1));sc.position.copy(H);sc.quaternion.copy(q);sc.renderOrder=17;let imp=false;
+      oneShot(sc,hold,(t,dt,mm)=>{const ap=sstep(.15,.4,t),gone=sstep(.78,.95,t);mm.scale.setScalar(Math.max(.01,(.2+.8*ap)*.85*(1-gone)));mm.rotateZ(dt*(1.5+6*gone));mm.material.opacity=ap*(1-gone*.5);
+       if(t>.55&&t<.8)for(let i=0;i<3;i++){const d=dirRnd(),r=.5;P(fx().add,H.x+d[0]*r,H.y+d[1]*r,H.z+d[2]*r*.4,{vx:-d[0]*r*2.4,vy:-d[1]*r*2.4,vz:-d[2]*r,life:.4,c0:MG0,c1:VI0,s0:.025,s1:.01,drag:0,fo:.6})}
+       if(!imp&&t>.8){imp=true;const fl=glowSpr(0xff70f0,1);fl.position.copy(H);fl.renderOrder=18;oneShot(fl,.35,(tt,_,s2)=>{s2.scale.setScalar(1.6*(1-tt)+.05);s2.material.opacity=1-tt});for(let i=0;i<16;i++)shade(H.x,H.y,H.z,{s:.22,v:1.4,a:.6});violet(H.x,H.y,H.z,{sp:1.2})}})}
+     else boom(false);st.camShake+=.08}
+    else{/* the double slash: two crescent waves, crossing cuts, sparks; beats paper = the paper is sliced into strips that dissolve into shadow */
+     const st0=ctx.wp.clone();for(let k=0;k<2;k++){const m=new THREE.Mesh(planeGeo(),addMat(crescentTex(),new THREE.Color(2.6,.5,2.4),1));m.quaternion.copy(q);m.rotateZ(k?.5:-.5);m.renderOrder=17;
+      oneShot(m,.55,(t,_,mm)=>{const tt=Math.max(0,t-k*.12);mm.position.set(st0.x+dir*tt*2.2,st0.y,st0.z+.05);mm.scale.set(dir*(.5+.9*tt),.5+.9*tt,1);mm.material.opacity=tt>0?Math.min(1,tt*10)*Math.pow(1-tt,1.2):0})}
+     for(const [w,h,col,life,rz] of[[1.9,.14,new THREE.Color(2.8,.5,2.4),.4,-.6],[1.9,.14,new THREE.Color(1.6,.5,3),.4,.6],[1.5,.05,0xffe0ff,.28,-.6]]){const m=new THREE.Mesh(planeGeo(),addMat(slashW(),col,1));m.position.copy(H);m.quaternion.copy(q);m.rotateZ(rz);m.renderOrder=18;
+      oneShot(m,life,(t,_,mm)=>{mm.scale.set(w*Math.min(1,t*8),h*(1+t*.5),1);mm.material.opacity=t<.25?1:Math.pow(1-(t-.25)/.75,1.5)})}
+     blast(H.x,H.y,H.z,60,{c0:MG0,c1:MG1,v0:1.8,v1:4,s:.028,gy:-2.5,drag:1.4});st.camShake+=.1;
+     if(won){const g=new THREE.Group(),pm=new THREE.MeshStandardMaterial({color:0xe8e0d0,roughness:.9,side:THREE.DoubleSide,transparent:true});const n=5;for(let i=0;i<n;i++){const h=new THREE.Mesh(new THREE.PlaneGeometry(.4/n,.55),pm);h.userData.ownGeo=true;h.position.x=-.2+(i+.5)*.4/n;h.userData.i=i-(n-1)/2;g.add(h)}
+      g.position.copy(H);g.quaternion.copy(q);g.rotateZ(-.6);oneShot(g,1,(t,dt,gg)=>{const sp=sstep(.08,.5,t);gg.children.forEach(h=>{const k=h.userData.i;h.position.y=k*.05*sp-t*t*.3;h.position.x+=k*dt*.25*sp;h.rotation.z=k*.15*sp});pm.opacity=1-sstep(.4,.8,t);
+       if(t>.35&&t<.85&&Math.random()<.8){const v=gg.children[Math.random()*n|0].getWorldPosition(new THREE.Vector3());shade(v.x,v.y,v.z,{s:.1,a:.55});neon(v.x,v.y,v.z,{sp:.5})}})}}},
+   brk(kind,ctx){const p=ctx.wp;
+    if(kind==='rock'){mask.visible=false;mglow.visible=false;rockBits(p,16,obsPlain,1.1,.9);for(let i=0;i<10;i++)shade(p.x,p.y,p.z,{s:.18,v:1.3});blast(p.x,p.y,p.z,40,{c0:MG0,c1:MG1,v0:.8,v1:2.4,s:.03})}
+    else if(kind==='paper'){for(let i=0;i<20;i++)violet(p.x+rnd(-.15,.15),p.y+rnd(-.25,.25),p.z,{sp:.5})}
+    else{S.bv=[new THREE.Vector3(-1.2,1.6,.4),new THREE.Vector3(1,1.4,-.4)];S.bw=[rnd(6,10),-rnd(6,10)];blast(p.x,p.y,p.z,40,{c0:MG0,c1:MG1,s:.026});piv.visible=pring.visible=false}},
+   brkUpd(kind,t,dt,ctx){const p=ctx.wp;lab.visible=false;
+    if(kind==='rock')return t>.1;
+    if(kind==='paper'){/* burns away in cursed purple flame */taliM.alphaTest=Math.min(.999,.5+t*.55);taliM.emissiveIntensity=1.4+t*3;circ.material.opacity=Math.max(0,.5-t);smalls.forEach(sm=>sm.m.scale.multiplyScalar(.95));
+     for(let i=0;i<2;i++){const v=tali.localToWorld(tmpV.set(rnd(-.14,.14),rnd(-.27,.27),0));neon(v.x,v.y,v.z,{sp:.5,s:.03});if(Math.random()<.5)shade(v.x,v.y,v.z,{s:.1,a:.5})}return t>1.1}
+    [A,B].forEach((k,i)=>{S.bv[i].y-=5*dt;k.g.position.addScaledVector(S.bv[i],dt);k.g.rotation.z+=S.bw[i]*dt});steel.alphaTest=handM.alphaTest=Math.min(.999,.5+t*.5);edgeGl.opacity=Math.max(0,.45-t*.5);
+    if(Math.random()<.5)shade(p.x,p.y,p.z,{s:.1,a:.5});return t>1.15},
+   hideTrails(){TR.forEach(t=>t.reset())}}}
+ const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant,frost:buildFrost,stone:buildStone,oni:buildOni};/* v1.20.0: Neon Oni Warlord's cursed samurai set — every hero now has a signature set *//* v1.19.0: Stone Sentinel's earth set *//* v1.18.0: Frostbound's ice set *//* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
  const OBJ={};const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>!OFF&&!FAIL&&!HREV.on&&!st.select&&!!SIGNATURES[heroKey(k)];
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(o&&o.hk===hk)return o;if(o)o.root.visible=false;
@@ -5923,7 +6119,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.19.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.20.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
