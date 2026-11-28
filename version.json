@@ -1,6 +1,20 @@
 {
-  "current": "1.14.1",
+  "current": "1.14.2",
   "releases": [
+    {
+      "v": "1.14.2",
+      "date": "2026-11-28",
+      "title": "Better match screen",
+      "new": [
+        "Your hero now stands on the RIGHT and your rival on the LEFT, so you can watch what your rival is doing",
+        "All your hero's moves now fit on the screen — no more scrolling"
+      ],
+      "fixed": [
+        "Rock, paper and scissors cards moved all the way to the bottom-right corner, with the chat button right above scissors",
+        "Sound and full screen buttons now sit on top of each other in the bottom-left corner",
+        "On a phone the rock card no longer covers the move buttons"
+      ]
+    },
     {
       "v": "1.14.1",
       "date": "2026-11-28",
