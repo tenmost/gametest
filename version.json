@@ -1,6 +1,16 @@
 {
-  "current": "1.20.4",
+  "current": "1.21.0",
   "releases": [
+    {
+      "v": "1.21.0",
+      "date": "2026-11-28",
+      "title": "Full screen on phones and tablets",
+      "new": [
+        "On phones and tablets held sideways the game now fills the whole screen — no more black bars at the sides",
+        "iPhone: a tip shows how to add RPS Rivals to your home screen, so it opens full screen without the browser bars"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.20.4",
       "date": "2026-11-28",

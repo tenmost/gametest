@@ -8,7 +8,7 @@
 <meta property="og:title" content="RPS Rivals — 3D Rock Paper Scissors | joyjoy.gg"><meta property="og:description" content="Free 3D rock-paper-scissors duels in your browser. Play the computer or challenge your friends online!">
 <meta property="og:image" content="https://joyjoy.gg/og-image.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="JOYJOY.GG — Enjoy Good Games. RPS Rivals: 3D rock paper scissors online duels">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="RPS Rivals — 3D Rock Paper Scissors | joyjoy.gg"><meta name="twitter:description" content="Free 3D rock-paper-scissors duels in your browser. Play the computer or challenge your friends online!"><meta name="twitter:image" content="https://joyjoy.gg/og-image.jpg">
-<meta name="application-name" content="joyjoy"><meta name="apple-mobile-web-app-title" content="RPS Rivals"><meta name="theme-color" content="#101b3d">
+<meta name="application-name" content="joyjoy"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="RPS Rivals"><meta name="theme-color" content="#101b3d">
 <script type="application/ld+json">[{"@context": "https://schema.org", "@type": "WebSite", "name": "joyjoy", "alternateName": ["JOYJOY.GG", "joyjoy.gg"], "url": "https://joyjoy.gg/"}, {"@context": "https://schema.org", "@type": "Organization", "name": "joyjoy", "url": "https://joyjoy.gg/", "logo": "https://joyjoy.gg/icon-512.png", "slogan": "Enjoy Good Games"}, {"@context": "https://schema.org", "@type": "VideoGame", "name": "RPS Rivals", "alternateName": "RPS Rivals 3D Rock Paper Scissors", "url": "https://joyjoy.gg/", "image": "https://joyjoy.gg/og-image.jpg", "description": "A free 3D rock-paper-scissors battle game in the browser. Pick a hero and an arena, duel the computer or challenge friends online, earn crystals and level up your heroes.", "genre": ["Casual", "Strategy", "Multiplayer"], "gamePlatform": ["Web browser", "PC", "Mobile"], "applicationCategory": "Game", "operatingSystem": "Any (web browser)", "playMode": ["SinglePlayer", "MultiPlayer"], "inLanguage": "en", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "publisher": {"@type": "Organization", "name": "joyjoy", "url": "https://joyjoy.gg/"}, "sameAs": ["https://joyjoy.gg/rps-rivals/"]}]</script>
 <script>(function(){try{var t=localStorage.getItem("sd_theme");document.documentElement.dataset.theme=["moon","forge","arcane","sakura","frost","royal"].indexOf(t)>=0?t:"moon"}catch(e){document.documentElement.dataset.theme="moon"}})();</script>
 <script>(function(){try{var q=new URLSearchParams(location.search).get("xmas"),d=new Date(),m=d.getMonth(),day=d.getDate();window.SD_XMAS=q?q==="1":(m===10&&day>=20)||m===11||(m===0&&day<=6);if(window.SD_XMAS)document.documentElement.classList.add("xmas");}catch(e){}})();</script>
@@ -6132,7 +6132,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.20.4';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.21.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -6649,4 +6649,28 @@ try{new ResizeObserver(chk).observe(st)}catch(e){addEventListener('resize',chk)}
  #sdBoot{visibility:hidden!important}
 }
 </style>
+<style>/* ===== FILL THE SCREEN ON PHONES + TABLETS (v1.21.0, Dainis): on touch screens held sideways the game is not a 16:9 box with black bars any more — it fills the whole screen (html.sdFill, set by the script below; ?fill=1 forces it on a computer for testing, ?fill=0 turns it off). The 3D view just shows a little more on the sides; the theme painting is drawn "cover". ===== */
+html.sdFill{--hdrH:0px}
+html.sdFill,html.sdFill body{width:100%;height:100%;overflow:hidden!important;background:#000}
+html.sdFill body{display:block!important;min-height:0!important}
+html.sdFill main{width:100vw!important;height:100dvh!important;max-width:none!important;padding:0!important;margin:0!important}
+html.sdFill .stage{aspect-ratio:auto!important;width:100vw!important;height:100dvh!important;border-radius:0!important;box-shadow:none!important}
+html.sdFill #siteHdr,html.sdFill footer{display:none!important}
+</style>
+<script>/* FILL THE SCREEN — see the style block above */
+(()=>{const q=new URLSearchParams(location.search).get('fill');const mq=matchMedia('(orientation:landscape) and (pointer:coarse)');
+function set(){const on=q==='1'||(q!=='0'&&mq.matches);const r=document.documentElement;if(r.classList.contains('sdFill')===on)return;r.classList.toggle('sdFill',on);setTimeout(()=>dispatchEvent(new Event('resize')),50);setTimeout(()=>{dispatchEvent(new Event('resize'));try{window.sdColumns&&window.sdColumns()}catch(e){}},300)}
+set();try{mq.addEventListener('change',set)}catch(e){mq.addListener&&mq.addListener(set)}})();</script>
+<style>/* iPHONE FULL SCREEN TIP (v1.21.0): Safari on iPhone can't hide its bars for a web page — only a game started from the home screen runs full screen. Shown once (localStorage sd_a2hs) on iPhone / iPads without full screen, never in a match or from the home-screen app. */
+#a2hs{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:9990;width:min(460px,92vw);display:none;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--ln2,#785a28);background:var(--pnl2,#141a24);color:var(--tx,#f0e6d2);font:600 13px/1.35 Arial,sans-serif;box-shadow:0 8px 30px #000a}
+#a2hs.on{display:flex}#a2hs b{color:var(--gd,#c8aa6e)}#a2hs .aI{font-size:24px;flex:none}#a2hs .aT{flex:1}
+#a2hs button{flex:none;border:1px solid var(--ln2,#785a28);border-radius:9px;background:transparent;color:var(--tx,#fff);font:900 12px Arial,sans-serif;padding:7px 10px}
+#stage.match-active~#a2hs,body:has(#stage.match-active) #a2hs{display:none!important}
+</style>
+<script>(()=>{const ua=navigator.userAgent,iPhone=/iPhone|iPod/.test(ua),iPad=/iPad/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=navigator.standalone||matchMedia('(display-mode: standalone),(display-mode: fullscreen)').matches;
+if(!(iPhone||(iPad&&!document.fullscreenEnabled))||standalone)return;try{if(localStorage.getItem('sd_a2hs'))return}catch(e){return}
+const d=document.createElement('div');d.id='a2hs';d.innerHTML='<span class="aI">📲</span><span class="aT"><b>Play full screen:</b> tap Share <span style="font-size:15px">⬆️</span> and choose <b>Add to Home Screen</b>, then open RPS Rivals from your home screen.</span><button type="button">OK</button>';
+document.body.appendChild(d);d.querySelector('button').onclick=()=>{d.classList.remove('on');try{localStorage.setItem('sd_a2hs','1')}catch(e){}};
+const show=()=>setTimeout(()=>d.classList.add('on'),2500);if(document.getElementById('sdBoot'))addEventListener('sd-loaded',show,{once:true});else show();})();</script>
 </html>
