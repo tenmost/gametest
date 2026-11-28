@@ -1,6 +1,16 @@
 {
-  "current": "1.14.4",
+  "current": "1.15.0",
   "releases": [
+    {
+      "v": "1.15.0",
+      "date": "2026-11-28",
+      "title": "Hero Battle Signatures (test: Gearfox)",
+      "new": [
+        "TEST: Gearfox now shows his own fiery rock, paper and scissors when the cards are revealed — the Ember Core rock, the Flame Scroll and the Inferno Blades, each with its own fire effects",
+        "It only changes how it looks — rock, paper and scissors still win and lose exactly the same way"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.14.4",
       "date": "2026-11-28",
