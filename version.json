@@ -1,6 +1,22 @@
 {
-  "current": "1.13.3",
+  "current": "1.14.0",
   "releases": [
+    {
+      "v": "1.14.0",
+      "date": "2026-11-28",
+      "title": "New match layout + quick chat",
+      "new": [
+        "New match screen: your rival's last 3 cards are on the left, newest on top — try to spot their pattern!",
+        "Hero moves are now in the bottom middle, two rows you can scroll sideways",
+        "On a computer the rock, paper and scissors cards sit in a row in the bottom right (keys 1, 2, 3)",
+        "On a phone the cards go up like stairs on the right, right under your thumb",
+        "Quick chat: tap the 💬 button in the bottom-right corner to say Hello, Good luck, GG and more"
+      ],
+      "fixed": [
+        "Heroes no longer talk by themselves at the start of a match — you decide when to chat and when to dance",
+        "On a phone a match is played sideways only — hold it upright and the game asks you to turn it"
+      ]
+    },
     {
       "v": "1.13.3",
       "date": "2026-11-27",
