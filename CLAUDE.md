@@ -10,6 +10,12 @@ RPS Rivals (formerly "Space Duel") is a 3D rock-paper-scissors browser game. Nam
 - Three.js 0.170 from jsDelivr, no build step, no npm. Everything runs as plain HTML + JS.
 - Goal: earn money with it later, so every asset and library must be licensed for commercial use.
 
+## SEO (v1.20.1, Nov 2026)
+- index.html `<head>`: title "joyjoy — Enjoy Good Games | RPS Rivals: 3D Rock Paper Scissors Online", description, canonical https://joyjoy.gg/, Open Graph + Twitter card (`/og-image.jpg`, 1200×630), favicons (`/favicon.ico`, `/favicon.svg`, `/icon-192.png`, `/icon-512.png`, `/apple-touch-icon.png`), `/site.webmanifest`, JSON-LD (WebSite name "joyjoy", Organization, VideoGame "RPS Rivals"). The game page doesn't scroll, so crawlable text sits in `#seoAbout` (class `.srOnly`, visually hidden, readable by screen readers) at the start of `<main>` — keep it short, true and matching the game; update hero/arena names there when they change.
+- `/rps-rivals/` = static info page (how to play, modes, heroes, arenas, FAQ, PLAY buttons → `/`). Update it when heroes, arenas or rules change. Linked from ABOUT & FAQ and `#seoAbout`.
+- `robots.txt` (blocks admin/test pages, supabase/, tools/) + `sitemap.xml` (add new pages + bump `lastmod`). admin.html and astronaut-test.html have `noindex`.
+- MULTI-GAME PLAN (Dainis): joyjoy.gg will hold several games. For now RPS Rivals stays at `/` (moving it would break relative `assets/` paths, model URLs in `sd_characters`, shared `?ref=`/`?room=` links and the Supabase password-reset redirect). When the second game comes: root becomes a game catalog and RPS Rivals moves to `/rps-rivals/` (plan the redirects first).
+
 ## Files
 - `index.html` — the whole game (CSS + several `<script>` blocks). Large and dense; edit with small, targeted changes.
 - `admin.html` — admin panel: upload/remove characters, view stats. Admins only (checked server-side).

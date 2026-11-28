@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /astronaut-test.html
+Disallow: /supabase/
+Disallow: /tools/
+
+Sitemap: https://joyjoy.gg/sitemap.xml
