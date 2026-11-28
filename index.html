@@ -6132,7 +6132,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.20.2';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.20.3';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -6623,4 +6623,23 @@ const ex=document.getElementById('matchExit');if(ex){ex.textContent='✕';ex.tit
 window.sdQuickChat=QC;
 setInterval(()=>{const bar=document.getElementById('emoBar'),on=!!(bar&&bar.classList.contains('on'));w.classList.toggle('on',on);if(!on)open(false)},400);
 })();</script>
+<style>/* ===== SMALL GAME (v1.20.3): sideways phones / small windows (game under 760 px wide, html.smStage). The left column is only ~140 px wide there: 🔔 + 📋 become small buttons stacked inside the player card (they hung over the crystals and the rank card), the rank name and the "beats" line get smaller so nothing is cut. ===== */
+html.smStage #playerCard .pcInfo{padding-right:24px!important;min-width:0}
+html.smStage #playerCard .pcGems{gap:4px!important;flex-wrap:wrap;font-size:12px}
+html.smStage #playerCard .pcGems svg{width:14px;height:14px}
+html.smStage #playerCard .pcGems>span{white-space:nowrap}
+html.smStage #inboxBtn:not(.inl),html.smStage #dailyCardBtn{width:22px!important;height:22px!important;right:3px!important;font-size:11px!important}
+html.smStage #inboxBtn:not(.inl){top:3px!important}
+html.smStage #dailyCardBtn{top:28px!important}
+html.smStage #inboxBtn .ibN,html.smStage #dailyCardBtn .ibN{min-width:13px;height:13px;font-size:8px;line-height:13px;top:-4px;right:-4px;padding:0 2px}
+html.smStage #rankCard .rcName b{font-size:12px!important;letter-spacing:0!important}
+html.smStage #rankCard .rcName span{font-size:10px!important}
+html.smStage #howMini{flex-wrap:wrap!important;justify-content:center!important;gap:1px 6px!important;font-size:8.5px!important;letter-spacing:0!important;padding-left:4px!important;padding-right:4px!important}
+html.smStage #howMini span{white-space:nowrap}
+html.smStage #lobbyBoard .lbHead b{font-size:12px!important;letter-spacing:.02em!important;white-space:nowrap}
+</style>
+<script>/* SMALL GAME — sets html.smStage from the game's width */
+(()=>{const st=document.getElementById('stage');if(!st)return;let on=null;
+function chk(){const w=st.getBoundingClientRect().width;if(!w)return;const s=w<760;if(s===on)return;on=s;document.documentElement.classList.toggle('smStage',s);setTimeout(()=>{try{window.sdColumns&&window.sdColumns()}catch(e){}},60)}
+try{new ResizeObserver(chk).observe(st)}catch(e){addEventListener('resize',chk)}chk();})();</script>
 </html>
