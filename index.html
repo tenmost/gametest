@@ -4971,7 +4971,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.14.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.14.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
@@ -5388,11 +5388,32 @@ btn.addEventListener('click',e=>{e.stopPropagation();open(!w.classList.contains(
 w.querySelector('#qcMenu').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();
  if(Date.now()-last<2500)return;last=Date.now();const i=+b.dataset.i;open(false);
  try{Scene3D.say&&Scene3D.say('g',QC[i])}catch(err){}
+ try{window.sdCpuReply&&window.sdCpuReply(i)}catch(err){}
  try{if(typeof NET!=='undefined'&&NET&&NET.ch&&!window.SD_SPEC)NET.ch.send({type:'broadcast',event:'qc',payload:{i}})}catch(err){}
  w.classList.add('wait');setTimeout(()=>w.classList.remove('wait'),2500)});
 document.addEventListener('click',e=>{if(!w.contains(e.target))open(false)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&w.classList.contains('open'))open(false)});
 let lastIn=0;window.sdQuickChatIn=i=>{i=Number(i);if(!Number.isInteger(i)||!QC[i]||Date.now()-lastIn<1500)return;lastIn=Date.now();try{Scene3D.say&&Scene3D.say('a',QC[i])}catch(e){}};
+/* COMPUTER PERSONALITY (v1.14.1, Dainis): only vs computer — the computer sometimes talks and dances by itself (all its moves, no level locks). Never spam: at least 7 s between its actions. */
+const offline=()=>!window.SD_SPEC&&!(typeof NET!=='undefined'&&NET&&NET.live);
+const inMatch=()=>stage.classList.contains('match-active')&&!stage.classList.contains('selecting')&&!document.querySelector('#over.show,.over.show');
+const CPU={hi:['👋 Hi there!','🤖 Beep boop, hello!','😎 Ready to lose?','🍀 Good luck, you need it!'],
+ reply:{0:['👋 Hello, human!','🤖 Hi!'],1:['🍀 You too!','😏 Luck won\'t help you!'],2:['😊 Thanks!','😎 I know!'],3:['😂 Haha!','🤖 Oops indeed!'],4:['😂 Hehe!','🤖 Ha ha ha!'],5:['🤝 GG!','🤝 Good game!']},
+ winF:['😎 Too easy!','🤖 Computer wins!','💪 Got you!','🎉 Yes!'],loseF:['😮 No way!','🍀 Lucky shot!','😤 Rematch!','🤖 Error… error…'],
+ idle:['🤔 Hmm…','🤖 Calculating…','😏 I know your next card','🎵 La la la','⏳ Your turn!'],
+ matchW:['🏆 I am the champion!','🤖 Victory for the machines!'],matchL:['🤝 GG, you win!','😢 I\'ll be back…']};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+let cpuLast=0,cpuT=0,prevF=[0,0];
+const cpuSay=(t,force)=>{if(!offline()||!inMatch())return false;if(!force&&Date.now()-cpuLast<7000)return false;cpuLast=Date.now();try{Scene3D.say&&Scene3D.say('a',t)}catch(e){}return true};
+const cpuDance=()=>{if(!offline()||!inMatch()||stage.classList.contains('move-resolving'))return false;try{const H=Scene3D.emoteHero&&Scene3D.emoteHero('a');if(!H||H.busy())return false;const l=H.list.filter(e=>H.has(e[0]));if(!l.length)return false;if(Scene3D.emote('a',pick(l)[0])){cpuLast=Date.now();return true}}catch(e){}return false};
+const later=(f,ms)=>setTimeout(()=>{if(offline()&&inMatch())f()},ms);
+let wasIn=false;setInterval(()=>{const on=offline()&&inMatch();
+ if(on&&!wasIn){prevF=[0,0];cpuLast=0;cpuT=Date.now()+9000+Math.random()*6000;later(()=>cpuSay(pick(CPU.hi),true),3200)}wasIn=on;
+ if(on&&Date.now()>cpuT){cpuT=Date.now()+11000+Math.random()*10000;if(Date.now()-cpuLast>7000){if(Math.random()<.6)cpuDance()||cpuSay(pick(CPU.idle));else cpuSay(pick(CPU.idle))}}},1000);
+window.addEventListener('sd-fight',e=>{if(!offline())return;const d=e.detail||{},cpuWon=(d.of||0)>prevF[1];prevF=[d.pf||0,d.of||0];
+ later(()=>{cpuSay(pick(cpuWon?CPU.winF:CPU.loseF),true);if(cpuWon)later(cpuDance,900)},700)});
+window.addEventListener('sd-match-end',e=>{if(!offline())return;const d=e.detail||{};try{Scene3D.say&&Scene3D.say('a',pick(d.won?CPU.matchL:CPU.matchW))}catch(err){}if(!d.won)setTimeout(()=>{try{const H=Scene3D.emoteHero('a');const l=H.list.filter(x=>H.has(x[0]));if(l.length&&!H.busy())Scene3D.emote('a',pick(l)[0])}catch(err){}},600)});
+window.sdCpuReply=i=>{if(!offline()||Math.random()<.35)return;const r=CPU.reply[i];if(r)later(()=>cpuSay(pick(r),true),1300)};
 window.sdQuickChat=QC;
 setInterval(()=>{const bar=document.getElementById('emoBar'),on=!!(bar&&bar.classList.contains('on'));w.classList.toggle('on',on);if(!on)open(false)},400);
 })();</script>

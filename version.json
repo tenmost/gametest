@@ -1,6 +1,16 @@
 {
-  "current": "1.14.0",
+  "current": "1.14.1",
   "releases": [
+    {
+      "v": "1.14.1",
+      "date": "2026-11-28",
+      "title": "The computer comes alive",
+      "new": [
+        "When you play against the computer, it now talks to you sometimes — it says hi, reacts when it wins or loses a fight, and answers your quick chat",
+        "The computer also dances and shows off its moves during the match"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.14.0",
       "date": "2026-11-28",
