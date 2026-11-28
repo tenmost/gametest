@@ -2577,7 +2577,7 @@ const SIG=(()=>{
   g.fillStyle='rgba(16,10,6,.86)';g.strokeStyle=edge;g.lineWidth=5;g.beginPath();g.roundRect(10,10,492,108,54);g.fill();g.stroke();
   g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ffe6bd';g.font='900 50px Arial';g.fillText(t1,256,52);g.font='800 21px Arial';g.fillStyle=edge;g.fillText(t2,256,97)}))}
 
- /* ======================= GEARFOX — fire signatures ======================= */
+ /* ======================= FROG RONIN — fire signatures (built first for Gearfox, moved to Frog Ronin in v1.15.1; function name kept) ======================= */
  let CRK=null,SCR=null,WAVE=null,SLASH=null;
  /* lava cracks: a Voronoi pattern — dark basalt colour map + glowing crack emissive map */
  function crackMaps(){if(CRK)return CRK;const W=256,H=128,R=seeded(42),pts=[];for(let i=0;i<34;i++)pts.push([R()*W,R()*H]);
@@ -2740,7 +2740,7 @@ const SIG=(()=>{
     piv.visible=bolt.visible=t<.15;return t>1.2},
    hideTrails(){TR.forEach(t=>t.reset())}}}
 
- const SIGNATURES={gearfox:buildFox};
+ const SIGNATURES={frog:buildFox};/* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
  const OBJ={};const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>!OFF&&!FAIL&&!HREV.on&&!st.select&&!!SIGNATURES[heroKey(k)];
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(o&&o.hk===hk)return o;if(o)o.root.visible=false;
@@ -5224,7 +5224,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.15.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.15.1';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
