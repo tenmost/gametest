@@ -2551,7 +2551,7 @@ const SIG=(()=>{
      col[k*4+3]=(q.a??1)*Math.min(1,t*(q.fin||12))*Math.pow(1-t,q.fo||1.3);
      sz[k]=q.s0+((q.s1??q.s0)-q.s0)*t;if(ra)ra[k]=q.r||0;k++}
     geo.setDrawRange(0,k);geo.attributes.position.needsUpdate=geo.attributes.aCol.needsUpdate=geo.attributes.aSize.needsUpdate=true;if(ra)geo.attributes.aRot.needsUpdate=true}}}
- let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke()),leaf:pool(260,false,leafSprite(),true)});
+ let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke()),leaf:pool(260,false,leafSprite(),true),shard:pool(420,false,shardSprite(),true)});
  const P=(pl,x,y,z,o)=>pl.add(Object.assign({x,y,z,vx:0,vy:0,vz:0},o));
  const dirRnd=()=>{const u=Math.random()*2-1,a=Math.random()*TAU,r=Math.sqrt(1-u*u);return[Math.cos(a)*r,u,Math.sin(a)*r]};
  /* ember / spark / smoke presets (colours above 1 = bloom glow) */
@@ -3093,7 +3093,178 @@ const SIG=(()=>{
     [A,B].forEach((b,i)=>{S.bv[i].y-=5*dt;b.g.position.addScaledVector(S.bv[i],dt);b.g.rotation.z+=S.bw[i]*dt});emGlow.opacity=Math.max(0,.45-t*.5);kglow.visible=t<.1;
     if(Math.random()<.3)leaf(p.x,p.y,p.z,{c:[.7,.55,.25],s:.045});return t>1.2},
    hideTrails(){TR.forEach(t=>t.reset())}}}
- const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant};/* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
+ /* ======================= FROSTBOUND — ancient ice magic (v1.18.0): translucent layered ice, dark royal-blue crystals, cyan energy, white frost, gold details ======================= */
+ const IC0=[1.5,2.6,3.4],IC1=[.15,.5,1.4],SNOW0=[1.4,1.5,1.7],SNOW1=[.7,.85,1.2],MIST=[.62,.76,.98];
+ const snow=(x,y,z,o={})=>P(fx().add,x,y,z,{vx:rnd(-.06,.06),vy:o.vy??rnd(-.12,.02),vz:0,life:rnd(1.6,2.6),c0:SNOW0,c1:SNOW1,s0:o.s||.018,s1:(o.s||.018)*.7,drag:.5,gy:-.04,sw:2,swA:.35,ph:Math.random()*9,fo:1});
+ const mist=(x,y,z,o={})=>smoke(x,y,z,Object.assign({c:MIST,a:.22,s:.12},o));
+ const glint=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:IC0,c1:IC1,sp:.25,vy:.05,s:.024,gy:-.02,swA:.3},o));
+ function shard(x,y,z,o={}){const d=dirRnd(),v=rnd(o.v0??1,o.v1??3);P(fx().shard,x,y,z,{vx:d[0]*v+(o.vx||0),vy:d[1]*v+(o.up??.5),vz:d[2]*v*.5,life:rnd(.6,1.2)*(o.l||1),c0:o.c||[1,1,1],s0:o.s||rnd(.03,.065),s1:(o.s||.045)*.6,a:1,drag:o.drag??1.2,gy:o.gy??-3.5,r:Math.random()*6.3,vr:rnd(-10,10),fin:25,fo:.8})}
+ let SHS=null,ICES=null,FRT=null;
+ /* ice shard sprite (spun by the shader) */
+ function shardSprite(){return SHS||(SHS=canvasTex(64,64,g=>{g.beginPath();g.moveTo(32,2);g.lineTo(44,26);g.lineTo(38,62);g.lineTo(24,58);g.lineTo(20,24);g.closePath();
+  const gr=g.createLinearGradient(20,0,44,64);gr.addColorStop(0,'#ffffff');gr.addColorStop(.45,'#bfe8ff');gr.addColorStop(1,'#3f8cff');g.fillStyle=gr;g.fill();g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=1.5;g.stroke();
+  g.strokeStyle='rgba(40,110,220,.6)';g.beginPath();g.moveTo(32,4);g.lineTo(30,58);g.stroke()}))}
+ const flake=(g,x,y,r,lw)=>{g.save();g.translate(x,y);g.lineWidth=lw;g.lineCap='round';for(let i=0;i<6;i++){g.rotate(Math.PI/3);g.beginPath();g.moveTo(0,0);g.lineTo(0,-r);for(const f of[.35,.6,.82]){const L=r*(1-f)*.55;g.moveTo(0,-r*f);g.lineTo(-L,-r*f-L*.8);g.moveTo(0,-r*f);g.lineTo(L,-r*f-L*.8)}g.stroke()}
+  g.beginPath();for(let i=0;i<=6;i++){const a=i/6*TAU;i?g.lineTo(Math.cos(a)*r*.18,Math.sin(a)*r*.18):g.moveTo(Math.cos(a)*r*.18,Math.sin(a)*r*.18)}g.stroke();g.restore()};
+ /* frost ferns spreading from the middle (for frost discs / spreading frost) */
+ function frostTex(){return FRT||(FRT=canvasTex(256,256,g=>{const R=seeded(31);g.strokeStyle='rgba(235,250,255,1)';g.shadowColor='#8fdcff';g.shadowBlur=4;g.lineCap='round';
+  const br=(x,y,a,len,w,d)=>{if(d>5||len<3)return;const x2=x+Math.cos(a)*len,y2=y+Math.sin(a)*len;g.lineWidth=w;g.beginPath();g.moveTo(x,y);g.lineTo(x2,y2);g.stroke();
+   const n=2+(R()*2|0);for(let i=0;i<n;i++){const t=.3+R()*.6;br(x+Math.cos(a)*len*t,y+Math.sin(a)*len*t,a+(R()<.5?-1:1)*(.5+R()*.4),len*(.35+R()*.25),w*.7,d+1)}br(x2,y2,a+(R()-.5)*.3,len*.7,w*.8,d+1)};
+  for(let i=0;i<9;i++)br(128,128,i/9*TAU+R()*.3,34+R()*12,2.4,0);
+  g.globalCompositeOperation='destination-in';const m=g.createRadialGradient(128,128,30,128,128,128);m.addColorStop(0,'rgba(0,0,0,1)');m.addColorStop(.75,'rgba(0,0,0,.8)');m.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=m;g.fillRect(0,0,256,256)}))}
+ /* enchanted ice banner: pale translucent ice, snowflakes, runes, gold corner filigree, jagged crystalline bottom edge */
+ function iceSheetTex(){if(ICES)return ICES;const W=512,H=384,R=seeded(17),edge=[];
+  for(let x=0;x<=W;x+=16)edge.push([x,H-14-(x/16%2?22+R()*16:R()*8)]);
+  const path=g=>{g.beginPath();g.moveTo(0,0);g.lineTo(W,0);for(let i=edge.length-1;i>=0;i--)g.lineTo(edge[i][0],edge[i][1]);g.closePath()};
+  const runes=[];for(let i=0;i<14;i++)runes.push([60+(i%7)*66,i<7?62:322,R()]);
+  const art=(g,glow)=>{g.save();g.lineCap='round';
+   g.strokeStyle=glow?'#8fe6ff':'rgba(255,255,255,.85)';g.shadowColor=glow?'#3fbfff':'transparent';g.shadowBlur=glow?8:0;flake(g,256,180,92,glow?3.2:2.6);flake(g,256,180,46,glow?2:1.6);
+   for(const [x,y,s] of[[96,184,32],[416,184,32],[150,110,16],[362,110,16],[150,255,16],[362,255,16]])flake(g,x,y,s,1.6);
+   g.lineWidth=1.8;for(const [x,y,q] of runes){g.beginPath();g.moveTo(x-8,y+10);g.lineTo(x,y-10);g.lineTo(x+8,y+10);if(q>.5){g.moveTo(x-6,y);g.lineTo(x+6,y)}else{g.moveTo(x,y-10);g.lineTo(x,y+12)}g.stroke()}
+   g.strokeStyle=glow?'#ffd060':'#d9b04a';g.shadowColor=glow?'#ffb020':'transparent';g.lineWidth=2.4;
+   for(const [x,y,sx,sy] of[[18,18,1,1],[W-18,18,-1,1]]){g.beginPath();g.moveTo(x,y+46*sy);g.quadraticCurveTo(x,y,x+46*sx,y);g.moveTo(x+10*sx,y+30*sy);g.quadraticCurveTo(x+12*sx,y+12*sy,x+30*sx,y+10*sy);g.stroke()}
+   g.beginPath();g.moveTo(40,30);g.lineTo(W-40,30);g.stroke();g.restore()};
+  const map=canvasTex(W,H,g=>{path(g);g.save();g.clip();const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(210,238,255,.95)');gr.addColorStop(.5,'rgba(150,205,255,.85)');gr.addColorStop(1,'rgba(90,160,240,.9)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+   for(let i=0;i<120;i++){g.strokeStyle=`rgba(255,255,255,${.05+R()*.12})`;g.lineWidth=1;const x=R()*W,y=R()*H;g.beginPath();g.moveTo(x,y);g.lineTo(x+(R()-.5)*60,y+(R()-.5)*60);g.stroke()}
+   art(g,false);g.restore();g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=4;path(g);g.stroke()});
+  const em=canvasTex(W,H,g=>{g.fillStyle='#000';g.fillRect(0,0,W,H);path(g);g.save();g.clip();art(g,true);g.restore();g.strokeStyle='#9fe8ff';g.shadowColor='#4fd0ff';g.shadowBlur=10;g.lineWidth=4;path(g);g.stroke()});
+  return ICES={map,em}}
+ /* hexagonal crystal with a pointed tip, base at y=0 */
+ const XG={};const crystalGeo=(h,r)=>{const k=h+'_'+r;if(XG[k])return XG[k];const g=new THREE.LatheGeometry([new THREE.Vector2(.001,0),new THREE.Vector2(r,.02*h),new THREE.Vector2(r*.92,h),new THREE.Vector2(.001,h+r*2.2)],6);g.computeVertexNormals();return XG[k]=g};
+ /* flying ice pieces (real crystals) */
+ function iceBits(H,n,mats,sp=1){const g=new THREE.Group();g.position.copy(H);for(let i=0;i<n;i++){const m=new THREE.Mesh(crystalGeo(.06,.014),mats[i%mats.length]),d=dirRnd(),v=rnd(1.2,3)*sp;
+   m.userData.v=new THREE.Vector3(d[0]*v,d[1]*v+1,d[2]*v*.6);m.userData.w=new THREE.Vector3(rnd(-12,12),rnd(-12,12),rnd(-12,12));m.scale.setScalar(rnd(.7,1.8));m.rotation.set(rnd(0,6),rnd(0,6),rnd(0,6));g.add(m)}
+  oneShot(g,1.15,(t,dt,gg)=>{for(const m of gg.children){const u=m.userData;u.v.y-=6*dt;m.position.addScaledVector(u.v,dt);m.rotation.x+=u.w.x*dt;m.rotation.y+=u.w.y*dt;if(t>.75)m.scale.multiplyScalar(.92)}})}
+
+ function buildFrost(){const root=new THREE.Group(),parts={},S={acc:0,acc2:0,acc3:0,lastOpen:.3,dOpen:0};
+  const iceClear=new THREE.MeshStandardMaterial({color:0xcfeaff,transparent:true,opacity:.42,roughness:.04,metalness:.3,emissive:0x1a5aa8,emissiveIntensity:.35,flatShading:true,depthWrite:false});
+  const iceMid=new THREE.MeshStandardMaterial({color:0x7cc0ff,transparent:true,opacity:.82,roughness:.06,metalness:.25,emissive:0x1648a0,emissiveIntensity:.45,flatShading:true});
+  const iceDeep=new THREE.MeshStandardMaterial({color:0x1d3fa8,roughness:.12,metalness:.35,emissive:0x0a1f66,emissiveIntensity:.6,flatShading:true});
+  const goldM=new THREE.MeshStandardMaterial({color:0xe0b24a,metalness:1,roughness:.25,emissive:0x5a3a00,emissiveIntensity:.5});
+  for(const m of[iceClear,iceMid,iceDeep])m.userData.keep=true;
+  const energy=new THREE.MeshBasicMaterial({color:new THREE.Color(1.3,2.7,3.5)}),eGlow=new THREE.MeshBasicMaterial({color:0x4fc8ff,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false});
+  const glowSpr=(c,o)=>new THREE.Sprite(new THREE.SpriteMaterial({map:texGlow(),color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false}));
+  const Y=new THREE.Vector3(0,1,0);
+  /* ---- ROCK: GLACIAL CORE — a pulsing core inside two layers of ice, dark royal-blue crystal formations, glowing facet cracks, gold bands ---- */
+  const rock=new THREE.Group(),body=new THREE.Group();rock.add(body);
+  const coreM=new THREE.MeshBasicMaterial({color:new THREE.Color(1.6,2.8,3.6)}),core=new THREE.Mesh(new THREE.IcosahedronGeometry(.085,2),coreM);body.add(core);
+  const cglow=glowSpr(0x7fdcff,.7);cglow.scale.setScalar(.5);body.add(cglow);
+  const inner=new THREE.Mesh(rockGeo(.19,2,4.4),iceMid);inner.renderOrder=1;body.add(inner);
+  const outerG=rockGeo(.265,3,8.1),outer=new THREE.Mesh(outerG,iceClear);outer.renderOrder=3;body.add(outer);
+  const cracks=new THREE.LineSegments(new THREE.EdgesGeometry(outerG,24),new THREE.LineBasicMaterial({color:new THREE.Color(.9,2,2.8),transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));cracks.renderOrder=4;body.add(cracks);
+  const xtals=[];const addX=(dir,h,r,mat,extra)=>{const m=new THREE.Mesh(crystalGeo(h,r),mat);m.position.copy(dir).multiplyScalar(.2);m.quaternion.setFromUnitVectors(Y,dir);m.renderOrder=2;body.add(m);xtals.push({m,base:extra?0:1,extra});return m};
+  const R=seeded(8);for(let i=0;i<13;i++){const d=new THREE.Vector3(R()*2-1,R()*2-1,R()*1.6-.5).normalize();addX(d,.09+R()*.08,.022+R()*.014,i%3===0?iceMid:iceDeep,i>=9)}
+  const bands=[];for(const [rx,rz,arc] of[[.4,.2,2.4],[-.7,1.2,1.8]]){const b=new THREE.Mesh(new THREE.TorusGeometry(.285,.008,6,40,arc),goldM);b.rotation.set(rx,0,rz);body.add(b);bands.push(b)}
+  const orbit=[];for(let i=0;i<6;i++){const m=new THREE.Mesh(crystalGeo(.05,.012),i%2?iceMid:iceDeep);rock.add(m);orbit.push({m,a:i/6*TAU,r:.36+(i%2)*.05,s:.6+i*.12,y:(i-2.5)*.05})}
+  root.add(rock);parts.rock=rock;
+  /* ---- PAPER: BLIZZARD VEIL — an enchanted ice banner on a crystal rod; it forms from snow, unfurls, frost patterns spread across it (shader) ---- */
+  const IS=iceSheetTex(),FROST={value:0};
+  const veilM=new THREE.MeshStandardMaterial({map:IS.map,emissive:0xffffff,emissiveMap:IS.em,emissiveIntensity:1.3,transparent:true,alphaTest:.15,opacity:.9,side:THREE.DoubleSide,roughness:.08,metalness:.2,depthWrite:false});
+  veilM.onBeforeCompile=sh=>{sh.uniforms.uFrost=FROST;sh.fragmentShader='uniform float uFrost;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#ifdef USE_EMISSIVEMAP\n vec4 emC=texture2D(emissiveMap,vEmissiveMapUv);float fr=smoothstep(uFrost,uFrost-0.08,length((vEmissiveMapUv-vec2(0.5,0.55))*vec2(1.25,1.0)));totalEmissiveRadiance*=emC.rgb*(0.1+0.9*fr);\n#endif')};
+  veilM.customProgramCacheKey=()=>'sigFrostVeil';
+  const vg=new THREE.PlaneGeometry(.56,.44,20,14),vp=vg.attributes.position,vuv=vg.attributes.uv,voy=new Float32Array(vp.count),vov=new Float32Array(vuv.count),vox=new Float32Array(vp.count);
+  for(let i=0;i<vp.count;i++){voy[i]=vp.getY(i);vox[i]=vp.getX(i);vov[i]=vuv.getY(i)}
+  const veil=new THREE.Mesh(vg,veilM);veil.renderOrder=5;
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.64,6),iceMid);rod.rotation.z=Math.PI/2;rod.position.y=.235;
+  const caps=[-1,1].map(s=>{const c=new THREE.Mesh(crystalGeo(.04,.02),goldM);c.rotation.z=-s*Math.PI/2;c.position.set(s*.32,.235,0);return c});
+  const icicles=[];for(let i=0;i<7;i++){const m=new THREE.Mesh(crystalGeo(.04+(i%3)*.02,.008),iceMid);m.rotation.z=Math.PI;m.position.set(-.27+i*.09,.22,.012);icicles.push(m)}
+  const paper=new THREE.Group();paper.add(veil,rod,...caps,...icicles);root.add(paper);parts.paper=paper;
+  function veilShape(u,form){u=Math.max(.03,u);const top=.22;for(let i=0;i<vp.count;i++){const y=top-(top-voy[i])*u,t=(top-y)/.44;vp.setXYZ(i,vox[i],y,Math.sin(vox[i]*9+TIME*2.6)*.014*t+Math.sin(TIME*1.7+y*7)*.008*t);vuv.setY(i,1-(1-vov[i])*u)}
+   vp.needsUpdate=vuv.needsUpdate=true;vg.computeVertexNormals();veilM.opacity=.9*form}
+  /* ---- SCISSORS: FROSTBITE FANGS — curved crystal blades with jagged edges, cyan veins, gold snowflake joint, ice spikes that grow ---- */
+  const bs=new THREE.Shape();bs.moveTo(-.035,-.032);bs.quadraticCurveTo(.17,-.085,.47,.035);
+  const edgePts=[];for(let i=0;i<=14;i++){const t=i/14,x=.47-t*.44,y=.035-t*.004+(i%2?.016:0)+Math.sin(t*3)*.004;edgePts.push([x,y])}edgePts.forEach(([x,y])=>bs.lineTo(x,y));bs.lineTo(-.035,.034);bs.closePath();
+  const bladeG=new THREE.ExtrudeGeometry(bs,{depth:.02,bevelEnabled:true,bevelThickness:.005,bevelSize:.004,bevelSegments:1,curveSegments:20});bladeG.translate(0,0,-.01);
+  const spineC=new THREE.QuadraticBezierCurve3(new THREE.Vector3(-.03,-.03,0),new THREE.Vector3(.17,-.083,0),new THREE.Vector3(.46,.033,0)),veinC=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.0,0,.013),new THREE.Vector3(.18,-.03,.013),new THREE.Vector3(.43,.028,.013));
+  const edgeC=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.465,.04,0),new THREE.Vector3(.25,.024,0),new THREE.Vector3(.03,.04,0));
+  const spineG=new THREE.TubeGeometry(spineC,24,.012,6),veinG=new THREE.TubeGeometry(veinC,24,.004,5),eGl=new THREE.TubeGeometry(edgeC,24,.016,8),ringG=new THREE.TorusGeometry(.048,.013,6,18);
+  function blade(){const g=new THREE.Group(),grow=new THREE.Group();g.add(grow);const bm=new THREE.Mesh(bladeG,iceMid);bm.renderOrder=2;grow.add(bm,new THREE.Mesh(spineG,iceDeep),new THREE.Mesh(veinG,energy),new THREE.Mesh(eGl,eGlow));
+   const ring=new THREE.Mesh(ringG,iceDeep);ring.position.set(-.21,-.07,0);g.add(ring);const arm=new THREE.Mesh(new THREE.CylinderGeometry(.014,.012,.2,6),iceDeep);arm.rotation.z=1.27;arm.position.set(-.11,-.04,0);g.add(arm);
+   const spikes=[];for(let k=0;k<6;k++){const t=.15+k*.13,p=edgeC.getPoint(1-t),m=new THREE.Mesh(crystalGeo(.03,.007),iceClear);m.position.copy(p);m.quaternion.setFromUnitVectors(Y,new THREE.Vector3(.35,1,0).normalize());m.renderOrder=3;grow.add(m);spikes.push(m)}
+   const pulse=glowSpr(0x9fe8ff,.9);pulse.scale.setScalar(.08);grow.add(pulse);return{g,grow,spikes,pulse}}
+  const A=blade(),B=blade();B.g.scale.y=-1;B.g.position.z=-.03;
+  const fs=new THREE.Shape();for(let i=0;i<12;i++){const a=i/12*TAU,r=i%2?.028:.06;i?fs.lineTo(Math.cos(a)*r,Math.sin(a)*r):fs.moveTo(Math.cos(a)*r,Math.sin(a)*r)}
+  const joint=new THREE.Mesh(new THREE.ExtrudeGeometry(fs,{depth:.012,bevelEnabled:true,bevelThickness:.003,bevelSize:.003,bevelSegments:1}),goldM);joint.position.z=.018;
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.02),energy);gem.position.z=.04;const jglow=glowSpr(0x7fdcff,.6);jglow.scale.setScalar(.15);jglow.position.z=.045;
+  const blades=new THREE.Group();blades.add(A.g,B.g,joint,gem,jglow);blades.position.x=-.1;
+  const floaters=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(crystalGeo(.035,.009),i%2?iceMid:iceClear);blades.add(m);floaters.push({m,a:i/5*TAU,ph:i})}
+  const sciss=new THREE.Group();sciss.add(blades);root.add(sciss);parts.scissors=sciss;
+  const home={A:A.g.position.clone(),B:B.g.position.clone()};
+  const TR=[makeTrail([1,2.4,3.6],[.08,.3,1.2]),makeTrail([1,2.4,3.6],[.08,.3,1.2])],TIP=new THREE.Vector3(.46,.035,0),MIDP=new THREE.Vector3(.2,-.01,0);
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));lab.scale.set(.6,.15,1);lab.position.y=-.43;lab.renderOrder=20;root.add(lab);
+  const LT={rock:['✊ ROCK','GLACIAL CORE'],paper:['✋ PAPER','BLIZZARD VEIL'],scissors:['✌️ SCISSORS','FROSTBITE FANGS']};
+  const charge=T=>T<.3?.15+.08*Math.sin(TIME*2.5):T<.55?sstep(.3,.55,T):.6;
+  /* frozen-and-shattered extras when Frostbound WINS (drawn at the clash point over whatever the rival showed) */
+  function frostDisc(H,q,s1=2.2){const m=new THREE.Mesh(planeGeo(),addMat(frostTex(),new THREE.Color(1.2,1.8,2.4),1));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;
+   oneShot(m,.8,(t,dt,mm)=>{const e=1-Math.pow(1-t,2.5);mm.scale.setScalar(.2+s1*e);mm.rotateZ(dt*.6);mm.material.opacity=Math.min(1,t*8)*Math.pow(1-t,1.3)})}
+  function frozenThen(H,q,build,hold,n){const g=build();g.position.copy(H);g.quaternion.copy(q);let done=false;
+   oneShot(g,hold+.05,(t,_,gg)=>{const e=Math.min(1,t*(hold+.05)/.12);gg.scale.setScalar(.3+.7*e);if(!done&&t>=.98){done=true;for(let i=0;i<n;i++)shard(H.x+rnd(-.15,.15),H.y+rnd(-.2,.2),H.z,{v0:1.2,v1:3.4,s:rnd(.025,.05)});iceBits(H,10,[iceMid,iceClear,iceDeep],1);mist(H.x,H.y,H.z,{s:.2,v:1.2})}})}
+  return{root,
+   show(kind){for(const k in parts)parts[k].visible=k===kind;lab.material.map=labelTex(kind,LT[kind][0],LT[kind][1],'#8fd8ff');lab.material.needsUpdate=true;lab.visible=true;
+    body.visible=true;body.position.set(0,0,0);core.scale.setScalar(1);cglow.visible=true;xtals.forEach(x=>{x.m.visible=true;x.m.scale.setScalar(x.extra?.01:1)});orbit.forEach(o=>o.m.visible=true);
+    FROST.value=0;veilM.opacity=0;veilM.emissiveIntensity=1.3;veilShape(.06,0);paper.position.y=0;icicles.forEach(m=>m.scale.setScalar(.3));
+    for(const b of[A,B]){b.g.rotation.set(0,0,0);b.grow.scale.set(.85,1,1);b.spikes.forEach(s=>s.scale.setScalar(.3))}A.g.position.copy(home.A);B.g.position.copy(home.B);joint.visible=gem.visible=jglow.visible=true;eGlow.opacity=.45;
+    TR.forEach(t=>t.reset());S.acc=S.acc2=S.acc3=0},
+   appear(kind,ctx){const p=ctx.wp;for(let i=0;i<16;i++){const d=dirRnd();glint(p.x+d[0]*.2,p.y+d[1]*.2,p.z+d[2]*.1,{sp:.6})}for(let i=0;i<5;i++)mist(p.x+rnd(-.15,.15),p.y+rnd(-.1,.1),p.z,{s:.15});
+    if(kind==='rock')st.camShake+=.06;if(kind==='paper')for(let i=0;i<30;i++){const a=Math.random()*TAU,r=rnd(.3,.5);P(fx().add,p.x+Math.cos(a)*r,p.y+rnd(-.2,.25),p.z+Math.sin(a)*r*.4,{vx:-Math.cos(a)*r*2.6,vy:0,vz:-Math.sin(a)*r,life:.42,c0:SNOW0,c1:IC0,s0:.02,s1:.03,drag:.5,fo:.5})}},
+   update(kind,Tm,dt,ctx){const p=ctx.wp,s=root.scale.x,c=charge(Tm);
+    if(kind==='rock'){/* heavy, slow; crystals grow outward, the core blazes */
+     body.rotation.y+=dt*(.22+.4*c);body.rotation.x=.14*Math.sin(TIME*.55);body.position.y=.008*Math.sin(TIME*1.2);
+     const pl=Math.sin(TIME*(2.6+c*9));coreM.color.setRGB(1.3+.6*c,2.4+.7*c+.3*pl,3.2+.5*c);core.scale.setScalar(.9+.25*c+.06*pl);cglow.scale.setScalar(.45+.45*c+.05*pl);cglow.material.opacity=.45+.35*c;
+     xtals.forEach((x,i)=>{const sc=x.extra?Math.max(.01,sstep(.2,.9,c)*1.2):1+.45*c+.03*Math.sin(TIME*3+i);x.m.scale.set(sc*.9+.1,sc,sc*.9+.1)});
+     cracks.material.opacity=.25+.45*c;iceClear.emissiveIntensity=.3+.6*c;
+     orbit.forEach((o,i)=>{const a=o.a+TIME*o.s;o.m.position.set(Math.cos(a)*o.r,o.y+Math.sin(TIME*1.8+i)*.03,Math.sin(a)*o.r*.55);o.m.rotation.x+=dt*1.5;o.m.rotation.z+=dt})
+     S.acc+=dt*(5+10*c);while(S.acc>=1){S.acc--;const d=dirRnd();Math.random()<.6?snow(p.x+d[0]*.35*s,p.y+.2+Math.random()*.2,p.z+d[2]*.1):glint(p.x+d[0]*.25*s,p.y+d[1]*.22*s,p.z+d[2]*.1)}
+     S.acc2+=dt*(2.5+4*c);while(S.acc2>=1){S.acc2--;mist(p.x+rnd(-.22,.22)*s,p.y-.12*s,p.z+.03,{v:-.35,s:.12})}
+     if(c>.5){S.acc3+=dt*14*c;while(S.acc3>=1){S.acc3--;const d=dirRnd(),r=.5;P(fx().add,p.x+d[0]*r,p.y+d[1]*r,p.z+d[2]*r*.4,{vx:-d[0]*r*2.2,vy:-d[1]*r*2.2,vz:-d[2]*r*.8,life:.45,c0:SNOW0,c1:IC0,s0:.02,s1:.035,drag:0,fo:.6})}}}
+    else if(kind==='paper'){const form=sstep(0,.22,Tm),u=Tm<.25?.06+.05*form:Math.min(1,.11+.89*sstep(.25,.55,Tm));veilShape(u,form);
+     FROST.value=Tm>=.55?1.1:sstep(.15,.55,Tm)*1.05;veilM.emissiveIntensity=1.1+.4*Math.sin(TIME*3)+.6*c;
+     icicles.forEach((m,i)=>m.scale.setScalar(.3+.9*sstep(.1,.5,Tm)+.04*Math.sin(TIME*2+i)));paper.position.y=.006*Math.sin(TIME*1.5);
+     S.acc+=dt*(10+10*c);while(S.acc>=1){S.acc--;const v=veil.localToWorld(tmpV.set(rnd(-.27,.27),rnd(.22-.44*u,.22),.02));Math.random()<.5?snow(v.x,v.y,v.z):glint(v.x,v.y,v.z,{s:.018})}
+     S.acc2+=dt*1.8;while(S.acc2>=1){S.acc2--;const v=veil.localToWorld(tmpV.set(rnd(-.25,.25),.22-.44*u,0));mist(v.x,v.y,v.z,{v:-.3,s:.09,a:.18})}
+     if(Math.random()<dt*3){const v=veil.localToWorld(tmpV.set(rnd(-.2,.2),rnd(-.1,.15),.02));gold(v.x,v.y,v.z,{s:.018})}}
+    else{const res=ctx.res;let o;
+     if(Tm<.3)o=.27+.2*Math.sin(TIME*6.5);else if(Tm<.42)o=.27+.5*sstep(.3,.42,Tm);else if(Tm<.55){const k=(Tm-.42)/.13;o=.77*(1-k*k)}else o=res==='lose'?.15:0;
+     const d=o-S.lastOpen;if(S.dOpen<0&&d>=0&&Tm<.3){const v=blades.localToWorld(tmpV.set(0,0,.03));for(let i=0;i<4;i++)shard(v.x,v.y,v.z,{v0:.4,v1:1,s:.02,l:.6,gy:-2})}S.dOpen=d;S.lastOpen=o;
+     A.g.rotation.z=-o;B.g.rotation.z=o;sciss.scale.x=ctx.dir;blades.rotation.z=.05*Math.sin(TIME*1.4);
+     for(const b of[A,B]){b.grow.scale.set(.85+.25*c,1+.1*c,1);b.spikes.forEach((sp,i)=>sp.scale.setScalar(.3+1.1*c+.05*Math.sin(TIME*4+i)));const f=(TIME*(.8+2.4*c))%1;b.pulse.position.copy(veinC.getPoint(f));b.pulse.material.opacity=(.3+.7*c)*Math.sin(f*Math.PI)}
+     eGlow.opacity=.3+.15*Math.sin(TIME*6)+c*.45;jglow.material.opacity=.4+.4*c;gem.rotation.y+=dt*2;
+     floaters.forEach((f,i)=>{const a=f.a+TIME*.7;f.m.position.set(Math.cos(a)*.22+.15,Math.sin(a)*.14,.06*Math.sin(TIME+i));f.m.rotation.z+=dt*1.2;f.m.rotation.x+=dt})
+     for(let i=0;i<2;i++){const bl=i?B.g:A.g;TR[i].push(bl.localToWorld(TIP.clone()),bl.localToWorld(MIDP.clone()))}
+     S.acc+=dt*(4+12*c);while(S.acc>=1){S.acc--;const v=(Math.random()<.5?A.g:B.g).localToWorld(tmpV.set(rnd(.05,.45),.02,0));Math.random()<.5?glint(v.x,v.y,v.z,{s:.018,sp:.1}):snow(v.x,v.y,v.z)}
+     S.acc2+=dt*(2+4*c);while(S.acc2>=1){S.acc2--;const v=(Math.random()<.5?A.g:B.g).localToWorld(tmpV.set(rnd(.1,.4),0,0));mist(v.x,v.y,v.z,{v:-.4,s:.08,a:.18})}}},
+   attack(kind,ctx){const H=ctx.HP,q=root.quaternion,won=ctx.res==='win';
+    const shock=()=>{for(const [c,sc0,sc1,life,op] of[[new THREE.Color(1,2,2.8),.15,2.6,.55,1],[0xffffff,.08,1.6,.3,.9],[0x2a5ad8,.2,3.4,.75,.5]]){const m=new THREE.Mesh(ringGeo(),addMat(null,c,op));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;
+      oneShot(m,life,(t,_,mm)=>{const e=1-Math.pow(1-t,3);mm.scale.setScalar(sc0+(sc1-sc0)*e);mm.material.opacity=op*Math.pow(1-t,1.4)})}
+     const fl=glowSpr(0xbfeaff,1);fl.position.copy(H);fl.renderOrder=18;oneShot(fl,.32,(t,_,s2)=>{s2.scale.setScalar(.4+2.2*Math.min(1,t*6));s2.material.opacity=Math.pow(1-t,1.6)})};
+    if(kind==='rock'){/* devastating frozen shockwave; beats scissors = the blades freeze over and shatter */
+     shock();frostDisc(H,q,2.6);for(let i=0;i<70;i++)shard(H.x,H.y,H.z,{v0:1.4,v1:3.8});iceBits(H,12,[iceMid,iceClear,iceDeep],1.1);for(let i=0;i<12;i++)mist(H.x+rnd(-.2,.2),H.y,H.z,{s:.2,v:1.5});
+     if(won)frozenThen(H,q,()=>{const g=new THREE.Group();for(const r of[.55,-.55]){const m=new THREE.Mesh(crystalGeo(.5,.035),iceMid);m.rotation.z=r-Math.PI/2;m.position.set(-.22*Math.cos(r),-.22*Math.sin(r),0);const n=m.clone();n.material=iceClear;n.scale.set(1.5,1.05,1.5);g.add(m,n)}return g},.32,110);
+     st.camShake+=.22}
+    else if(kind==='paper'){/* the veil becomes a blizzard around the rival; beats rock = the rock is sealed in thick ice, then it all bursts */
+     const sw=new THREE.Object3D();oneShot(sw,.9,(t)=>{for(let i=0;i<6;i++){const a=Math.random()*TAU,r=rnd(.18,.4)*(1-t*.4);P(fx().add,H.x+Math.cos(a)*r,H.y+rnd(-.25,.25),H.z+Math.sin(a)*r*.45,{vx:-Math.sin(a)*2.6,vy:rnd(-.1,.3),vz:Math.cos(a)*1.1,life:.5,c0:SNOW0,c1:IC1,s0:.022,s1:.012,drag:1,fo:.8})}if(Math.random()<.35)mist(H.x+rnd(-.2,.2),H.y,H.z,{s:.12,a:.2})});
+     if(won)frozenThen(H,q,()=>{const g=new THREE.Group(),sh=new THREE.Mesh(rockGeo(.3,2,2.2),iceClear);sh.renderOrder=6;const s2=new THREE.Mesh(rockGeo(.24,1,5.5),iceMid);sh.userData.ownGeo=s2.userData.ownGeo=true;g.add(s2,sh);
+       const Q=seeded(3);for(let i=0;i<9;i++){const d=new THREE.Vector3(Q()*2-1,Q()*2-1,Q()).normalize(),m=new THREE.Mesh(crystalGeo(.12,.026),i%2?iceDeep:iceMid);m.position.copy(d).multiplyScalar(.22);m.quaternion.setFromUnitVectors(Y,d);g.add(m)}return g},.75,140);
+     setTimeout(()=>{try{shock();frostDisc(H,q,2);blast(H.x,H.y,H.z,60,{c0:IC0,c1:IC1,v0:1.4,v1:3.4,s:.03,gy:-1.5})}catch(e){}},won?720:260);st.camShake+=.1}
+    else{/* crystalline cut + a wave of freezing energy; beats paper = the paper freezes and bursts into hundreds of crystal fragments */
+     for(const [w,h,col,life,rz] of[[1.9,.18,new THREE.Color(1,2.2,3.2),.45,-.5],[1.5,.06,0xffffff,.3,-.5],[1.2,.12,new THREE.Color(.3,.9,2.6),.5,.38]]){const m=new THREE.Mesh(planeGeo(),addMat(slashW(),col,1));m.position.copy(H);m.quaternion.copy(q);m.rotateZ(rz);m.renderOrder=18;
+      oneShot(m,life,(t,_,mm)=>{mm.scale.set(w*Math.min(1,t*7),h*(1+t*.6),1);mm.material.opacity=t<.25?1:Math.pow(1-(t-.25)/.75,1.5)})}
+     frostDisc(H,q,1.8);for(let i=0;i<50;i++)shard(H.x,H.y,H.z,{v0:1.5,v1:4,gy:-3});
+     if(won)frozenThen(H,q,()=>{const g=new THREE.Group(),m=new THREE.Mesh(new THREE.PlaneGeometry(.5,.62),new THREE.MeshStandardMaterial({map:frostTex(),color:0xcfeeff,emissive:0x5ab8ff,emissiveIntensity:.8,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));m.userData.ownGeo=true;g.add(m);return g},.2,260);
+     st.camShake+=.12}},
+   brk(kind,ctx){const p=ctx.wp;
+    if(kind==='rock'){body.visible=false;orbit.forEach(o=>o.m.visible=false);iceBits(p,16,[iceMid,iceClear,iceDeep],1.1);for(let i=0;i<60;i++)shard(p.x,p.y,p.z,{v0:1,v1:3});for(let i=0;i<8;i++)mist(p.x,p.y,p.z,{s:.18,v:1.2});
+     const fl=glowSpr(0x9fe8ff,1);fl.position.copy(p);oneShot(fl,.35,(t,_,s2)=>{s2.scale.setScalar(.3+.9*t);s2.material.opacity=(1-t)*(Math.random()<.3?.3:1)})}
+    else if(kind==='paper'){for(let i=0;i<20;i++)glint(p.x+rnd(-.25,.25),p.y+rnd(-.2,.2),p.z,{sp:.5})}
+    else{S.bv=[new THREE.Vector3(-1.3,1.7,.5),new THREE.Vector3(1.1,1.5,-.4)];S.bw=[rnd(6,10),-rnd(6,10)];for(let i=0;i<40;i++)shard(p.x,p.y,p.z,{v0:1,v1:2.6});joint.visible=false}},
+   brkUpd(kind,t,dt,ctx){const p=ctx.wp;lab.visible=false;
+    if(kind==='rock')return t>.1;
+    if(kind==='paper'){/* freezes solid, cracks, shatters into shards */FROST.value=1.2;veilM.emissiveIntensity=1.3+t*3;veilM.opacity=Math.max(0,.9*(1-sstep(.25,.7,t)));
+     if(t>.2&&t<.7){for(let i=0;i<5;i++){const v=veil.localToWorld(tmpV.set(rnd(-.27,.27),rnd(-.2,.2),0));shard(v.x,v.y,v.z,{v0:.4,v1:1.6,s:rnd(.02,.04),gy:-3})}}paper.position.y-=dt*t*.6;return t>1}
+    [A,B].forEach((b,i)=>{S.bv[i].y-=5*dt;b.g.position.addScaledVector(S.bv[i],dt);b.g.rotation.z+=S.bw[i]*dt});eGlow.opacity=Math.max(0,.45-t*.5);
+    if(Math.random()<.4){const v=A.g.localToWorld(tmpV.set(.3,0,0));shard(v.x,v.y,v.z,{v0:.3,v1:1,s:.025})}gem.visible=jglow.visible=t<.1;return t>1.2},
+   hideTrails(){TR.forEach(t=>t.reset())}}}
+ const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant,frost:buildFrost};/* v1.18.0: Frostbound's ice set *//* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
  const OBJ={};const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>!OFF&&!FAIL&&!HREV.on&&!st.select&&!!SIGNATURES[heroKey(k)];
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(o&&o.hk===hk)return o;if(o)o.root.visible=false;
@@ -3118,7 +3289,7 @@ const SIG=(()=>{
    o.sig.update(o.kind,T,dt,Object.assign(ctx(o,k,sgn),{res}));return true}catch(e){fail(e);return false}}
  function breakIt(k){try{const o=OBJ[k];if(!o||!o.kind)return false;o.broken=true;o.done=false;o.bt=0;o.sig.brk(o.kind,ctx(o,k,k==='g'?-1:1));return true}catch(e){fail(e);return false}}
  function impact(HP,r){for(const k of['g','a']){try{const o=OBJ[k];if(!active(k)||!o||!o.kind||r[k]==='lose')continue;o.sig.attack(o.kind,Object.assign(ctx(o,k,k==='g'?-1:1),{HP:HP.clone(),res:r[k]}))}catch(e){fail(e)}}}
- function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc);FXP.leaf.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
+ function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc);FXP.leaf.update(dt,sc);FXP.shard.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
  return{active,update,breakIt,impact,updateFx,SIGNATURES,get on(){return!OFF&&!FAIL}}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT-HREV.D;
@@ -5577,7 +5748,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.17.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.18.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
