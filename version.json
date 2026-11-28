@@ -1,6 +1,17 @@
 {
-  "current": "1.18.0",
+  "current": "1.19.0",
   "releases": [
+    {
+      "v": "1.19.0",
+      "date": "2026-11-28",
+      "title": "Stone Sentinel moves mountains",
+      "new": [
+        "Stone Sentinel now shows his own earth magic when the cards are revealed: Titan's Fist rock, the Runestone Tablet paper and the Seismic Crushers scissors — floating stones held by blue energy, glowing runes, dust and heavy earthquake hits",
+        "When Stone Sentinel wins, his rival's object gets crushed: scissors are smashed flat by the fist, rock is locked in a stone cage, paper is caught and torn apart by the jaws",
+        "It only changes how it looks — rock, paper and scissors still win and lose exactly the same way"
+      ],
+      "fixed": []
+    },
     {
       "v": "1.18.0",
       "date": "2026-11-28",

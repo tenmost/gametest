@@ -2551,7 +2551,7 @@ const SIG=(()=>{
      col[k*4+3]=(q.a??1)*Math.min(1,t*(q.fin||12))*Math.pow(1-t,q.fo||1.3);
      sz[k]=q.s0+((q.s1??q.s0)-q.s0)*t;if(ra)ra[k]=q.r||0;k++}
     geo.setDrawRange(0,k);geo.attributes.position.needsUpdate=geo.attributes.aCol.needsUpdate=geo.attributes.aSize.needsUpdate=true;if(ra)geo.attributes.aRot.needsUpdate=true}}}
- let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke()),leaf:pool(260,false,leafSprite(),true),shard:pool(420,false,shardSprite(),true)});
+ let FXP=null;const fx=()=>FXP||(FXP={add:pool(900,true,texGlow()),smoke:pool(160,false,texSmoke()),leaf:pool(260,false,leafSprite(),true),shard:pool(420,false,shardSprite(),true),pebble:pool(260,false,pebbleSprite(),true)});
  const P=(pl,x,y,z,o)=>pl.add(Object.assign({x,y,z,vx:0,vy:0,vz:0},o));
  const dirRnd=()=>{const u=Math.random()*2-1,a=Math.random()*TAU,r=Math.sqrt(1-u*u);return[Math.cos(a)*r,u,Math.sin(a)*r]};
  /* ember / spark / smoke presets (colours above 1 = bloom glow) */
@@ -3264,7 +3264,182 @@ const SIG=(()=>{
     [A,B].forEach((b,i)=>{S.bv[i].y-=5*dt;b.g.position.addScaledVector(S.bv[i],dt);b.g.rotation.z+=S.bw[i]*dt});eGlow.opacity=Math.max(0,.45-t*.5);
     if(Math.random()<.4){const v=A.g.localToWorld(tmpV.set(.3,0,0));shard(v.x,v.y,v.z,{v0:.3,v1:1,s:.025})}gem.visible=jglow.visible=t<.1;return t>1.2},
    hideTrails(){TR.forEach(t=>t.reset())}}}
- const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant,frost:buildFrost};/* v1.18.0: Frostbound's ice set *//* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
+ /* ======================= STONE SENTINEL — ancient earth magic (v1.19.0): weathered grey-brown stone, a little moss, glowing blue energy, gravity and seismic weight ======================= */
+ const BL0=[.6,1.9,3.6],BL1=[.08,.3,1.3],DUSTS=[.46,.43,.39];
+ const bmote=(x,y,z,o={})=>ember(x,y,z,Object.assign({c0:BL0,c1:BL1,sp:.2,vy:.1,s:.026,gy:.02,swA:.35},o));
+ const sdust=(x,y,z,o={})=>smoke(x,y,z,Object.assign({c:DUSTS,a:.36,s:.15},o));
+ function pebble(x,y,z,o={}){const d=dirRnd(),v=rnd(o.v0??1,o.v1??3);P(fx().pebble,x,y,z,{vx:d[0]*v+(o.vx||0),vy:d[1]*v+(o.up??.8),vz:d[2]*v*.5,life:rnd(.7,1.3)*(o.l||1),c0:o.c||[1,1,1],s0:o.s||rnd(.03,.06),s1:(o.s||.045)*.8,a:1,drag:o.drag??.8,gy:o.gy??-5,r:Math.random()*6.3,vr:rnd(-8,8),fin:30,fo:.4})}
+ let PBS=null,STM=null,TAB=null,RRING=null,GCR=null;
+ function pebbleSprite(){return PBS||(PBS=canvasTex(64,64,g=>{g.beginPath();const R=seeded(4);for(let i=0;i<=9;i++){const a=i/9*TAU,r=22+R()*8;i?g.lineTo(32+Math.cos(a)*r,32+Math.sin(a)*r):g.moveTo(32+Math.cos(a)*r,32+Math.sin(a)*r)}g.closePath();
+  const gr=g.createRadialGradient(24,22,4,32,32,32);gr.addColorStop(0,'#a59c8c');gr.addColorStop(.6,'#6e665c');gr.addColorStop(1,'#3e3934');g.fillStyle=gr;g.fill();g.strokeStyle='rgba(30,25,20,.7)';g.lineWidth=2;g.stroke()}))}
+ /* weathered stone: grey-brown strata, pits, a little moss, glowing blue Voronoi cracks (colour + glow maps) */
+ function stoneMaps(){if(STM)return STM;const W=256,H=128,R=seeded(55),pts=[];for(let i=0;i<26;i++)pts.push([R()*W,R()*H]);
+  const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c},cb=mk(),ce=mk(),gb=cb.getContext('2d'),ge=ce.getContext('2d'),ib=gb.createImageData(W,H),ie=ge.createImageData(W,H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){let d1=1e9,d2=1e9;for(const p of pts){let dx=Math.abs(x-p[0]);dx=Math.min(dx,W-dx);const dy=y-p[1],d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d}else if(d<d2)d2=d}
+   const e=Math.sqrt(d2)-Math.sqrt(d1),crack=Math.max(0,1-e/2.6),core=Math.max(0,1-e/1.1),fu=x*TAU/W,n=R(),
+    strata=.5+.5*Math.sin(y*.32+Math.sin(fu*2)*3),warm=.5+.5*Math.sin(fu*3+y*.05),ms=Math.min(.7,Math.max(0,(Math.sin(fu*2+Math.cos(y*.08)*2)*Math.cos(y*.06+Math.sin(fu*3))-.55)*2.4)),i=(y*W+x)*4;
+   let v=88+30*strata+26*(n-.5)-(n>.93?28:0);let r=v+12*warm,g=v+4*warm,b=v-6*warm;r=r*(1-ms)+58*ms;g=g*(1-ms)+82*ms;b=b*(1-ms)+40*ms;
+   ib.data[i]=r*(1-crack*.8);ib.data[i+1]=g*(1-crack*.8);ib.data[i+2]=b*(1-crack*.8);ib.data[i+3]=255;
+   const q=Math.min(1,Math.pow(crack,1.5)+core*.5);ie.data[i]=(40+150*core*core)*q;ie.data[i+1]=(140+90*core)*q;ie.data[i+2]=255*q;ie.data[i+3]=255}
+  gb.putImageData(ib,0,0);ge.putImageData(ie,0,0);
+  const t1=new THREE.CanvasTexture(cb),t2=new THREE.CanvasTexture(ce);for(const t of[t1,t2]){t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping}return STM={map:t1,em:t2}}
+ /* rune tablet face: carved runes in four columns (one per section), worn border, moss in the corners; glow map = the runes */
+ const RUNE=(g,x,y,s,k)=>{g.beginPath();const t=k%6;g.moveTo(x,y-s);g.lineTo(x,y+s);if(t===0){g.moveTo(x,y-s*.4);g.lineTo(x+s*.6,y-s)}else if(t===1){g.moveTo(x-s*.6,y);g.lineTo(x+s*.6,y-s*.5)}else if(t===2){g.moveTo(x,y);g.lineTo(x+s*.6,y+s*.6);g.moveTo(x,y);g.lineTo(x-s*.6,y+s*.6)}
+  else if(t===3){g.moveTo(x-s*.6,y-s);g.lineTo(x+s*.6,y)}else if(t===4){g.moveTo(x,y-s*.5);g.lineTo(x+s*.5,y-s*.2);g.lineTo(x,y+s*.1)}else{g.moveTo(x-s*.5,y-s*.6);g.lineTo(x+s*.5,y-s*.6)}g.stroke()};
+ function tabletTex(){if(TAB)return TAB;const W=512,H=384,S=stoneMaps();
+  const art=(g)=>{g.lineCap='round';for(let col=0;col<4;col++){const cx=64+col*128;let k=col*3;g.beginPath();g.arc(cx,92,30,0,TAU);g.stroke();RUNE(g,cx,92,16,k++);for(let r=0;r<4;r++)RUNE(g,cx+(r%2?-22:22),168+r*48,15,(k++)*5)}
+   g.beginPath();g.moveTo(24,40);g.lineTo(W-24,40);g.moveTo(24,H-36);g.lineTo(W-24,H-36);g.stroke()};
+  const map=canvasTex(W,H,g=>{g.drawImage(S.map.image,0,0,W,H);g.fillStyle='rgba(60,55,50,.25)';g.fillRect(0,0,W,H);g.strokeStyle='rgba(28,24,22,.85)';g.lineWidth=7;art(g);g.strokeStyle='rgba(170,160,145,.5)';g.lineWidth=2;g.save();g.translate(-2,-2);art(g);g.restore()});
+  const em=canvasTex(W,H,g=>{g.fillStyle='#000';g.fillRect(0,0,W,H);g.strokeStyle='#7fd0ff';g.shadowColor='#2a9aff';g.shadowBlur=12;g.lineWidth=4;art(g)});
+  return TAB={map,em}}
+ const runeRing=()=>RRING||(RRING=canvasTex(256,256,g=>{g.strokeStyle='rgba(150,215,255,1)';g.shadowColor='#3aa8ff';g.shadowBlur=8;g.lineWidth=3;g.beginPath();g.arc(128,128,116,0,TAU);g.stroke();g.lineWidth=2;g.beginPath();g.arc(128,128,88,0,TAU);g.stroke();
+  for(let i=0;i<16;i++){const a=i/16*TAU;g.save();g.translate(128+Math.cos(a)*102,128+Math.sin(a)*102);g.rotate(a+Math.PI/2);RUNE(g,0,0,8,i);g.restore()}}));
+ /* glowing blue ground cracks (a decal on the arena floor) */
+ const groundCracks=()=>GCR||(GCR=canvasTex(256,256,g=>{const R=seeded(19);g.strokeStyle='rgba(170,225,255,1)';g.shadowColor='#2a8fff';g.shadowBlur=8;g.lineCap='round';
+  const br=(x,y,a,len,w,d)=>{if(d>4)return;let px=x,py=y;g.lineWidth=w;g.beginPath();g.moveTo(px,py);for(let i=0;i<6;i++){a+=(R()-.5)*.7;px+=Math.cos(a)*len/6;py+=Math.sin(a)*len/6;g.lineTo(px,py)}g.stroke();if(R()<.8)br(px,py,a+(R()-.5)*1.2,len*.6,w*.7,d+1);if(R()<.5)br(px,py,a+(R()<.5?-1:1)*.8,len*.5,w*.6,d+1)};
+  for(let i=0;i<8;i++)br(128,128,i/8*TAU+R()*.4,58+R()*20,3.5,0);
+  g.globalCompositeOperation='destination-in';const m=g.createRadialGradient(128,128,20,128,128,128);m.addColorStop(0,'rgba(0,0,0,1)');m.addColorStop(.8,'rgba(0,0,0,.7)');m.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=m;g.fillRect(0,0,256,256)}));
+ /* stone chunks thrown through the air (real meshes) */
+ function rockBits(H,n,mat,sp=1,sz=1){const g=new THREE.Group();g.position.copy(H);for(let i=0;i<n;i++){const m=new THREE.Mesh(rockGeo((.035+Math.random()*.04)*sz,1,i*1.37),mat),d=dirRnd(),v=rnd(1.2,3)*sp;m.userData.ownGeo=true;
+   m.userData.v=new THREE.Vector3(d[0]*v,d[1]*v+1.3,d[2]*v*.6);m.userData.w=new THREE.Vector3(rnd(-10,10),rnd(-10,10),rnd(-10,10));g.add(m)}
+  oneShot(g,1.25,(t,dt,gg)=>{for(const m of gg.children){const u=m.userData;u.v.y-=7*dt;m.position.addScaledVector(u.v,dt);m.rotation.x+=u.w.x*dt;m.rotation.y+=u.w.y*dt;if(t>.8)m.scale.multiplyScalar(.9)}})}
+ function seismic(H,q,big){/* rings + dust wave + glowing ground cracks + shake */
+  for(const [c,sc0,sc1,life,op] of[[new THREE.Color(.5,1.6,3.2),.15,2.7,.55,1],[0xd8d0c0,.1,1.8,.35,.8],[0x6a5a48,.25,3.6,.8,.55]]){const m=new THREE.Mesh(ringGeo(),addMat(null,c,op));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;
+   oneShot(m,life,(t,_,mm)=>{const e=1-Math.pow(1-t,3);mm.scale.setScalar(sc0+(sc1-sc0)*e);mm.material.opacity=op*Math.pow(1-t,1.4)})}
+  const gc=new THREE.Mesh(planeGeo(),addMat(groundCracks(),new THREE.Color(.6,1.6,3),1));gc.rotation.x=-Math.PI/2;gc.position.set(H.x,FLOOR+.83,.7);gc.renderOrder=12;
+  oneShot(gc,1.8,(t,_,mm)=>{mm.scale.setScalar(.3+2.6*Math.min(1,t*5));mm.material.opacity=Math.min(1,t*10)*(1-sstep(.5,1,t))*(.8+.2*Math.sin(t*40))});
+  for(let i=0;i<(big?16:9);i++){const a=Math.random()*TAU;smoke(H.x+Math.cos(a)*.1,H.y-.05,H.z,{c:DUSTS,a:.4,s:.2,v:1.4})}
+  for(let i=0;i<(big?30:16);i++){const a=Math.random()*TAU;sdust(H.x+Math.cos(a)*rnd(.2,.6),H.y-.3,H.z+Math.sin(a)*.2,{s:.18,v:.6})}
+  st.camShake+=big?.28:.16}
+
+ function buildStone(){const root=new THREE.Group(),parts={},S={acc:0,acc2:0,acc3:0,lastOpen:.3,dOpen:0};
+  const SM=stoneMaps();
+  const stoneM=new THREE.MeshStandardMaterial({map:SM.map,emissive:0xffffff,emissiveMap:SM.em,emissiveIntensity:1.1,roughness:.95,metalness:0,flatShading:true});stoneM.userData.keep=true;
+  const stoneD=new THREE.MeshStandardMaterial({map:SM.map,color:0x8a8278,roughness:.95,flatShading:true});stoneD.userData.keep=true;
+  const glowSpr=(c,o)=>new THREE.Sprite(new THREE.SpriteMaterial({map:texGlow(),color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false}));
+  const linkM=new THREE.LineBasicMaterial({color:new THREE.Color(.5,1.6,3.2),transparent:true,opacity:.6,blending:THREE.AdditiveBlending,depthWrite:false});
+  /* energy links: a line between pairs of pieces, re-drawn every frame */
+  function links(pairs){const pos=new Float32Array(pairs.length*6),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const L=new THREE.LineSegments(g,linkM);L.frustumCulled=false;L.renderOrder=6;
+   const a=new THREE.Vector3(),b=new THREE.Vector3();return{L,update(par){pairs.forEach(([p,q],i)=>{a.copy(p.position);b.copy(q.position);if(p.parent!==par)p.parent.localToWorld(a)&&par.worldToLocal(a);if(q.parent!==par)q.parent.localToWorld(b)&&par.worldToLocal(b);pos.set([a.x,a.y,a.z],i*6);pos.set([b.x,b.y,b.z],i*6+3)});g.attributes.position.needsUpdate=true}}}
+  /* ---- ROCK: TITAN'S FIST — a clenched fist of separate floating stones held together by blue energy; it assembles from rocks rising from below ---- */
+  const rock=new THREE.Group(),fist=new THREE.Group();rock.add(fist);
+  const RB=(w,h,d)=>new RoundedBoxGeometry(w,h,d,2,Math.min(w,h,d)*.28);
+  const piece=(geo,x,y,z,rx=0,ry=0,rz=0)=>{const m=new THREE.Mesh(geo,stoneM);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);m.userData.home=m.position.clone();m.userData.hr=m.rotation.clone();
+   m.userData.from=new THREE.Vector3(x+rnd(-.35,.35),y-rnd(.55,.9),z+rnd(-.1,.1));m.userData.d=Math.random()*.18;fist.add(m);return m};
+  const palm=piece(RB(.2,.26,.17),-.04,0,0,0,0,.04),fistP=[palm];
+  for(let f=0;f<4;f++){const y=.095-f*.064;fistP.push(piece(RB(.1,.058,.1),.1,y,.03,0,0,-.05));fistP.push(piece(RB(.075,.054,.08),.15,y-.002,-.04,0,0,.3))}
+  fistP.push(piece(RB(.07,.15,.07),-.02,-.12,.08,.4,0,1.25));fistP.push(piece(RB(.06,.07,.065),.06,-.125,.1,.2,0,.15));
+  fistP.push(piece(RB(.16,.14,.16),-.2,-.01,-.01,0,0,.05));
+  const knuckGlow=[];for(let f=0;f<4;f++){const s=glowSpr(0x3a9aff,.5);s.scale.setScalar(.08);s.position.set(.06,.095-f*.064,.08);fist.add(s);knuckGlow.push(s)}
+  const pairs=[];for(let i=1;i<fistP.length;i++)pairs.push([palm,fistP[i]]);for(let f=0;f<4;f++)pairs.push([fistP[1+f*2],fistP[2+f*2]]);const fL=links(pairs);fist.add(fL.L);
+  const fglow=glowSpr(0x2a7aff,.35);fglow.scale.setScalar(.75);fglow.position.z=-.1;rock.add(fglow);
+  const grav=new THREE.Mesh(ringGeo(),new THREE.MeshBasicMaterial({color:0x2a5ad8,transparent:true,opacity:.2,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));grav.renderOrder=2;rock.add(grav);
+  const debris=[];for(let i=0;i<7;i++){const m=new THREE.Mesh(rockGeo(.022+(i%3)*.01,1,i*2.3),stoneD);rock.add(m);debris.push({m,a:i/7*TAU,r:.32+(i%2)*.06,s:.4+i*.09,y:(i-3)*.06})}
+  root.add(rock);parts.rock=rock;
+  /* ---- PAPER: RUNESTONE TABLET — four thin carved stone sections with jagged edges, joined by energy; they gather and the runes light up one by one ---- */
+  const TT=tabletTex();const tabMats=[];
+  const secs=[];for(let i=0;i<4;i++){const x0=-.28+i*.14,x1=x0+.14,R=seeded(40+i),sh=new THREE.Shape(),pts=[];
+   const top=y=>.21-R()*.025,bot=()=>-.21+R()*.025;pts.push([x0+.004,bot()]);for(let k=1;k<4;k++)pts.push([x0+k*.035,bot()]);pts.push([x1-.004,bot()]);for(let k=1;k<6;k++)pts.push([x1-.004+(i===3?(R()-.5)*.02:0),-.21+k*.07]);pts.push([x1-.004,top()]);for(let k=3;k>0;k--)pts.push([x0+k*.035,top()]);pts.push([x0+.004,top()]);for(let k=5;k>0;k--)pts.push([x0+.004+(i===0?(R()-.5)*.02:0),-.21+k*.07]);
+   pts.forEach(([x,y],k)=>k?sh.lineTo(x,y):sh.moveTo(x,y));sh.closePath();
+   const geo=new THREE.ExtrudeGeometry(sh,{depth:.026,bevelEnabled:true,bevelThickness:.005,bevelSize:.004,bevelSegments:1});geo.translate(0,0,-.013);
+   const uv=geo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setXY(k,(uv.getX(k)+.28)/.56,(uv.getY(k)+.21)/.42);
+   const mat=new THREE.MeshStandardMaterial({map:TT.map,emissive:0xffffff,emissiveMap:TT.em,emissiveIntensity:0,roughness:.92,flatShading:true});mat.userData.keep=true;tabMats.push(mat);
+   const m=new THREE.Mesh(geo,mat);const cx=(x0+x1)/2;m.userData={cx,from:new THREE.Vector3(-cx*.6+rnd(-.1,.1),-.5-i*.1,rnd(-.15,.15)),fr:rnd(-1,1),d:i*.06};secs.push(m)}
+  const tab=new THREE.Group();secs.forEach(m=>tab.add(m));const tL=links([[secs[0],secs[1]],[secs[1],secs[2]],[secs[2],secs[3]]]);tab.add(tL.L);
+  const ring=new THREE.Mesh(planeGeo(),new THREE.MeshBasicMaterial({map:runeRing(),color:new THREE.Color(.6,1.6,3),transparent:true,opacity:.6,blending:THREE.AdditiveBlending,depthWrite:false}));ring.scale.setScalar(.75);ring.position.z=-.06;ring.renderOrder=1;
+  const tfr=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(rockGeo(.02+(i%2)*.01,1,i*3.1),stoneD);tfr.push({m,a:i/5*TAU,ph:i});tab.add(m)}
+  const paper=new THREE.Group();paper.add(ring,tab);root.add(paper);parts.paper=paper;
+  /* ---- SCISSORS: SEISMIC CRUSHERS — two curved stone jaws of articulated fragments with jagged teeth, a floating runestone pivot ---- */
+  function jaw(){const g=new THREE.Group(),frags=[],teeth=[];const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.02,0,0),new THREE.Vector3(.22,-.07,0),new THREE.Vector3(.44,.02,0));
+   for(let k=0;k<5;k++){const t=.1+k*.2,p=curve.getPoint(t),tg=curve.getTangent(t),m=new THREE.Mesh(RB(.1-k*.01,.07-k*.006,.07),stoneM);m.position.copy(p);m.position.y-=.02;m.rotation.z=Math.atan2(tg.y,tg.x);g.add(m);frags.push(m)}
+   for(let k=0;k<7;k++){const t=.12+k*.12,p=curve.getPoint(t),m=new THREE.Mesh(crystalGeo(.045+(k%2)*.015,.014),stoneD);m.position.set(p.x,p.y+.012,0);m.rotation.z=-.25+(k%2?.2:-.1);m.userData.home=m.position.clone();teeth.push(m);g.add(m)}
+   const arm=new THREE.Mesh(RB(.18,.05,.06),stoneM);arm.position.set(-.1,-.04,0);arm.rotation.z=.32;g.add(arm);const kn=new THREE.Mesh(rockGeo(.045,1,7.7),stoneM);kn.position.set(-.2,-.08,0);g.add(kn);
+   const ln=links(frags.slice(1).map((f,i)=>[frags[i],f]).concat([[arm,frags[0]],[kn,arm]]));g.add(ln.L);return{g,frags,teeth,ln,curve}}
+  const A=jaw(),B=jaw();B.g.scale.y=-1;B.g.position.z=-.03;
+  const pivot=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.04,6),stoneM);pivot.rotation.x=Math.PI/2;pivot.position.z=.03;const prune=glowSpr(0x5ab0ff,.8);prune.scale.setScalar(.14);prune.position.z=.06;
+  const between=glowSpr(0x2a7aff,.3);between.scale.setScalar(.3);between.position.set(.25,0,0);
+  const blades=new THREE.Group();blades.add(A.g,B.g,pivot,prune,between);blades.position.x=-.1;
+  const sciss=new THREE.Group();sciss.add(blades);root.add(sciss);parts.scissors=sciss;
+  const home={A:A.g.position.clone(),B:B.g.position.clone()};
+  const TR=[makeTrail([.6,1.8,3.6],[.05,.2,1]),makeTrail([.6,1.8,3.6],[.05,.2,1])],TIP=new THREE.Vector3(.44,.02,0),MIDP=new THREE.Vector3(.22,-.04,0);
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));lab.scale.set(.6,.15,1);lab.position.y=-.43;lab.renderOrder=20;root.add(lab);
+  const LT={rock:["✊ ROCK","TITAN'S FIST"],paper:['✋ PAPER','RUNESTONE TABLET'],scissors:['✌️ SCISSORS','SEISMIC CRUSHERS']};
+  const charge=T=>T<.3?.15+.08*Math.sin(TIME*2.5):T<.55?sstep(.3,.55,T):.6;
+  const assemble=(m,f)=>{const e=1-Math.pow(1-Math.max(0,Math.min(1,f)),3);m.position.lerpVectors(m.userData.from,m.userData.home,e);m.rotation.set(m.userData.hr.x+(1-e)*3,m.userData.hr.y+(1-e)*2,m.userData.hr.z+(1-e)*1.5)};
+  return{root,
+   show(kind){for(const k in parts)parts[k].visible=k===kind;lab.material.map=labelTex(kind,LT[kind][0],LT[kind][1],'#6ab8ff');lab.material.needsUpdate=true;lab.visible=true;
+    fist.visible=true;fist.position.set(0,0,0);fist.scale.setScalar(1);fistP.forEach(m=>{m.visible=true;assemble(m,0)});fglow.visible=true;S.landed=false;
+    tab.visible=true;ring.visible=true;secs.forEach(m=>{m.visible=true;m.position.copy(m.userData.from);m.rotation.set(m.userData.fr,0,m.userData.fr)});tabMats.forEach(m=>m.emissiveIntensity=0);
+    for(const j of[A,B]){j.g.rotation.set(0,0,0);j.teeth.forEach(t=>t.scale.setScalar(.01))}A.g.position.copy(home.A);B.g.position.copy(home.B);pivot.visible=prune.visible=true;
+    TR.forEach(t=>t.reset());S.acc=S.acc2=S.acc3=0},
+   appear(kind,ctx){const p=ctx.wp;for(let i=0;i<8;i++)sdust(p.x+rnd(-.25,.25),p.y-.25,p.z,{s:.14});for(let i=0;i<12;i++){const d=dirRnd();bmote(p.x+d[0]*.2,p.y+d[1]*.2,p.z+d[2]*.1,{sp:.5})}st.camShake+=.05},
+   update(kind,Tm,dt,ctx){const p=ctx.wp,s=root.scale.x,c=charge(Tm),dir=ctx.dir;
+    if(kind==='rock'){/* rocks rise from below and lock into a fist; then it winds back and is LAUNCHED at the rival */
+     fistP.forEach((m,i)=>assemble(m,(Tm-m.userData.d)/.32));
+     if(!S.landed&&Tm>.5){S.landed=true;bmote(p.x,p.y,p.z,{sp:1});for(let i=0;i<4;i++)sdust(p.x,p.y-.15,p.z)}
+     fL.update(fist);linkM.opacity=.35+.4*c+.15*Math.sin(TIME*7);
+     const back=Tm<.3?0:Tm<.42?-sstep(.3,.42,Tm)*.12:Tm<.55?-.12+.34*Math.pow((Tm-.42)/.13,2):Math.max(0,.22-(Tm-.55)*1.2);
+     fist.position.x=back*dir;fist.scale.set(dir,1,1);fist.rotation.z=.05*Math.sin(TIME*1.2);fist.position.y=.01*Math.sin(TIME*1.6);
+     stoneM.emissiveIntensity=.9+.9*c+.2*Math.sin(TIME*5);knuckGlow.forEach((g,i)=>g.material.opacity=.3+.6*c+.1*Math.sin(TIME*6+i));fglow.material.opacity=.25+.3*c;
+     const gp=(TIME*.8)%1;grav.scale.setScalar(.55-.3*gp);grav.material.opacity=.25*Math.sin(gp*Math.PI)*(.5+c);
+     debris.forEach((d,i)=>{const a=d.a+TIME*d.s;d.m.position.set(Math.cos(a)*d.r,d.y+Math.sin(TIME*1.3+i)*.04,Math.sin(a)*d.r*.5);d.m.rotation.x+=dt;d.m.rotation.y+=dt*.7});
+     S.acc+=dt*(6+16*c);while(S.acc>=1){S.acc--;if(Tm<.35){P(fx().pebble,p.x+rnd(-.3,.3),p.y-.45,p.z+rnd(-.05,.05),{vx:rnd(-.1,.1),vy:rnd(1.2,2),vz:0,life:.4,c0:[1,1,1],s0:rnd(.02,.04),s1:.02,drag:1,gy:-1,r:0,vr:rnd(-5,5),fin:20,fo:.6})}else bmote(p.x+rnd(-.2,.2),p.y+rnd(-.15,.15),p.z+.05,{sp:.15})}
+     S.acc2+=dt*2.5;while(S.acc2>=1){S.acc2--;sdust(p.x+rnd(-.2,.2),p.y-.2,p.z,{s:.1,a:.25,v:.4})}}
+    else if(kind==='paper'){/* sections fly in and line up, then each section's runes ignite in turn */
+     secs.forEach((m,i)=>{const f=Math.max(0,Math.min(1,(Tm-m.userData.d)/.3)),e=1-Math.pow(1-f,3),spread=sstep(.2,.5,Tm);
+      m.position.set(m.userData.from.x+(m.userData.cx*(.35+.65*spread)-m.userData.from.x)*e,m.userData.from.y*(1-e)+.006*Math.sin(TIME*1.8+i),m.userData.from.z*(1-e)+.01*Math.sin(TIME*1.3+i*2));m.rotation.set(m.userData.fr*(1-e),.15*(1-spread)*(i-1.5),m.userData.fr*(1-e));
+      tabMats[i].emissiveIntensity=sstep(.25+i*.07,.36+i*.07,Tm)*(1.1+.3*Math.sin(TIME*4+i))+(Tm>=.55?.3:0)});
+     tL.update(tab);ring.rotation.z+=dt*(.4+c);ring.material.opacity=(.25+.45*c)*sstep(.2,.45,Tm);ring.scale.setScalar(.7+.1*c);
+     tfr.forEach((f,i)=>{const a=f.a+TIME*.6;f.m.position.set(Math.cos(a)*.36,Math.sin(a)*.26,.04*Math.sin(TIME+i));f.m.rotation.x+=dt;f.m.rotation.z+=dt*.6});
+     if(Tm>.3&&Math.random()<dt*2){const m=new THREE.Mesh(ringGeo(),addMat(null,new THREE.Color(.4,1.2,2.6),.5));m.position.copy(p);m.quaternion.copy(root.quaternion);oneShot(m,.7,(t,_,mm)=>{mm.scale.setScalar(.3+.7*t);mm.material.opacity=.5*(1-t)})}
+     S.acc+=dt*(6+12*c);while(S.acc>=1){S.acc--;const v=tab.localToWorld(tmpV.set(rnd(-.27,.27),rnd(-.2,.2),.02));bmote(v.x,v.y,v.z,{s:.02})}
+     S.acc2+=dt*1.5;while(S.acc2>=1){S.acc2--;sdust(p.x+rnd(-.25,.25),p.y-.22,p.z,{s:.08,a:.2,v:-.2})}}
+    else{const res=ctx.res;let o;
+     if(Tm<.3)o=.18+.04*Math.sin(TIME*2);else if(Tm<.45)o=.18+.5*sstep(.3,.45,Tm);else if(Tm<.55){const k=(Tm-.45)/.1;o=.68*(1-k*k*k)}else o=res==='lose'?.12:0;
+     if(S.lastOpen>.05&&o<=.001&&Tm>=.5&&!S.slam){S.slam=true;const v=blades.localToWorld(tmpV.set(.25,0,0));for(let i=0;i<8;i++)pebble(v.x,v.y,v.z,{v0:.5,v1:1.5,s:.03})}if(Tm<.3)S.slam=false;S.lastOpen=o;
+     A.g.rotation.z=-o;B.g.rotation.z=o;sciss.scale.x=ctx.dir;blades.rotation.z=.04*Math.sin(TIME*1.1);
+     for(const j of[A,B]){j.teeth.forEach((t,i)=>{const f=sstep(.05+i*.05,.25+i*.05,Tm);t.scale.setScalar(Math.max(.01,f));t.position.copy(t.userData.home);t.position.y-=(1-f)*.15});j.ln.update(j.g)}
+     linkM.opacity=.35+.4*c+.15*Math.sin(TIME*7);stoneM.emissiveIntensity=.9+.9*c;pivot.rotation.y+=dt*(.5+2*c);prune.material.opacity=.5+.5*c;
+     between.material.opacity=(.15+.6*c)*o*1.6;between.scale.setScalar(.25+.25*c);
+     if(c>.4&&Math.random()<dt*12*c){const a=A.g.localToWorld(A.teeth[Math.random()*7|0].position.clone()),b=B.g.localToWorld(B.teeth[Math.random()*7|0].position.clone());bolt(a,b,.12,7,.03)}
+     for(let i=0;i<2;i++){const bl=i?B.g:A.g;TR[i].push(bl.localToWorld(TIP.clone()),bl.localToWorld(MIDP.clone()))}
+     S.acc+=dt*(3+8*c);while(S.acc>=1){S.acc--;const v=(Math.random()<.5?A.g:B.g).localToWorld(tmpV.set(rnd(.05,.42),-.02,0));Math.random()<.6?sdust(v.x,v.y,v.z,{s:.06,a:.25,v:-.6}):bmote(v.x,v.y,v.z,{s:.02})}}},
+   attack(kind,ctx){const H=ctx.HP,q=root.quaternion,won=ctx.res==='win';
+    if(kind==='rock'){/* the fist lands: seismic shockwave, exploding rock, dust; beats scissors = the blades are crushed flat */
+     seismic(H,q,true);rockBits(H,14,stoneD,1.1);for(let i=0;i<40;i++)pebble(H.x,H.y,H.z,{v0:1.4,v1:3.6});blast(H.x,H.y,H.z,50,{c0:BL0,c1:BL1,v0:1.2,v1:3,s:.03,gy:-2});
+     if(won){const g=new THREE.Group(),sm=new THREE.MeshStandardMaterial({color:0x9aa2ac,metalness:.9,roughness:.35,transparent:true});for(const [r,y] of[[.25,.03],[-.2,-.03]]){const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.05,.012),sm);b.userData.ownGeo=true;b.rotation.z=r;b.position.y=y;g.add(b)}
+      g.position.copy(H);g.quaternion.copy(q);oneShot(g,.9,(t,dt,gg)=>{gg.scale.set(1+t*.4,Math.max(.15,1-t*4),1);gg.children.forEach((b,i)=>{b.position.y-=dt*t*2.5;b.rotation.z+=(i?-1:1)*dt*2});sm.opacity=1-sstep(.6,1,t);if(Math.random()<.4)blast(H.x+rnd(-.2,.2),H.y,H.z,2,{s:.02,v0:.6,v1:1.6})})}}
+    else if(kind==='paper'){/* the tablet becomes a stone enclosure; beats rock = the sections imprison the rock, then a gravity burst */
+     const st0=ctx.wp.clone();
+     if(won){const g=new THREE.Group();g.position.copy(H);g.quaternion.copy(q);const Ls=[];for(let i=0;i<6;i++){const m=new THREE.Mesh(secs[i%4].geometry,tabMats[i%4]);m.userData.a=i/6*TAU;g.add(m);Ls.push(m)}
+      const start=st0.clone().sub(H);let burst=false;
+      oneShot(g,1.15,(t,dt,gg)=>{const f=sstep(0,.35,t);gg.children.forEach((m,i)=>{const a=m.userData.a+t*1.5,tx=Math.cos(a)*.26,ty=Math.sin(a)*.22*.3,tz=Math.sin(a)*.22;m.position.set(start.x*(1-f)+tx*f,start.y*(1-f)+ty*f,start.z*(1-f)+tz*f);m.rotation.set(0,-a+Math.PI/2,0);m.scale.set(.9,1.05,1)});
+       if(t>.35&&t<.7&&Math.random()<.5)bolt(H.clone().add(new THREE.Vector3(rnd(-.25,.25),rnd(-.2,.2),.1)),H.clone().add(new THREE.Vector3(rnd(-.25,.25),rnd(-.2,.2),.1)),.12,6,.03);
+       if(!burst&&t>.72){burst=true;seismic(H,q,true);for(let i=0;i<40;i++)pebble(H.x,H.y,H.z,{v0:1.4,v1:3.4});blast(H.x,H.y,H.z,70,{c0:BL0,c1:BL1,v0:1.6,v1:3.6,s:.035,gy:-1})}
+       if(t>.72)gg.children.forEach(m=>{m.position.multiplyScalar(1+dt*6);m.position.y-=dt*t*3;m.rotation.x+=dt*4})});
+      for(let i=0;i<30;i++){const d=dirRnd(),r=.5;P(fx().add,H.x+d[0]*r,H.y+d[1]*r,H.z+d[2]*r*.4,{vx:-d[0]*r*1.6,vy:-d[1]*r*1.6,vz:-d[2]*r*.6,life:.6,c0:BL0,c1:[1.4,2.4,3.6],s0:.02,s1:.035,drag:0,fo:.6})}}
+     else{const m=new THREE.Mesh(planeGeo(),addMat(runeRing(),new THREE.Color(.6,1.6,3),1));m.position.copy(H);m.quaternion.copy(q);m.renderOrder=17;oneShot(m,.6,(t,dt,mm)=>{mm.scale.setScalar(.3+1.6*t);mm.rotateZ(dt*3);mm.material.opacity=1-t});seismic(H,q,false)}
+     st.camShake+=.06}
+    else{/* the jaws slam: seismic wave, flying stone, dust; beats paper = the paper is caught and split apart */
+     seismic(H,q,true);rockBits(H,10,stoneD,1);for(let i=0;i<30;i++)pebble(H.x,H.y,H.z,{v0:1.4,v1:3.2});
+     for(const [w,h,col,life,rz] of[[1.8,.16,new THREE.Color(.5,1.6,3.4),.4,0],[1.4,.05,0xd8ecff,.28,0]]){const m=new THREE.Mesh(planeGeo(),addMat(slashW(),col,1));m.position.copy(H);m.quaternion.copy(q);m.rotateZ(rz);m.renderOrder=18;
+      oneShot(m,life,(t,_,mm)=>{mm.scale.set(w*Math.min(1,t*7),h*(1+t*.6),1);mm.material.opacity=t<.25?1:Math.pow(1-(t-.25)/.75,1.5)})}
+     if(won){const g=new THREE.Group(),pm=new THREE.MeshStandardMaterial({color:0xe9dfc6,roughness:.9,side:THREE.DoubleSide,transparent:true});for(const s of[1,-1]){const h=new THREE.Mesh(new THREE.PlaneGeometry(.42,.27),pm);h.userData.ownGeo=true;h.position.y=s*.14;h.userData.s=s;g.add(h)}
+      g.position.copy(H);g.quaternion.copy(q);oneShot(g,1,(t,dt,gg)=>{const sp=sstep(.12,.5,t);gg.children.forEach(h=>{const s=h.userData.s;h.position.set(-s*sp*.15,s*(.14+sp*.35),0);h.rotation.z=s*sp*.9;h.position.y-=t*t*.5});pm.opacity=1-sstep(.65,1,t);
+       if(t<.2&&Math.random()<.6)sdust(H.x+rnd(-.2,.2),H.y,H.z,{s:.08})})}
+     st.camShake+=.06}},
+   brk(kind,ctx){const p=ctx.wp;
+    if(kind==='rock'){S.bv=fistP.map(()=>{const d=dirRnd();return new THREE.Vector3(d[0]*rnd(1,2.2),Math.abs(d[1])*1.4+.8,d[2])});for(let i=0;i<30;i++)pebble(p.x,p.y,p.z,{v0:1,v1:2.6});for(let i=0;i<10;i++)sdust(p.x,p.y,p.z,{s:.18,v:1.2});fglow.visible=false}
+    else if(kind==='paper'){S.bv=secs.map((m,i)=>new THREE.Vector3((i-1.5)*.6,rnd(.4,1),rnd(-.3,.3)));for(let i=0;i<8;i++)sdust(p.x+rnd(-.25,.25),p.y,p.z,{s:.15})}
+    else{S.bv=[new THREE.Vector3(-1.2,1.5,.4),new THREE.Vector3(1,1.3,-.4)];S.bw=[rnd(5,8),-rnd(5,8)];rockBits(p,10,stoneD,.9);pivot.visible=prune.visible=false}},
+   brkUpd(kind,t,dt,ctx){const p=ctx.wp;lab.visible=false;
+    if(kind==='rock'){/* the fist falls apart into its stones */fistP.forEach((m,i)=>{const v=S.bv[i];v.y-=6*dt;m.position.addScaledVector(v,dt);m.rotation.x+=dt*5;m.rotation.z+=dt*3});linkM.opacity=Math.max(0,.6-t*2);fL.update(fist);
+     if(Math.random()<.3)sdust(p.x,p.y-.2,p.z,{s:.1});return t>1.15}
+    if(kind==='paper'){secs.forEach((m,i)=>{const v=S.bv[i];v.y-=4.5*dt;m.position.addScaledVector(v,dt);m.rotation.x+=dt*(2+i);m.rotation.z+=dt*(i-1.5);tabMats[i].emissiveIntensity=Math.max(0,1-t*2)});tL.update(tab);ring.material.opacity=Math.max(0,.5-t);return t>1.15}
+    [A,B].forEach((j,i)=>{S.bv[i].y-=5.5*dt;j.g.position.addScaledVector(S.bv[i],dt);j.g.rotation.z+=S.bw[i]*dt;j.ln.update(j.g)});between.material.opacity=0;
+    if(Math.random()<.3)pebble(p.x,p.y,p.z,{v0:.4,v1:1.2,s:.03});return t>1.2},
+   hideTrails(){TR.forEach(t=>t.reset())}}}
+ const SIGNATURES={frog:buildFox,gearfox:buildGear,verdant:buildVerdant,frost:buildFrost,stone:buildStone};/* v1.19.0: Stone Sentinel's earth set *//* v1.18.0: Frostbound's ice set *//* v1.17.0: Verdant Guardian's living-forest set *//* v1.16.0: Gearfox got her own mechanical set *//* v1.15.1 (Dainis): the fire set moved from Gearfox to FROG RONIN only */
  const OBJ={};const heroKey=k=>SL[k]&&SL[k].cfg&&SL[k].cfg.key;
  const active=k=>!OFF&&!FAIL&&!HREV.on&&!st.select&&!!SIGNATURES[heroKey(k)];
  function obj(k){const hk=heroKey(k);let o=OBJ[k];if(o&&o.hk===hk)return o;if(o)o.root.visible=false;
@@ -3289,7 +3464,7 @@ const SIG=(()=>{
    o.sig.update(o.kind,T,dt,Object.assign(ctx(o,k,sgn),{res}));return true}catch(e){fail(e);return false}}
  function breakIt(k){try{const o=OBJ[k];if(!o||!o.kind)return false;o.broken=true;o.done=false;o.bt=0;o.sig.brk(o.kind,ctx(o,k,k==='g'?-1:1));return true}catch(e){fail(e);return false}}
  function impact(HP,r){for(const k of['g','a']){try{const o=OBJ[k];if(!active(k)||!o||!o.kind||r[k]==='lose')continue;o.sig.attack(o.kind,Object.assign(ctx(o,k,k==='g'?-1:1),{HP:HP.clone(),res:r[k]}))}catch(e){fail(e)}}}
- function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc);FXP.leaf.update(dt,sc);FXP.shard.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
+ function updateFx(dt){if(!FXP&&!ONE.length)return;try{const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));if(FXP){FXP.add.update(dt,sc);FXP.smoke.update(dt,sc);FXP.leaf.update(dt,sc);FXP.shard.update(dt,sc);FXP.pebble.update(dt,sc)}updateOne(dt)}catch(e){fail(e)}}
  return{active,update,breakIt,impact,updateFx,SIGNATURES,get on(){return!OFF&&!FAIL}}})();
 function updateCards(dt,pulse){
  const revealed=st.res&&!st.shaking,T=st.revT-HREV.D;
@@ -5748,7 +5923,7 @@ setInterval(placeTb,700);addEventListener('resize',()=>setTimeout(placeTb,100));
 <script>
 (()=>{
 /* Every update players can notice: raise SD_VERSION here AND add the same number on top of version.json (see CLAUDE.md "UPDATES"). */
-const SD_VERSION='1.18.0';window.SD_VERSION=SD_VERSION;
+const SD_VERSION='1.19.0';window.SD_VERSION=SD_VERSION;
 const stage=document.getElementById('stage')||document.querySelector('.stage');if(!stage)return;
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}},SS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const cmp=(a,b)=>{a=String(a).split('.').map(Number);b=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
